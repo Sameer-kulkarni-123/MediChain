@@ -20,9 +20,9 @@ export default function HomePage() {
   const { toast } = useToast()
   const router = useRouter()
 
-  const MANUFACTURER_ADDRESS = "0xc4546db5f94e4bf5ef3d85f249768f469c5446c6"
-  const DISTRIBUTOR_ADDRESS = "2"
-  const RETAILER_ADDRESS = "3"
+  const MANUFACTURER_ADDRESS = "0x92187a2b0e46cEf360bF3a6DB1a36Bda4DF76e36"
+  const DISTRIBUTOR_ADDRESS = "1"
+  const RETAILER_ADDRESS = "a"
 
   const connectWallet = async () => {
     if (!window.ethereum) {
