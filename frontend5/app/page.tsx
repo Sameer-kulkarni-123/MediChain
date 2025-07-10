@@ -21,8 +21,8 @@ export default function HomePage() {
   const router = useRouter()
 
   const MANUFACTURER_ADDRESS = "0x92187a2b0e46cEf360bF3a6DB1a36Bda4DF76e36"
-  const DISTRIBUTOR_ADDRESS = "1"
-  const RETAILER_ADDRESS = "a"
+  const DISTRIBUTOR_ADDRESS = "0xA3C8EE9981112A27998D9A77E95110672c9765cE"
+  const RETAILER_ADDRESS = "0x84Ba1f39b0453aE2749A55f4C6f48eAE813584c7"
 
   const connectWallet = async () => {
     if (!window.ethereum) {
