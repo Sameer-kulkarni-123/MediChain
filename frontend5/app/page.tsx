@@ -20,58 +20,71 @@ export default function HomePage() {
   const { toast } = useToast()
   const router = useRouter()
 
-  const MANUFACTURER_ADDRESS = "2"
-  const DISTRIBUTOR_ADDRESS = "0x235B703d61D8Ea4553627606b4ac510c2156dAc6"
-  const RETAILER_ADDRESS = "a"
+  const MANUFACTURERS = [
+  "0x92187a2b0e46cEf360bF3a6DB1a36Bda4DF76e36", 
+  "0xA3C8EE9981112A27998D9A77E95110672c9765cE"]
+
+  const DISTRIBUTORS = [
+  "0x235B703d61D8Ea4553627606b4ac510c2156dAc6", // your original one
+  "0xfd5Bb320199E6bEA38ac1A2C7bf51Bfa0d3E5ab4"]
+
+  const RETAILERS = [
+  "0x84Ba1f39b0453aE2749A55f4C6f48eAE813584c7",
+  "0xface1234abcd5678ef901234abcd5678ef901234"
+  ]
+
 
   const connectWallet = async () => {
-    if (!window.ethereum) {
-      toast({
-        title: "MetaMask Not Found",
-        description: "Please install MetaMask to continue.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    setIsConnecting(true)
-    try {
-      const accounts = await window.ethereum.request({
-        method: "eth_requestAccounts",
-      })
-
-      if (accounts.length > 0) {
-        const connectedAccount = accounts[0].toLowerCase()
-        setAccount(connectedAccount)
-
-        toast({
-          title: "Wallet Connected",
-          description: `Connected to ${connectedAccount.slice(0, 6)}...${connectedAccount.slice(-4)}`,
-        })
-
-        // Route based on wallet address
-        if (connectedAccount === MANUFACTURER_ADDRESS.toLowerCase()) {
-          router.push("/manufacturer")
-        } else if (connectedAccount === DISTRIBUTOR_ADDRESS.toLowerCase()) {
-          // For demo purposes, route to distributor for other addresses
-          // In production, you'd have specific address checks for each role
-          router.push("/distributor")
-        }
-        else if (connectedAccount === RETAILER_ADDRESS.toLowerCase()) {
-          router.push("/retailer")
-
-        }
-      }
-    } catch (error) {
-      toast({
-        title: "Connection Failed",
-        description: "Failed to connect wallet. Please try again.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsConnecting(false)
-    }
+  if (!window.ethereum) {
+    toast({
+      title: "MetaMask Not Found",
+      description: "Please install MetaMask to continue.",
+      variant: "destructive",
+    })
+    return
   }
+
+  setIsConnecting(true)
+  try {
+    const accounts = await window.ethereum.request({
+      method: "eth_requestAccounts",
+    })
+
+    if (accounts.length > 0) {
+      const connectedAccount = accounts[0].toLowerCase()
+      setAccount(connectedAccount)
+
+      toast({
+        title: "Wallet Connected",
+        description: `Connected to ${connectedAccount.slice(0, 6)}...${connectedAccount.slice(-4)}`,
+      })
+
+      // Check which role the connected account belongs to
+      if (MANUFACTURERS.map(addr => addr.toLowerCase()).includes(connectedAccount)) {
+        router.push("/manufacturer")
+      } else if (DISTRIBUTORS.map(addr => addr.toLowerCase()).includes(connectedAccount)) {
+        router.push("/distributor")
+      } else if (RETAILERS.map(addr => addr.toLowerCase()).includes(connectedAccount)) {
+        router.push("/retailer")
+      } else {
+        toast({
+          title: "Unauthorized Address",
+          description: "This wallet is not assigned to any role.",
+          variant: "destructive",
+        })
+      }
+    }
+  } catch (error) {
+    toast({
+      title: "Connection Failed",
+      description: "Failed to connect wallet. Please try again.",
+      variant: "destructive",
+    })
+  } finally {
+    setIsConnecting(false)
+  }
+}
+
 
   useEffect(() => {
     if (window.ethereum) {
