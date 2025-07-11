@@ -1,0 +1,158 @@
+{
+    "manufacturers": [
+      {
+        "id": "mfg_001",
+        "name": "PharmaCorp Industries",
+        "walletAddress": "0xc4546db5F94e4bf5ef3D85f249768F469C5446C6",
+        "category": "manufacturer",
+        "location": "New York, USA",
+        "specialization": "Antibiotics & Pain Relief"
+      },
+      {
+        "id": "mfg_002",
+        "name": "MediTech Solutions",
+        "walletAddress": "0x742d35cc6634c0532925a3b8d4c9db96590c6c87",
+        "category": "manufacturer",
+        "location": "California, USA",
+        "specialization": "Cardiovascular Medicines"
+      },
+      {
+        "id": "mfg_003",
+        "name": "BioHealth Manufacturing",
+        "walletAddress": "0x8ba1f109551bd432803012645hac136c0c8326b",
+        "category": "manufacturer",
+        "location": "Texas, USA",
+        "specialization": "Diabetes & Insulin"
+      },
+      {
+        "id": "mfg_004",
+        "name": "Global Pharma Ltd",
+        "walletAddress": "0x1234567890abcdef1234567890abcdef12345678",
+        "category": "manufacturer",
+        "location": "Illinois, USA",
+        "specialization": "Vaccines & Immunology"
+      }
+    ],
+    "distributors": [
+      {
+        "id": "dist_001",
+        "name": "MediLogistics Corp",
+        "walletAddress": "0xb0F4fe3c7fb8C0a82486BC651cf7430131046Cc1",
+        "category": "distributor",
+        "location": "Chicago, USA",
+        "coverage": "Midwest Region",
+        "capacity": "10,000 units/month"
+      },
+      {
+        "id": "dist_002",
+        "name": "HealthSupply Networks",
+        "walletAddress": "0xabcdef1234567890abcdef1234567890abcdef12",
+        "category": "distributor",
+        "location": "Atlanta, USA",
+        "coverage": "Southeast Region",
+        "capacity": "15,000 units/month"
+      },
+      {
+        "id": "dist_003",
+        "name": "PharmaDistribute Inc",
+        "walletAddress": "0x5555666677778888999900001111222233334444",
+        "category": "distributor",
+        "location": "Denver, USA",
+        "coverage": "Mountain Region",
+        "capacity": "8,000 units/month"
+      },
+      {
+        "id": "dist_004",
+        "name": "National MedSupply",
+        "walletAddress": "0xaaabbbcccdddeeefff000111222333444555666",
+        "category": "distributor",
+        "location": "Phoenix, USA",
+        "coverage": "Southwest Region",
+        "capacity": "12,000 units/month"
+      },
+      {
+        "id": "dist_005",
+        "name": "Coast Medical Distribution",
+        "walletAddress": "0x1111aaaa2222bbbb3333cccc4444dddd5555eeee",
+        "category": "distributor",
+        "location": "Seattle, USA",
+        "coverage": "Pacific Northwest",
+        "capacity": "9,500 units/month"
+      }
+    ],
+    "retailers": [
+      {
+        "id": "ret_001",
+        "name": "HealthMart Pharmacy",
+        "walletAddress": "0x08BD476389cE4Df4904a1139E53DdD3A6D384BD0",
+        "category": "retailer",
+        "location": "Miami, FL",
+        "type": "Chain Pharmacy",
+        "stores": 25
+      },
+      {
+        "id": "ret_002",
+        "name": "City Medical Center",
+        "walletAddress": "0x1010202030304040505060607070808090909090",
+        "category": "retailer",
+        "location": "Boston, MA",
+        "type": "Hospital",
+        "stores": 1
+      },
+      {
+        "id": "ret_003",
+        "name": "QuickCare Drugstore",
+        "walletAddress": "0x2020404060608080a0a0c0c0e0e0f0f010101212",
+        "category": "retailer",
+        "location": "Houston, TX",
+        "type": "Independent Pharmacy",
+        "stores": 3
+      },
+      {
+        "id": "ret_004",
+        "name": "Metro Health Network",
+        "walletAddress": "0x3030606090909c9cf0f0f3f3f6f6f9f9fcfcffff",
+        "category": "retailer",
+        "location": "Los Angeles, CA",
+        "type": "Hospital Network",
+        "stores": 8
+      },
+      {
+        "id": "ret_005",
+        "name": "Community Care Pharmacy",
+        "walletAddress": "0x4040808c0c0f0f0f3f3f6f6f9f9fcfcfffff0000",
+        "category": "retailer",
+        "location": "Portland, OR",
+        "type": "Community Pharmacy",
+        "stores": 2
+      },
+      {
+        "id": "ret_006",
+        "name": "University Medical Clinic",
+        "walletAddress": "0x5050a0a0f0f0f5f5fafafdfdfefeffffff000333",
+        "category": "retailer",
+        "location": "Ann Arbor, MI",
+        "type": "University Hospital",
+        "stores": 1
+      },
+      {
+        "id": "ret_007",
+        "name": "Wellness Plus Stores",
+        "walletAddress": "0x6060c0c0f8f8fcfcfefeffffff0003336669999cc",
+        "category": "retailer",
+        "location": "Nashville, TN",
+        "type": "Chain Pharmacy",
+        "stores": 15
+      },
+      {
+        "id": "ret_008",
+        "name": "Downtown Medical Supply",
+        "walletAddress": "0x7070e0e0fcfcffffff000333666999cccffffffff",
+        "category": "retailer",
+        "location": "San Francisco, CA",
+        "type": "Medical Supply Store",
+        "stores": 1
+      }
+    ]
+  }
+  
