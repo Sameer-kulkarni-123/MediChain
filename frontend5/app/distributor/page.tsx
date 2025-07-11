@@ -14,11 +14,14 @@ import { ConnectionPath } from "@/components/connection-path"
 import { AssignmentForm } from "@/components/assignment-form"
 import supplyChainData from "@/data/supplyChainData.json"
 import { useToast } from "@/hooks/use-toast"
-import { sendCrate, receiveCrate, getCrate, getAccount, getMyPendingCrates } from "../../apis"
+import { receiveCrate, getAccount} from "../../apis"
 
 export default function DistributorPortal() {
-  const [selectedCrate, setSelectedCrate] = useState<string | null>(null)
-  const [pendingCrates, setPendingCrates] = useState<string[]>([])
+  // Remove all pendingCrates state and logic
+  // const [selectedCrate, setSelectedCrate] = useState<string | null>(null)
+  // const [pendingCrates, setPendingCrates] = useState<string[]>([])
+  const [crateReceiveInput, setCrateReceiveInput] = useState("")
+  const [isReceiving, setIsReceiving] = useState(false)
   const [selectedRetailer, setSelectedRetailer] = useState<any>(null)
   const [currentDistributor, setCurrentDistributor] = useState<any>(null)
   const [assignedManufacturer, setAssignedManufacturer] = useState<any>(null)
@@ -31,39 +34,32 @@ export default function DistributorPortal() {
   const { toast } = useToast()
 
   useEffect(() => {
-    // Simulate getting current distributor from wallet/auth
     setCurrentDistributor(supplyChainData.distributors[0])
-    // Simulate assigned manufacturer
     setAssignedManufacturer(supplyChainData.manufacturers[0])
-    // Fetch pending crates for this distributor
-    const fetchPendingCrates = async () => {
-      try {
-        const crates = (await getMyPendingCrates()) as string[];
-        setPendingCrates(crates || []);
-        if (crates && crates.length > 0) setSelectedCrate(crates[0]);
-      } catch (err) {
-        setPendingCrates([]);
-        toast({
-          title: "Error",
-          description: "Failed to fetch pending crates. Please check your wallet connection.",
-          variant: "destructive",
-        });
-      }
-    };
-    fetchPendingCrates();
-  }, []);
+    // Remove fetchPendingCrates and related logic
+  }, [])
 
-  // Mock crate data
-  const crateDetails = {
-    crateCode: selectedCrate || "",
-    medicineName: "Paracetamol 500mg",
-    batchId: "B001",
-    manufacturerId: "MFG001",
-    manufacturingDate: "2024-01-15",
-    expiryDate: "2026-01-15",
-    bottleCount: 100,
-    currentStatus: "At Distributor",
+  // Receive crate handler
+  const handleReceiveCrate = async () => {
+    if (!crateReceiveInput) {
+      toast({ title: "Error", description: "Please enter a crate code.", variant: "destructive" });
+      return;
+    }
+    setIsReceiving(true);
+    try {
+      console.log(crateReceiveInput)
+      await receiveCrate(crateReceiveInput);
+      toast({ title: "Success", description: `Crate ${crateReceiveInput} received successfully!` });
+      setCrateReceiveInput("");
+      // No more refreshing pending crates
+    } catch (error: any) {
+      toast({ title: "Error", description: error?.message || "Failed to receive crate.", variant: "destructive" });
+    } finally {
+      setIsReceiving(false);
+    }
   }
+
+  // Remove mock crate data and selectedCrate usage
 
   const handleInputChange = (field: string, value: string) => {
     setDistributorData((prev) => ({
@@ -82,7 +78,7 @@ export default function DistributorPortal() {
       
       // Simulate receiving crate from manufacturer (in real app, this would be triggered by manufacturer)
       // For demo purposes, we'll simulate the receive action
-      await receiveCrate(crateDetails.crateCode)
+      // await receiveCrate(crateDetails.crateCode) // This line is no longer needed as crateDetails is removed
 
       toast({
         title: "Success",
@@ -130,35 +126,32 @@ export default function DistributorPortal() {
           </div>
         </div>
 
-        {/* Pending Crates List */}
+        {/* Crate Receive Section */}
         <div className="mb-6">
           <Card>
             <CardHeader className="px-4 sm:px-6">
               <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                 <Package className="h-5 w-5" />
-                Pending Crates to Receive
+                Receive Crate
               </CardTitle>
               <CardDescription className="text-sm sm:text-base">
-                These crates have been sent to you and are awaiting your action.
+                Enter a crate code to mark it as received on the blockchain.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2 px-4 sm:px-6">
-              {pendingCrates.length === 0 ? (
-                <p className="text-gray-500 text-sm">No crates pending for receipt.</p>
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  {pendingCrates.map((crateCode) => (
-                    <Button
-                      key={crateCode}
-                      variant={selectedCrate === crateCode ? "default" : "outline"}
-                      className="text-xs sm:text-sm"
-                      onClick={() => setSelectedCrate(crateCode)}
-                    >
-                      {crateCode}
-                    </Button>
-                  ))}
-                </div>
-              )}
+              <div className="flex gap-2 items-center">
+                <Input
+                  type="text"
+                  placeholder="Enter crate code..."
+                  value={crateReceiveInput}
+                  onChange={e => setCrateReceiveInput(e.target.value)}
+                  className="w-64"
+                  disabled={isReceiving}
+                />
+                <Button onClick={handleReceiveCrate} disabled={isReceiving}>
+                  {isReceiving ? "Receiving..." : "Receive Crate"}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -190,46 +183,58 @@ export default function DistributorPortal() {
                 <div>
                   <Label className="text-xs sm:text-sm font-medium text-gray-600">Crate Code</Label>
                   <p className="font-mono text-xs sm:text-sm bg-gray-50 p-2 rounded break-all">
-                    {crateDetails.crateCode}
+                    {/* crateDetails.crateCode */}
                   </p>
                 </div>
                 <div>
                   <Label className="text-xs sm:text-sm font-medium text-gray-600">Medicine Name</Label>
-                  <p className="text-xs sm:text-sm bg-gray-50 p-2 rounded">{crateDetails.medicineName}</p>
+                  <p className="text-xs sm:text-sm bg-gray-50 p-2 rounded">
+                    {/* crateDetails.medicineName */}
+                  </p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label className="text-xs sm:text-sm font-medium text-gray-600">Batch ID</Label>
-                  <p className="text-xs sm:text-sm bg-gray-50 p-2 rounded">{crateDetails.batchId}</p>
+                  <p className="text-xs sm:text-sm bg-gray-50 p-2 rounded">
+                    {/* crateDetails.batchId */}
+                  </p>
                 </div>
                 <div>
                   <Label className="text-xs sm:text-sm font-medium text-gray-600">Manufacturer ID</Label>
-                  <p className="text-xs sm:text-sm bg-gray-50 p-2 rounded">{crateDetails.manufacturerId}</p>
+                  <p className="text-xs sm:text-sm bg-gray-50 p-2 rounded">
+                    {/* crateDetails.manufacturerId */}
+                  </p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label className="text-xs sm:text-sm font-medium text-gray-600">Manufacturing Date</Label>
-                  <p className="text-xs sm:text-sm bg-gray-50 p-2 rounded">{crateDetails.manufacturingDate}</p>
+                  <p className="text-xs sm:text-sm bg-gray-50 p-2 rounded">
+                    {/* crateDetails.manufacturingDate */}
+                  </p>
                 </div>
                 <div>
                   <Label className="text-xs sm:text-sm font-medium text-gray-600">Expiry Date</Label>
-                  <p className="text-xs sm:text-sm bg-gray-50 p-2 rounded">{crateDetails.expiryDate}</p>
+                  <p className="text-xs sm:text-sm bg-gray-50 p-2 rounded">
+                    {/* crateDetails.expiryDate */}
+                  </p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label className="text-xs sm:text-sm font-medium text-gray-600">Bottle Count</Label>
-                  <p className="text-xs sm:text-sm bg-gray-50 p-2 rounded">{crateDetails.bottleCount}</p>
+                  <p className="text-xs sm:text-sm bg-gray-50 p-2 rounded">
+                    {/* crateDetails.bottleCount */}
+                  </p>
                 </div>
                 <div>
                   <Label className="text-xs sm:text-sm font-medium text-gray-600">Current Status</Label>
                   <Badge variant="outline" className="text-green-600 border-green-600 text-xs sm:text-sm">
-                    {crateDetails.currentStatus}
+                    {/* crateDetails.currentStatus */}
                   </Badge>
                 </div>
               </div>

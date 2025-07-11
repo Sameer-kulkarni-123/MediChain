@@ -31,8 +31,7 @@ contract MedicineCrateTracking {
     mapping(string => Crate) public crates;
     mapping(string => BottleScanInfo) public bottleScans; // bottleCode => scan info
     
-    // Mapping to track pending crates for each address
-    mapping(address => string[]) public pendingCrates;
+    // Remove the pendingCrates mapping and all related logic
 
     event CrateRegistered(string crateCode, uint256 bottleCount);
     event CrateSent(string crateCode, address from, address to);
@@ -104,31 +103,24 @@ contract MedicineCrateTracking {
         crate.nextHolderWalletAddress = to;
         crate.pastWalletAddress.push(crate.currentWalletAddress);
         
-        // Add crateCode to pendingCrates for the next holder
-        pendingCrates[to].push(crateCode);
+        // Remove: pendingCrates[to].push(crateCode);
 
         emit CrateSent(crateCode, msg.sender, to);
     }
 
-    function crateReceived(string memory crateCode) public onlyNextHolder(crateCode) {
+    function crateReceived(string memory crateCode) public onlyNextHolder(crateCode) returns(string memory){
         Crate storage crate = crates[crateCode];
+        require(crate.exists, "crate doesn't exists");
         require(crate.inTransit, "Crate is not in transit");
 
         crate.currentWalletAddress = msg.sender;
         crate.inTransit = false;
         crate.nextHolderWalletAddress = address(0);
+        return crate.crateCode;
 
-        // Remove crateCode from pendingCrates for the receiver
-        string[] storage cratesList = pendingCrates[msg.sender];
-        for (uint i = 0; i < cratesList.length; i++) {
-            if (keccak256(bytes(cratesList[i])) == keccak256(bytes(crateCode))) {
-                cratesList[i] = cratesList[cratesList.length - 1];
-                cratesList.pop();
-                break;
-            }
-        }
+        // Remove: code that removes crateCode from pendingCrates[msg.sender]
 
-        emit CrateReceived(crateCode, crate.pastWalletAddress[crate.pastWalletAddress.length - 1], msg.sender);
+        // emit CrateReceived(crateCode, crate.pastWalletAddress[crate.pastWalletAddress.length - 1], msg.sender);
     }
 
 
@@ -144,9 +136,7 @@ contract MedicineCrateTracking {
         crate.nextHolderWalletAddress = address(0);
     }
 
-    function getPendingCrates(address holder) public view returns (string[] memory) {
-        return pendingCrates[holder];
-    }
+    // Remove the getPendingCrates function if present
     
     function scanBottle(string memory bottleCode) public {
         (string memory crateCode, string memory bottleId) = parseCrateFromBottle(bottleCode);
