@@ -14,7 +14,7 @@ import { SearchableDropdown } from "@/components/searchable-dropdown"
 import { ConnectionPath } from "@/components/connection-path"
 import supplyChainData from "@/data/supplyChainData.json"
 import { useToast } from "@/hooks/use-toast"
-import { registerCrate, getAccount } from "../../apis"
+import { registerCrate, getAccount, sendCrate } from "../../apis"
 
 interface CreatedCrate {
   crateCode: string
@@ -130,7 +130,7 @@ export default function ManufacturerPortal() {
     }))
   }
 
-  const handleDistributorConfirmation = async () => {
+  const handleDistributorConfirmation = async (crateCode:string, toAddress:string) => {
     if (!selectedDistributor) {
       toast({
         title: "Error",
@@ -144,7 +144,9 @@ export default function ManufacturerPortal() {
 
     try {
       // Simulate API call to confirm distributor selection
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      // await new Promise((resolve) => setTimeout(resolve, 15000))
+      const receipt = await sendCrate(crateCode, toAddress)
+      console.log(receipt)
 
       toast({
         title: "Distributor Confirmed",
@@ -510,7 +512,7 @@ export default function ManufacturerPortal() {
                   </div>
 
                   <Button
-                    onClick={handleDistributorConfirmation}
+                    onClick={() => handleDistributorConfirmation("abcde", selectedDistributor["walletAddress"])}
                     className="w-full mt-4 bg-green-600 hover:bg-green-700 text-sm sm:text-base py-2"
                     disabled={isSubmitting}
                   >
