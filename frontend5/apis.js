@@ -1,8 +1,8 @@
 import Web3 from "web3";
 import contractABI from './abi/MedicineCrateTracking.json';
 
-const contractAddress = process.env.NEXT_PUBLIC_CONRACT_ADDRESS_IN_SEPOLIA; // Use NEXT_PUBLIC_ to expose in frontend
-// const contractAddress = process.env.NEXT_PUBLIC_CONRACT_ADDRESS_IN_LOCAL;
+// const contractAddress = process.env.NEXT_PUBLIC_CONRACT_ADDRESS_IN_SEPOLIA; // Use NEXT_PUBLIC_ to expose in frontend
+const contractAddress = process.env.NEXT_PUBLIC_CONRACT_ADDRESS_IN_LOCAL;
 
 // Helper: Get Web3 instance and contract (client-side only)
 function getWeb3AndContract() {
@@ -16,8 +16,8 @@ function getWeb3AndContract() {
     throw new Error("Contract address not configured. Please check your environment variables.");
   }
   
-  console.log("Contract Address:", contractAddress);
-  console.log("Contract ABI loaded:", !!contractABI);
+  // console.log("Contract Address:", contractAddress);
+  // console.log("Contract ABI loaded:", !!contractABI);
   
   const contract = new web3.eth.Contract(contractABI, contractAddress);
   return { web3, contract };
@@ -26,7 +26,7 @@ function getWeb3AndContract() {
 export async function getAccount() {
   try {
     const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-    console.log("Connected account:", accounts[0]);
+    // console.log("Connected account:", accounts[0]);
     return accounts[0];
   } catch (error) {
     console.error("Error getting account:", error);
