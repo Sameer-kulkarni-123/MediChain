@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Store, ArrowLeft, Shield, CheckCircle, Package, Truck, Factory } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
+import { retailerReceivedCrate, scanBottle, getCrate, getAccount } from "../../apis"
 
 export default function RetailerPortal() {
   const [crateCode, setCrateCode] = useState("")
@@ -65,10 +66,10 @@ export default function RetailerPortal() {
     setIsVerifying(true)
 
     try {
-      // Simulate blockchain verification
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-
-      if (crateCode === crateJourney.crateCode) {
+      // Get crate data from blockchain
+      const crateData = await getCrate(crateCode)
+      
+      if (crateData && crateData.exists) {
         setIsVerified(true)
         toast({
           title: "Verification Successful",
@@ -103,8 +104,8 @@ export default function RetailerPortal() {
     }
 
     try {
-      // Simulate blockchain transaction
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      // Mark crate as received by retailer (final destination)
+      await retailerReceivedCrate(crateCode)
 
       toast({
         title: "Delivery Confirmed",

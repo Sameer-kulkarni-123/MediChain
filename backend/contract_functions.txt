@@ -1,0 +1,187 @@
+MEDICINE CRATE TRACKING SMART CONTRACT - FUNCTION DOCUMENTATION
+================================================================
+
+CONTRACT: MedicineCrateTracking
+VERSION: 0.8.20
+LICENSE: MIT
+
+STRUCTURES:
+===========
+
+1. Crate Structure:
+   - crateCode (string): Unique identifier for the crate
+   - batchId (string): Batch identification number
+   - medicineId (string): Medicine identification code
+   - medicineName (string): Name of the medicine
+   - manufacturerPhysicalAddress (string): Physical address of manufacturer
+   - manufacturerWalletAddress (address): Wallet address of manufacturer
+   - currentPhysicalAddress (string): Current physical location
+   - currentWalletAddress (address): Current holder's wallet address
+   - cidDocument (string): IPFS CID for document storage
+   - bottleCount (uint256): Number of bottles in crate
+   - inTransit (bool): Whether crate is currently in transit
+   - nextHolderWalletAddress (address): Next recipient's wallet address
+   - exists (bool): Whether crate exists in system
+   - pastWalletAddress (address[]): Array of previous holders
+   - isFinalDestination (bool): Whether crate reached final destination
+   - bottleCodes (string[]): Array of individual bottle codes
+
+2. BottleScanInfo Structure:
+   - scanned (bool): Whether bottle has been scanned
+   - scanTimestamp (uint256): When bottle was scanned
+   - reported (bool): Whether bottle has been reported
+
+EVENTS:
+=======
+
+1. CrateRegistered(string crateCode, uint256 bottleCount)
+   - Emitted when a new crate is registered
+
+2. CrateSent(string crateCode, address from, address to)
+   - Emitted when a crate is sent to next holder
+
+3. CrateReceived(string crateCode, address from, address to)
+   - Emitted when a crate is received by next holder
+
+4. BottleScanned(string bottleCode, bool firstScan, bool suspicious)
+   - Emitted when a bottle is scanned
+
+5. BottleReported(string bottleCode)
+   - Emitted when a bottle is reported
+
+MODIFIERS:
+==========
+
+1. onlyCurrentHolder(string memory crateCode)
+   - Ensures only current holder can perform action
+   - Checks if crate exists and msg.sender is current holder
+
+2. onlyNextHolder(string memory crateCode)
+   - Ensures only assigned receiver can confirm receipt
+   - Checks if crate exists and msg.sender is next holder
+
+PUBLIC FUNCTIONS:
+=================
+
+1. registerCrate()
+   INPUTS:
+   - crateCode (string): Unique crate identifier
+   - batchId (string): Batch identification number
+   - medicineId (string): Medicine identification code
+   - medicineName (string): Name of the medicine
+   - manufacturerWalletAddress (address): Manufacturer's wallet address
+   - manufacturerPhysicalAddress (string): Manufacturer's physical address
+   - cidDocument (string): IPFS CID for document storage
+   - bottleCount (uint256): Number of bottles in crate
+   - bottleCodes (string[]): Array of individual bottle codes
+   
+   OUTPUTS: None (void function)
+   
+   DESCRIPTION: Registers a new crate in the system. Only manufacturer can call this.
+   REQUIREMENTS: Crate must not already exist
+
+2. crateSent(string memory crateCode, address to)
+   INPUTS:
+   - crateCode (string): Crate identifier
+   - to (address): Next holder's wallet address
+   
+   OUTPUTS: None (void function)
+   
+   DESCRIPTION: Marks crate as sent to next holder. Only current holder can call this.
+   REQUIREMENTS: 
+   - Crate must exist
+   - Caller must be current holder
+   - Crate must not already be in transit
+
+3. crateReceived(string memory crateCode)
+   INPUTS:
+   - crateCode (string): Crate identifier
+   
+   OUTPUTS: None (void function)
+   
+   DESCRIPTION: Confirms receipt of crate by next holder. Only assigned receiver can call this.
+   REQUIREMENTS:
+   - Crate must exist
+   - Caller must be assigned receiver
+   - Crate must be in transit
+
+4. crateRetailerReceived(string memory crateCode)
+   INPUTS:
+   - crateCode (string): Crate identifier
+   
+   OUTPUTS: None (void function)
+   
+   DESCRIPTION: Marks crate as received by final retailer. Sets isFinalDestination to true.
+   REQUIREMENTS: Crate must exist
+
+5. scanBottle(string memory bottleCode)
+   INPUTS:
+   - bottleCode (string): Bottle identifier (format: "crateCode-bottleId")
+   
+   OUTPUTS: None (void function)
+   
+   DESCRIPTION: Scans a bottle at final destination. Records scan timestamp and detects suspicious activity.
+   REQUIREMENTS:
+   - Crate must exist
+   - Crate must have reached final destination
+   - Bottle must exist in crate's bottleCodes array
+
+INTERNAL FUNCTIONS:
+==================
+
+1. parseCrateFromBottle(string memory bottleCode)
+   INPUTS:
+   - bottleCode (string): Bottle identifier
+   
+   OUTPUTS:
+   - (string memory, string memory): Returns (crateCode, bottleId)
+   
+   DESCRIPTION: Parses bottle code to extract crate code and bottle ID. Expects format "crateCode-bottleId".
+   REQUIREMENTS: Bottle code must contain "-" separator
+
+MAPPINGS:
+=========
+
+1. crates (string => Crate): Maps crate codes to Crate structures
+2. bottleScans (string => BottleScanInfo): Maps bottle codes to scan information
+
+USAGE EXAMPLES:
+===============
+
+1. Register a new crate:
+   registerCrate("CRATE001", "BATCH2024", "MED123", "Aspirin", 
+                 manufacturerAddress, "123 Factory St", "QmHash...", 100, bottleCodesArray)
+
+2. Send crate to distributor:
+   crateSent("CRATE001", distributorAddress)
+
+3. Confirm receipt by distributor:
+   crateReceived("CRATE001")
+
+4. Mark as received by retailer:
+   crateRetailerReceived("CRATE001")
+
+5. Scan a bottle:
+   scanBottle("CRATE001-BOTTLE001")
+
+ERROR MESSAGES:
+==============
+
+- "Crate does not exist"
+- "Only current holder can perform this"
+- "Only assigned receiver can confirm receipt"
+- "Crate already registered"
+- "Crate is already in transit"
+- "Crate is not in transit"
+- "Invalid crate"
+- "crate didn't reached"
+- "Bottle doesn't exist"
+- "Invalid bottle code"
+
+NOTES:
+======
+- All bottle codes must follow format: "crateCode-bottleId"
+- Only bottles can be scanned after crate reaches final destination
+- Repeated bottle scans are marked as suspicious
+- Past wallet addresses are tracked for audit trail
+- IPFS CID is used for document storage 
