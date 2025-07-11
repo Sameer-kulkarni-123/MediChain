@@ -223,21 +223,21 @@ export default function ManufacturerPortal() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6 sm:mb-8">
           <Link href="/">
-            <Button variant="outline" size="icon">
+            <Button variant="outline" size="icon" className="shrink-0 bg-transparent">
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
-          <div className="flex items-center gap-3">
-            <Factory className="h-8 w-8 text-blue-600" />
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Manufacturer Portal</h1>
-              <p className="text-gray-600">Create and manage medical crate records</p>
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <Factory className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 shrink-0" />
+            <div className="min-w-0 flex-1">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 truncate">Manufacturer Portal</h1>
+              <p className="text-sm sm:text-base text-gray-600">Create and manage medical crate records</p>
               {currentManufacturer && (
-                <p className="text-sm text-blue-600 font-medium">
+                <p className="text-xs sm:text-sm text-blue-600 font-medium truncate">
                   {currentManufacturer.name} - {currentManufacturer.specialization}
                 </p>
               )}
@@ -246,34 +246,43 @@ export default function ManufacturerPortal() {
         </div>
 
         {/* Connection Path */}
-        <ConnectionPath
-          manufacturer={currentManufacturer}
-          distributor={selectedDistributor}
-          currentUserType="manufacturer"
-        />
+        <div className="mb-6 sm:mb-8">
+          <ConnectionPath
+            manufacturer={currentManufacturer}
+            distributor={selectedDistributor}
+            currentUserType="manufacturer"
+          />
+        </div>
 
-        <div className="grid lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 sm:gap-8">
           {/* Crate Creation Form */}
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+          <Card className="xl:col-span-2">
+            <CardHeader className="px-4 sm:px-6">
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                 <Package className="h-5 w-5" />
                 Crate Creation
               </CardTitle>
-              <CardDescription>Generate crate code and enter manufacturing details</CardDescription>
+              <CardDescription className="text-sm sm:text-base">
+                Generate crate code and enter manufacturing details
+              </CardDescription>
             </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
+            <CardContent className="px-4 sm:px-6">
+              <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
                 {/* Crate Code Generation */}
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h3 className="font-medium text-gray-900">Crate Code</h3>
-                      <p className="text-sm text-gray-600">
+                <div className="p-3 sm:p-4 bg-gray-50 rounded-lg">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-medium text-gray-900 text-sm sm:text-base">Crate Code</h3>
+                      <p className="text-xs sm:text-sm text-gray-600">
                         Generate a unique 10-character crate code (XXXXX-XXXXX format)
                       </p>
                     </div>
-                    <Button type="button" onClick={generateCrateCode} variant="outline">
+                    <Button
+                      type="button"
+                      onClick={generateCrateCode}
+                      variant="outline"
+                      className="shrink-0 w-full sm:w-auto bg-transparent"
+                    >
                       Generate Code
                     </Button>
                   </div>
@@ -281,11 +290,11 @@ export default function ManufacturerPortal() {
                     value={formData.crateCode}
                     placeholder="Click generate to create code"
                     readOnly
-                    className="bg-white font-mono text-lg"
+                    className="bg-white font-mono text-sm sm:text-lg"
                   />
                   {formData.crateCode && (
                     <div className="mt-2 space-y-1">
-                      <Badge variant="outline" className="text-green-600 border-green-600">
+                      <Badge variant="outline" className="text-green-600 border-green-600 text-xs sm:text-sm">
                         10-Character Crate Code Generated Successfully
                       </Badge>
                       <p className="text-xs text-gray-600">
@@ -297,53 +306,67 @@ export default function ManufacturerPortal() {
                 </div>
 
                 {/* Manufacturing Details */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="batchId">Batch ID</Label>
+                    <Label htmlFor="batchId" className="text-sm sm:text-base">
+                      Batch ID
+                    </Label>
                     <Input
                       id="batchId"
                       value={formData.batchId}
                       onChange={(e) => handleInputChange("batchId", e.target.value)}
                       placeholder="Enter batch ID"
                       required
+                      className="text-sm sm:text-base"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="medicineId">Medicine ID</Label>
+                    <Label htmlFor="medicineId" className="text-sm sm:text-base">
+                      Medicine ID
+                    </Label>
                     <Input
                       id="medicineId"
                       value={formData.medicineId}
                       onChange={(e) => handleInputChange("medicineId", e.target.value)}
                       placeholder="Enter medicine ID"
                       required
+                      className="text-sm sm:text-base"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <Label htmlFor="medicineName">Medicine Name</Label>
+                  <Label htmlFor="medicineName" className="text-sm sm:text-base">
+                    Medicine Name
+                  </Label>
                   <Input
                     id="medicineName"
                     value={formData.medicineName}
                     onChange={(e) => handleInputChange("medicineName", e.target.value)}
                     placeholder="Enter medicine name"
                     required
+                    className="text-sm sm:text-base"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="manufacturerPhysicalAddress">Manufacturer Physical Address</Label>
+                  <Label htmlFor="manufacturerPhysicalAddress" className="text-sm sm:text-base">
+                    Manufacturer Physical Address
+                  </Label>
                   <Input
                     id="manufacturerPhysicalAddress"
                     value={formData.manufacturerPhysicalAddress}
                     onChange={(e) => handleInputChange("manufacturerPhysicalAddress", e.target.value)}
                     placeholder="Enter manufacturer physical address"
                     required
+                    className="text-sm sm:text-base"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="bottleCount">Bottle Count</Label>
+                  <Label htmlFor="bottleCount" className="text-sm sm:text-base">
+                    Bottle Count
+                  </Label>
                   <Input
                     id="bottleCount"
                     type="number"
@@ -353,9 +376,10 @@ export default function ManufacturerPortal() {
                     onChange={(e) => handleInputChange("bottleCount", e.target.value)}
                     placeholder="Enter number of bottles (1-99999)"
                     required
+                    className="text-sm sm:text-base"
                   />
                   {formData.bottleCount && Number.parseInt(formData.bottleCount) > 0 && formData.crateCode && (
-                    <div className="text-sm text-gray-600 mt-1 space-y-1">
+                    <div className="text-xs sm:text-sm text-gray-600 mt-1 space-y-1">
                       <p>
                         Will generate {formData.bottleCount} bottle codes using prefix "
                         {formData.crateCode.split("-")[0]}-"
@@ -368,17 +392,24 @@ export default function ManufacturerPortal() {
                 </div>
 
                 <div>
-                  <Label htmlFor="cidDocuments">CID Documents</Label>
+                  <Label htmlFor="cidDocuments" className="text-sm sm:text-base">
+                    CID Documents
+                  </Label>
                   <Textarea
                     id="cidDocuments"
                     value={formData.cidDocuments}
                     onChange={(e) => handleInputChange("cidDocuments", e.target.value)}
                     placeholder="Enter IPFS CID for documents"
                     rows={3}
+                    className="text-sm sm:text-base"
                   />
                 </div>
 
-                <Button type="submit" className="w-full" disabled={isSubmitting || !formData.crateCode}>
+                <Button
+                  type="submit"
+                  className="w-full text-sm sm:text-base py-2 sm:py-3"
+                  disabled={isSubmitting || !formData.crateCode}
+                >
                   {isSubmitting ? "Creating Crate on Blockchain..." : "Create Crate on Blockchain"}
                 </Button>
               </form>
@@ -386,15 +417,17 @@ export default function ManufacturerPortal() {
           </Card>
 
           {/* Distributor Selection */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+          <Card className="w-full">
+            <CardHeader className="px-4 sm:px-6">
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                 <Users className="h-5 w-5" />
                 Select Distributor
               </CardTitle>
-              <CardDescription>Choose a distributor to assign your products to</CardDescription>
+              <CardDescription className="text-sm sm:text-base">
+                Choose a distributor to assign your products to
+              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 px-4 sm:px-6">
               <SearchableDropdown
                 options={supplyChainData.distributors}
                 value={selectedDistributor}
@@ -404,9 +437,9 @@ export default function ManufacturerPortal() {
               />
 
               {selectedDistributor && (
-                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <h4 className="font-medium text-green-900 mb-2">Selected Distributor:</h4>
-                  <div className="space-y-1 text-sm text-green-800">
+                <div className="p-3 sm:p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <h4 className="font-medium text-green-900 mb-2 text-sm sm:text-base">Selected Distributor:</h4>
+                  <div className="space-y-1 text-xs sm:text-sm text-green-800">
                     <p>
                       <span className="font-medium">Name:</span> {selectedDistributor.name}
                     </p>
@@ -419,7 +452,7 @@ export default function ManufacturerPortal() {
                     <p>
                       <span className="font-medium">Location:</span> {selectedDistributor.location}
                     </p>
-                    <p className="font-mono text-xs">
+                    <p className="font-mono text-xs break-all">
                       <span className="font-medium">Wallet:</span> {selectedDistributor.walletAddress}
                     </p>
                   </div>
@@ -429,33 +462,35 @@ export default function ManufacturerPortal() {
           </Card>
 
           {/* Product Assignment Form */}
-          <AssignmentForm
+          {/* <AssignmentForm
             fromEntity={currentManufacturer}
             toEntity={selectedDistributor}
             assignmentType="manufacturer-to-distributor"
-          />
+          /> */}
         </div>
 
         {/* Available Distributors Overview */}
-        <Card className="mt-8">
-          <CardHeader>
-            <CardTitle>Available Distributors Network</CardTitle>
-            <CardDescription>Overview of all distributors in the network</CardDescription>
+        <Card className="mt-6 sm:mt-8">
+          <CardHeader className="px-4 sm:px-6">
+            <CardTitle className="text-lg sm:text-xl">Available Distributors Network</CardTitle>
+            <CardDescription className="text-sm sm:text-base">
+              Overview of all distributors in the network
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <CardContent className="px-4 sm:px-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {supplyChainData.distributors.map((distributor) => (
                 <div
                   key={distributor.id}
-                  className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                  className={`p-3 sm:p-4 border rounded-lg cursor-pointer transition-colors ${
                     selectedDistributor?.id === distributor.id
                       ? "border-blue-500 bg-blue-50"
                       : "border-gray-200 hover:border-gray-300"
                   }`}
                   onClick={() => setSelectedDistributor(distributor)}
                 >
-                  <h4 className="font-medium text-gray-900">{distributor.name}</h4>
-                  <p className="text-sm text-gray-600 mt-1">{distributor.coverage}</p>
+                  <h4 className="font-medium text-gray-900 text-sm sm:text-base truncate">{distributor.name}</h4>
+                  <p className="text-xs sm:text-sm text-gray-600 mt-1">{distributor.coverage}</p>
                   <p className="text-xs text-gray-500 mt-1">{distributor.capacity}</p>
                   <div className="mt-2">
                     <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -469,30 +504,30 @@ export default function ManufacturerPortal() {
         </Card>
 
         {/* Recent Activity */}
-        <Card className="mt-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+        <Card className="mt-6 sm:mt-8">
+          <CardHeader className="px-4 sm:px-6">
+            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
               <Clock className="h-5 w-5" />
               Recent Activity
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-4 sm:px-6">
             <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div>
-                  <p className="font-medium">Crate MC-1704123456-7890</p>
-                  <p className="text-sm text-gray-600">Paracetamol 500mg - Batch B001</p>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-gray-50 rounded-lg gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-sm sm:text-base">Crate MC-1704123456-7890</p>
+                  <p className="text-xs sm:text-sm text-gray-600">Paracetamol 500mg - Batch B001</p>
                 </div>
-                <Badge variant="outline" className="text-green-600 border-green-600">
+                <Badge variant="outline" className="text-green-600 border-green-600 shrink-0 text-xs sm:text-sm">
                   Completed
                 </Badge>
               </div>
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div>
-                  <p className="font-medium">Crate MC-1704123456-7891</p>
-                  <p className="text-sm text-gray-600">Ibuprofen 200mg - Batch B002</p>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-gray-50 rounded-lg gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-sm sm:text-base">Crate MC-1704123456-7891</p>
+                  <p className="text-xs sm:text-sm text-gray-600">Ibuprofen 200mg - Batch B002</p>
                 </div>
-                <Badge variant="outline" className="text-blue-600 border-blue-600">
+                <Badge variant="outline" className="text-blue-600 border-blue-600 shrink-0 text-xs sm:text-sm">
                   In Transit
                 </Badge>
               </div>
