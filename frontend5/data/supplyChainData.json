@@ -11,7 +11,7 @@
       {
         "id": "mfg_002",
         "name": "MediTech Solutions",
-        "walletAddress": "",
+        "walletAddress": "0x0707C981F6EA01Dddf8D918C14bC6f48ceB0a69A",
         "category": "manufacturer",
         "location": "California, USA",
         "specialization": "Cardiovascular Medicines"
@@ -46,7 +46,7 @@
       {
         "id": "dist_002",
         "name": "HealthSupply Networks",
-        "walletAddress": "0x0707C981F6EA01Dddf8D918C14bC6f48ceB0a69A",
+        "walletAddress": "",
         "category": "distributor",
         "location": "Atlanta, USA",
         "coverage": "Southeast Region",

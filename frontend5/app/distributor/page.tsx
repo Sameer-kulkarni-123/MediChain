@@ -14,10 +14,11 @@ import { ConnectionPath } from "@/components/connection-path"
 import { AssignmentForm } from "@/components/assignment-form"
 import supplyChainData from "@/data/supplyChainData.json"
 import { useToast } from "@/hooks/use-toast"
-import { sendCrate, receiveCrate, getCrate, getAccount } from "../../apis"
+import { sendCrate, receiveCrate, getCrate, getAccount, getMyPendingCrates } from "../../apis"
 
 export default function DistributorPortal() {
-  const [selectedCrate, setSelectedCrate] = useState("MC-1704123456-7890")
+  const [selectedCrate, setSelectedCrate] = useState<string | null>(null)
+  const [pendingCrates, setPendingCrates] = useState<string[]>([])
   const [selectedRetailer, setSelectedRetailer] = useState<any>(null)
   const [currentDistributor, setCurrentDistributor] = useState<any>(null)
   const [assignedManufacturer, setAssignedManufacturer] = useState<any>(null)
@@ -34,11 +35,27 @@ export default function DistributorPortal() {
     setCurrentDistributor(supplyChainData.distributors[0])
     // Simulate assigned manufacturer
     setAssignedManufacturer(supplyChainData.manufacturers[0])
-  }, [])
+    // Fetch pending crates for this distributor
+    const fetchPendingCrates = async () => {
+      try {
+        const crates = (await getMyPendingCrates()) as string[];
+        setPendingCrates(crates || []);
+        if (crates && crates.length > 0) setSelectedCrate(crates[0]);
+      } catch (err) {
+        setPendingCrates([]);
+        toast({
+          title: "Error",
+          description: "Failed to fetch pending crates. Please check your wallet connection.",
+          variant: "destructive",
+        });
+      }
+    };
+    fetchPendingCrates();
+  }, []);
 
   // Mock crate data
   const crateDetails = {
-    crateCode: "MC-1704123456-7890",
+    crateCode: selectedCrate || "",
     medicineName: "Paracetamol 500mg",
     batchId: "B001",
     manufacturerId: "MFG001",
@@ -111,6 +128,39 @@ export default function DistributorPortal() {
               )}
             </div>
           </div>
+        </div>
+
+        {/* Pending Crates List */}
+        <div className="mb-6">
+          <Card>
+            <CardHeader className="px-4 sm:px-6">
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                <Package className="h-5 w-5" />
+                Pending Crates to Receive
+              </CardTitle>
+              <CardDescription className="text-sm sm:text-base">
+                These crates have been sent to you and are awaiting your action.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2 px-4 sm:px-6">
+              {pendingCrates.length === 0 ? (
+                <p className="text-gray-500 text-sm">No crates pending for receipt.</p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {pendingCrates.map((crateCode) => (
+                    <Button
+                      key={crateCode}
+                      variant={selectedCrate === crateCode ? "default" : "outline"}
+                      className="text-xs sm:text-sm"
+                      onClick={() => setSelectedCrate(crateCode)}
+                    >
+                      {crateCode}
+                    </Button>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
         {/* Connection Path */}

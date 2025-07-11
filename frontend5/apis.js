@@ -234,3 +234,21 @@ export async function debugContractConnection() {
     throw error;
   }
 }
+
+// 12. Get pending crates for a given address
+export async function getPendingCratesForAddress(address) {
+  try {
+    const { contract } = getWeb3AndContract();
+    const crates = await contract.methods.getPendingCrates(address).call();
+    return crates && crates.length > 0 ? crates : null;
+  } catch (error) {
+    console.error("Error getting pending crates:", error);
+    throw new Error(`Failed to get pending crates: ${error.message}`);
+  }
+}
+
+// 13. Get pending crates for the current user
+export async function getMyPendingCrates() {
+  const account = await getAccount();
+  return getPendingCratesForAddress(account);
+}
