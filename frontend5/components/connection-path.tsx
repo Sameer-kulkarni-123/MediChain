@@ -1,122 +1,194 @@
 "use client"
 
-import { ArrowRight, Factory, Truck, Store } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { ArrowRight, ArrowDown } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 
+interface Entity {
+  id: string
+  name: string
+  location?: string
+  specialization?: string
+  coverage?: string
+  type?: string
+}
+
 interface ConnectionPathProps {
-  manufacturer?: any
-  distributor?: any
-  retailer?: any
-  currentUserType: string
+  manufacturer?: Entity | null
+  distributor?: Entity | null
+  retailer?: Entity | null
+  currentUserType: "manufacturer" | "distributor" | "retailer"
 }
 
 export function ConnectionPath({ manufacturer, distributor, retailer, currentUserType }: ConnectionPathProps) {
   const getStepStatus = (step: string) => {
-    if (step === "manufacturer") return manufacturer ? "completed" : "current"
-    if (step === "distributor") return distributor ? "completed" : manufacturer ? "current" : "pending"
-    if (step === "retailer") return retailer ? "completed" : distributor ? "current" : "pending"
-    return "pending"
+    switch (currentUserType) {
+      case "manufacturer":
+        if (step === "manufacturer") return "current"
+        if (step === "distributor" && distributor) return "selected"
+        return "pending"
+      case "distributor":
+        if (step === "manufacturer") return "completed"
+        if (step === "distributor") return "current"
+        if (step === "retailer" && retailer) return "selected"
+        return "pending"
+      case "retailer":
+        if (step === "manufacturer") return "completed"
+        if (step === "distributor") return "completed"
+        if (step === "retailer") return "current"
+        return "pending"
+      default:
+        return "pending"
+    }
   }
 
   const getStepColor = (status: string) => {
     switch (status) {
       case "completed":
-        return "text-green-600 bg-green-100 border-green-200"
+        return "bg-green-100 text-green-800 border-green-300"
       case "current":
-        return "text-blue-600 bg-blue-100 border-blue-200"
-      case "pending":
-        return "text-gray-400 bg-gray-100 border-gray-200"
+        return "bg-blue-100 text-blue-800 border-blue-300"
+      case "selected":
+        return "bg-orange-100 text-orange-800 border-orange-300"
       default:
-        return "text-gray-400 bg-gray-100 border-gray-200"
+        return "bg-gray-100 text-gray-600 border-gray-300"
     }
   }
 
   return (
-    <Card className="mb-8">
-      <CardHeader>
-        <CardTitle className="text-lg">Supply Chain Connection Path</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="flex items-center justify-between space-x-4">
-          {/* Manufacturer Step */}
-          <div className="flex-1">
-            <div className={`p-4 rounded-lg border-2 ${getStepColor(getStepStatus("manufacturer"))}`}>
-              <div className="flex items-center space-x-3">
-                <Factory className="h-6 w-6" />
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">{manufacturer ? manufacturer.name : "Select Manufacturer"}</p>
-                  {manufacturer && <p className="text-xs truncate opacity-75">{manufacturer.location}</p>}
-                </div>
+    <div className="mb-6 sm:mb-8 p-3 sm:p-4 bg-white rounded-lg border">
+      <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Supply Chain Connection Path</h3>
+
+      {/* Desktop Layout */}
+      <div className="hidden md:flex items-center justify-between">
+        {/* Manufacturer Step */}
+        <div className="flex-1">
+          <div className={`p-2 sm:p-3 rounded-lg border-2 ${getStepColor(getStepStatus("manufacturer"))}`}>
+            <div className="text-xs sm:text-sm font-medium">Manufacturer</div>
+            {manufacturer ? (
+              <div className="mt-1">
+                <div className="font-semibold text-xs sm:text-sm truncate">{manufacturer.name}</div>
+                <div className="text-xs opacity-75 truncate">{manufacturer.specialization}</div>
+                <div className="text-xs opacity-75 truncate">{manufacturer.location}</div>
               </div>
-              <Badge variant="outline" className="mt-2 text-xs">
-                Manufacturer
-              </Badge>
-            </div>
-          </div>
-
-          <ArrowRight className="h-5 w-5 text-gray-400 flex-shrink-0" />
-
-          {/* Distributor Step */}
-          <div className="flex-1">
-            <div className={`p-4 rounded-lg border-2 ${getStepColor(getStepStatus("distributor"))}`}>
-              <div className="flex items-center space-x-3">
-                <Truck className="h-6 w-6" />
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">{distributor ? distributor.name : "Select Distributor"}</p>
-                  {distributor && <p className="text-xs truncate opacity-75">{distributor.coverage}</p>}
-                </div>
-              </div>
-              <Badge variant="outline" className="mt-2 text-xs">
-                Distributor
-              </Badge>
-            </div>
-          </div>
-
-          <ArrowRight className="h-5 w-5 text-gray-400 flex-shrink-0" />
-
-          {/* Retailer Step */}
-          <div className="flex-1">
-            <div className={`p-4 rounded-lg border-2 ${getStepColor(getStepStatus("retailer"))}`}>
-              <div className="flex items-center space-x-3">
-                <Store className="h-6 w-6" />
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">{retailer ? retailer.name : "Select Retailer"}</p>
-                  {retailer && <p className="text-xs truncate opacity-75">{retailer.type}</p>}
-                </div>
-              </div>
-              <Badge variant="outline" className="mt-2 text-xs">
-                Retailer
-              </Badge>
-            </div>
+            ) : (
+              <div className="text-xs opacity-75">Not connected</div>
+            )}
           </div>
         </div>
 
-        {/* Connection Summary */}
-        {(manufacturer || distributor || retailer) && (
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-            <h4 className="font-medium text-gray-900 mb-2">Connection Summary</h4>
-            <div className="space-y-1 text-sm text-gray-600">
-              {manufacturer && (
-                <p>
-                  • <span className="font-medium">Manufacturer:</span> {manufacturer.name} (
-                  {manufacturer.specialization})
-                </p>
-              )}
-              {distributor && (
-                <p>
-                  • <span className="font-medium">Distributor:</span> {distributor.name} ({distributor.coverage})
-                </p>
-              )}
-              {retailer && (
-                <p>
-                  • <span className="font-medium">Retailer:</span> {retailer.name} ({retailer.type})
-                </p>
-              )}
-            </div>
+        <ArrowRight className="mx-2 sm:mx-4 h-4 w-4 sm:h-5 sm:w-5 text-gray-400 shrink-0" />
+
+        {/* Distributor Step */}
+        <div className="flex-1">
+          <div className={`p-2 sm:p-3 rounded-lg border-2 ${getStepColor(getStepStatus("distributor"))}`}>
+            <div className="text-xs sm:text-sm font-medium">Distributor</div>
+            {distributor ? (
+              <div className="mt-1">
+                <div className="font-semibold text-xs sm:text-sm truncate">{distributor.name}</div>
+                <div className="text-xs opacity-75 truncate">{distributor.coverage}</div>
+                <div className="text-xs opacity-75 truncate">{distributor.location}</div>
+              </div>
+            ) : (
+              <div className="text-xs opacity-75">Not selected</div>
+            )}
           </div>
-        )}
-      </CardContent>
-    </Card>
+        </div>
+
+        <ArrowRight className="mx-2 sm:mx-4 h-4 w-4 sm:h-5 sm:w-5 text-gray-400 shrink-0" />
+
+        {/* Retailer Step */}
+        <div className="flex-1">
+          <div className={`p-2 sm:p-3 rounded-lg border-2 ${getStepColor(getStepStatus("retailer"))}`}>
+            <div className="text-xs sm:text-sm font-medium">Retailer</div>
+            {retailer ? (
+              <div className="mt-1">
+                <div className="font-semibold text-xs sm:text-sm truncate">{retailer.name}</div>
+                <div className="text-xs opacity-75 truncate">{retailer.type}</div>
+                <div className="text-xs opacity-75 truncate">{retailer.location}</div>
+              </div>
+            ) : (
+              <div className="text-xs opacity-75">Not selected</div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Layout */}
+      <div className="md:hidden space-y-3">
+        {/* Manufacturer Step */}
+        <div className={`p-3 rounded-lg border-2 ${getStepColor(getStepStatus("manufacturer"))}`}>
+          <div className="text-sm font-medium">Manufacturer</div>
+          {manufacturer ? (
+            <div className="mt-1">
+              <div className="font-semibold text-sm">{manufacturer.name}</div>
+              <div className="text-xs opacity-75">{manufacturer.specialization}</div>
+              <div className="text-xs opacity-75">{manufacturer.location}</div>
+            </div>
+          ) : (
+            <div className="text-xs opacity-75">Not connected</div>
+          )}
+        </div>
+
+        <div className="flex justify-center">
+          <ArrowDown className="h-4 w-4 text-gray-400" />
+        </div>
+
+        {/* Distributor Step */}
+        <div className={`p-3 rounded-lg border-2 ${getStepColor(getStepStatus("distributor"))}`}>
+          <div className="text-sm font-medium">Distributor</div>
+          {distributor ? (
+            <div className="mt-1">
+              <div className="font-semibold text-sm">{distributor.name}</div>
+              <div className="text-xs opacity-75">{distributor.coverage}</div>
+              <div className="text-xs opacity-75">{distributor.location}</div>
+            </div>
+          ) : (
+            <div className="text-xs opacity-75">Not selected</div>
+          )}
+        </div>
+
+        <div className="flex justify-center">
+          <ArrowDown className="h-4 w-4 text-gray-400" />
+        </div>
+
+        {/* Retailer Step */}
+        <div className={`p-3 rounded-lg border-2 ${getStepColor(getStepStatus("retailer"))}`}>
+          <div className="text-sm font-medium">Retailer</div>
+          {retailer ? (
+            <div className="mt-1">
+              <div className="font-semibold text-sm">{retailer.name}</div>
+              <div className="text-xs opacity-75">{retailer.type}</div>
+              <div className="text-xs opacity-75">{retailer.location}</div>
+            </div>
+          ) : (
+            <div className="text-xs opacity-75">Not selected</div>
+          )}
+        </div>
+      </div>
+
+      {/* Status Legend */}
+      <div className="flex flex-wrap gap-2 sm:gap-4 mt-3 sm:mt-4 text-xs">
+        <div className="flex items-center gap-1">
+          <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300 text-xs">
+            Completed
+          </Badge>
+        </div>
+        <div className="flex items-center gap-1">
+          <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300 text-xs">
+            Current
+          </Badge>
+        </div>
+        <div className="flex items-center gap-1">
+          <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-300 text-xs">
+            Selected
+          </Badge>
+        </div>
+        <div className="flex items-center gap-1">
+          <Badge variant="outline" className="bg-gray-100 text-gray-600 border-gray-300 text-xs">
+            Pending
+          </Badge>
+        </div>
+      </div>
+    </div>
   )
 }

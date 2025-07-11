@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Wallet, Shield, Package, Truck, Store, Factory, Network, Users, CheckCircle } from "lucide-react"
+import { Shield, Truck, Store, Factory, Users, Network } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
 import supplyChainData from "@/data/supplyChainData.json"
@@ -90,6 +90,7 @@ export default function HomePage() {
           setUserRole(null)
           setUserEntity(null)
         } else {
+          // Re-check user role when account changes
           const newAccount = accounts[0].toLowerCase()
           setAccount(newAccount)
 
@@ -121,17 +122,18 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="container mx-auto px-4 py-16">
-        <div className="text-center mb-16">
-          <div className="flex justify-center mb-6">
-            <div className="p-4 bg-blue-600 rounded-full">
-              <Shield className="h-12 w-12 text-white" />
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
+        {/* Hero Section */}
+        <div className="text-center mb-12 sm:mb-16">
+          <div className="flex justify-center mb-4 sm:mb-6">
+            <div className="p-3 sm:p-4 bg-blue-600 rounded-full">
+              <Shield className="h-8 w-8 sm:h-12 sm:w-12 text-white" />
             </div>
           </div>
-          <h1 className="text-5xl font-bold text-gray-900 mb-6">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 sm:mb-6">
             Welcome to <span className="text-blue-600">MediChain</span>
           </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
+          <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto mb-6 sm:mb-8 px-4">
             A decentralized medical supply tracking platform with 3-level supply chain workflow. Connect manufacturers,
             distributors, and retailers in a secure blockchain network.
           </p>
@@ -141,127 +143,177 @@ export default function HomePage() {
               onClick={connectWallet}
               disabled={isConnecting}
               size="lg"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 sm:px-8 py-2 sm:py-3 text-base sm:text-lg w-full sm:w-auto"
             >
               {isConnecting ? "Connecting..." : "Connect MetaMask Wallet"}
             </Button>
           ) : (
             <div className="space-y-4">
-              <Badge variant="outline" className="text-green-600 border-green-600 px-4 py-2">
+              <Badge
+                variant="outline"
+                className="text-green-600 border-green-600 px-3 sm:px-4 py-2 text-sm sm:text-base"
+              >
                 Connected: {account.slice(0, 6)}...{account.slice(-4)}
               </Badge>
               {userEntity && (
                 <div className="p-4 bg-white rounded-lg shadow-sm max-w-md mx-auto">
-                  <h3 className="font-semibold text-gray-900">{userEntity.name}</h3>
-                  <p className="text-sm text-gray-600 capitalize">{userEntity.category}</p>
+                  <h3 className="font-semibold text-gray-900 text-sm sm:text-base">{userEntity.name}</h3>
+                  <p className="text-xs sm:text-sm text-gray-600 capitalize">{userEntity.category}</p>
                   <p className="text-xs text-gray-500">{userEntity.location}</p>
                 </div>
               )}
-              <div className="flex gap-4 justify-center">
-                <Button onClick={() => window.location.reload()} variant="outline">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
+                <Button onClick={() => window.location.reload()} variant="outline" className="w-full sm:w-auto">
                   Disconnect
                 </Button>
-                {userRole && <Button onClick={() => router.push(`/${userRole}`)}>Go to {userRole} Portal</Button>}
+                {userRole && (
+                  <Button onClick={() => router.push(`/${userRole}`)} className="w-full sm:w-auto">
+                    Go to {userRole} Portal
+                  </Button>
+                )}
               </div>
             </div>
           )}
         </div>
 
         {/* Supply Chain Workflow */}
-        <Card className="max-w-6xl mx-auto mb-16">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl">3-Level Supply Chain Workflow</CardTitle>
-            <CardDescription>Seamless product flow from manufacturing to retail</CardDescription>
+        <Card className="max-w-6xl mx-auto mb-12 sm:mb-16">
+          <CardHeader className="text-center px-4 sm:px-6">
+            <CardTitle className="text-xl sm:text-2xl">3-Level Supply Chain Workflow</CardTitle>
+            <CardDescription className="text-sm sm:text-base">
+              Seamless product flow from manufacturing to retail
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="grid md:grid-cols-3 gap-8">
-              {[{
-                title: "Manufacturer",
-                icon: <Factory className="h-8 w-8 text-blue-600" />, color: "blue-600", bg: "bg-blue-100",
-                steps: ["Generate product batches", "Select distributor partners", "Track assignments"]
-              }, {
-                title: "Distributor",
-                icon: <Truck className="h-8 w-8 text-green-600" />, color: "green-600", bg: "bg-green-100",
-                steps: ["Manage inventory", "Select retailer partners", "Coordinate logistics"]
-              }, {
-                title: "Retailer",
-                icon: <Store className="h-8 w-8 text-purple-600" />, color: "purple-600", bg: "bg-purple-100",
-                steps: ["Track received products", "View supply chain path", "Manage inventory"]
-              }].map((item, idx) => (
-                <div key={idx} className="text-center">
-                  <div className={`w-16 h-16 ${item.bg} rounded-full flex items-center justify-center mx-auto mb-4`}>
-                    {item.icon}
-                  </div>
-                  <h3 className={`font-semibold mb-2 text-${item.color}`}>{idx + 1}. {item.title}</h3>
-                  <p className="text-sm text-gray-600 mb-4">
-                    {idx === 0 && "Create products and assign to distributors using searchable dropdown"}
-                    {idx === 1 && "Receive from manufacturers and forward to retailers"}
-                    {idx === 2 && "Receive products and view complete supply chain journey"}
-                  </p>
-                  <div className="text-xs text-gray-500 space-y-1">
-                    {item.steps.map((s, i) => <p key={i}>• {s}</p>)}
-                  </div>
+          <CardContent className="px-4 sm:px-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+              <div className="text-center">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Factory className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
                 </div>
-              ))}
+                <h3 className="font-semibold mb-2 text-blue-600 text-sm sm:text-base">1. Manufacturer</h3>
+                <p className="text-xs sm:text-sm text-gray-600 mb-4">
+                  Create products and assign to distributors using searchable dropdown
+                </p>
+                <div className="text-xs text-gray-500 space-y-1">
+                  <p>• Generate product batches</p>
+                  <p>• Select distributor partners</p>
+                  <p>• Track assignments</p>
+                </div>
+              </div>
+
+              <div className="text-center">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Truck className="h-6 w-6 sm:h-8 sm:w-8 text-green-600" />
+                </div>
+                <h3 className="font-semibold mb-2 text-green-600 text-sm sm:text-base">2. Distributor</h3>
+                <p className="text-xs sm:text-sm text-gray-600 mb-4">
+                  Receive from manufacturers and forward to retailers
+                </p>
+                <div className="text-xs text-gray-500 space-y-1">
+                  <p>• Manage inventory</p>
+                  <p>• Select retailer partners</p>
+                  <p>• Coordinate logistics</p>
+                </div>
+              </div>
+
+              <div className="text-center">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Store className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600" />
+                </div>
+                <h3 className="font-semibold mb-2 text-purple-600 text-sm sm:text-base">3. Retailer</h3>
+                <p className="text-xs sm:text-sm text-gray-600 mb-4">
+                  Receive products and view complete supply chain journey
+                </p>
+                <div className="text-xs text-gray-500 space-y-1">
+                  <p>• Track received products</p>
+                  <p>• View supply chain path</p>
+                  <p>• Manage inventory</p>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Network Statistics */}
-        <div className="grid md:grid-cols-4 gap-6 mb-16">
-          {[{
-            title: "Manufacturers",
-            count: supplyChainData.manufacturers.length,
-            icon: <Factory className="h-8 w-8 text-blue-600 mx-auto mb-2" />, color: "text-blue-600"
-          }, {
-            title: "Distributors",
-            count: supplyChainData.distributors.length,
-            icon: <Truck className="h-8 w-8 text-green-600 mx-auto mb-2" />, color: "text-green-600"
-          }, {
-            title: "Retailers",
-            count: supplyChainData.retailers.length,
-            icon: <Store className="h-8 w-8 text-purple-600 mx-auto mb-2" />, color: "text-purple-600"
-          }, {
-            title: "Total Network",
-            count: supplyChainData.manufacturers.length + supplyChainData.distributors.length + supplyChainData.retailers.length,
-            icon: <Network className="h-8 w-8 text-orange-600 mx-auto mb-2" />, color: "text-orange-600"
-          }].map((item, idx) => (
-            <Card key={idx} className="text-center">
-              <CardContent className="pt-6">
-                {item.icon}
-                <div className={`text-2xl font-bold ${item.color}`}>{item.count}</div>
-                <div className="text-sm text-gray-600">{item.title}</div>
-              </CardContent>
-            </Card>
-          ))}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-12 sm:mb-16">
+          <Card className="text-center">
+            <CardContent className="pt-4 sm:pt-6 px-3 sm:px-6">
+              <Factory className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 mx-auto mb-2" />
+              <div className="text-xl sm:text-2xl font-bold text-blue-600">{supplyChainData.manufacturers.length}</div>
+              <div className="text-xs sm:text-sm text-gray-600">Manufacturers</div>
+            </CardContent>
+          </Card>
+
+          <Card className="text-center">
+            <CardContent className="pt-4 sm:pt-6 px-3 sm:px-6">
+              <Truck className="h-6 w-6 sm:h-8 sm:w-8 text-green-600 mx-auto mb-2" />
+              <div className="text-xl sm:text-2xl font-bold text-green-600">{supplyChainData.distributors.length}</div>
+              <div className="text-xs sm:text-sm text-gray-600">Distributors</div>
+            </CardContent>
+          </Card>
+
+          <Card className="text-center">
+            <CardContent className="pt-4 sm:pt-6 px-3 sm:px-6">
+              <Store className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600 mx-auto mb-2" />
+              <div className="text-xl sm:text-2xl font-bold text-purple-600">{supplyChainData.retailers.length}</div>
+              <div className="text-xs sm:text-sm text-gray-600">Retailers</div>
+            </CardContent>
+          </Card>
+
+          <Card className="text-center">
+            <CardContent className="pt-4 sm:pt-6 px-3 sm:px-6">
+              <Network className="h-6 w-6 sm:h-8 sm:w-8 text-orange-600 mx-auto mb-2" />
+              <div className="text-xl sm:text-2xl font-bold text-orange-600">
+                {supplyChainData.manufacturers.length +
+                  supplyChainData.distributors.length +
+                  supplyChainData.retailers.length}
+              </div>
+              <div className="text-xs sm:text-sm text-gray-600">Total Network</div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Features Section */}
-        <div className="grid md:grid-cols-3 gap-8 mb-16">
-          {[{
-            icon: <Users className="h-12 w-12 text-blue-600" />,
-            title: "Searchable Partner Selection",
-            color: "text-blue-600",
-            description: "Find and connect with supply chain partners using advanced search and filtering"
-          }, {
-            icon: <Network className="h-12 w-12 text-green-600" />,
-            title: "Connection Path Tracking",
-            color: "text-green-600",
-            description: "Visualize complete supply chain connections from manufacturer to retailer"
-          }, {
-            icon: <Shield className="h-12 w-12 text-purple-600" />,
-            title: "Secure Blockchain Network",
-            color: "text-purple-600",
-            description: "Role-based access control with wallet authentication and verification"
-          }].map((item, idx) => (
-            <Card key={idx} className="text-center hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex justify-center mb-4">{item.icon}</div>
-                <CardTitle className={item.color}>{item.title}</CardTitle>
-                <CardDescription>{item.description}</CardDescription>
-              </CardHeader>
-            </Card>
-          ))}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 mb-12 sm:mb-16">
+          <Card className="text-center hover:shadow-lg transition-shadow">
+            <CardHeader className="px-4 sm:px-6">
+              <div className="flex justify-center mb-4">
+                <Users className="h-8 w-8 sm:h-12 sm:w-12 text-blue-600" />
+              </div>
+              <CardTitle className="text-blue-600 text-sm sm:text-base lg:text-lg">
+                Searchable Partner Selection
+              </CardTitle>
+              <CardDescription className="text-xs sm:text-sm">
+                Find and connect with supply chain partners using advanced search and filtering
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card className="text-center hover:shadow-lg transition-shadow">
+            <CardHeader className="px-4 sm:px-6">
+              <div className="flex justify-center mb-4">
+                <Network className="h-8 w-8 sm:h-12 sm:w-12 text-green-600" />
+              </div>
+              <CardTitle className="text-green-600 text-sm sm:text-base lg:text-lg">Connection Path Tracking</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">
+                Visualize complete supply chain connections from manufacturer to retailer
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card className="text-center hover:shadow-lg transition-shadow">
+            <CardHeader className="px-4 sm:px-6">
+              <div className="flex justify-center mb-4">
+                <Shield className="h-8 w-8 sm:h-12 sm:w-12 text-purple-600" />
+              </div>
+              <CardTitle className="text-purple-600 text-sm sm:text-base lg:text-lg">
+                Secure Blockchain Network
+              </CardTitle>
+              <CardDescription className="text-xs sm:text-sm">
+                Role-based access control with wallet authentication and verification
+              </CardDescription>
+            </CardHeader>
+          </Card>
         </div>
       </div>
     </div>
