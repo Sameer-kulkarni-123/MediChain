@@ -4,9 +4,10 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Wallet, Shield, Package, Truck, Store, Factory, Network, Users, CheckCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { Wallet, Shield, Package, Truck, Store, CheckCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
+import supplyChainData from "@/data/supplyChainData.json"
 
 declare global {
   interface Window {
@@ -17,18 +18,16 @@ declare global {
 export default function HomePage() {
   const [account, setAccount] = useState<string | null>(null)
   const [isConnecting, setIsConnecting] = useState(false)
+  const [userRole, setUserRole] = useState<string | null>(null)
+  const [userEntity, setUserEntity] = useState<any>(null)
   const { toast } = useToast()
   const router = useRouter()
-
-  const MANUFACTURER_ADDRESS = "0x92187a2b0e46cEf360bF3a6DB1a36Bda4DF76e36"
-  const DISTRIBUTOR_ADDRESS = "1"
-  const RETAILER_ADDRESS = "a"
 
   const connectWallet = async () => {
     if (!window.ethereum) {
       toast({
         title: "MetaMask Not Found",
-        description: "Please install MetaMask to continue.",
+        description: "Please install MetaMask to continue",
         variant: "destructive",
       })
       return
@@ -44,22 +43,32 @@ export default function HomePage() {
         const connectedAccount = accounts[0].toLowerCase()
         setAccount(connectedAccount)
 
-        toast({
-          title: "Wallet Connected",
-          description: `Connected to ${connectedAccount.slice(0, 6)}...${connectedAccount.slice(-4)}`,
-        })
+        // Find user role based on wallet address
+        const allEntities = [
+          ...supplyChainData.manufacturers,
+          ...supplyChainData.distributors,
+          ...supplyChainData.retailers,
+        ]
 
-        // Route based on wallet address
-        if (connectedAccount === MANUFACTURER_ADDRESS.toLowerCase()) {
-          router.push("/manufacturer")
-        } else if (connectedAccount === DISTRIBUTOR_ADDRESS.toLowerCase()) {
-          // For demo purposes, route to distributor for other addresses
-          // In production, you'd have specific address checks for each role
-          router.push("/distributor")
-        }
-        else if (connectedAccount === RETAILER_ADDRESS.toLowerCase()) {
-          router.push("/retailer")
+        const foundEntity = allEntities.find((entity) => entity.walletAddress.toLowerCase() === connectedAccount)
 
+        if (foundEntity) {
+          setUserRole(foundEntity.category)
+          setUserEntity(foundEntity)
+
+          toast({
+            title: "Wallet Connected",
+            description: `Connected as ${foundEntity.category}: ${foundEntity.name}`,
+          })
+
+          // Route based on user role
+          router.push(`/${foundEntity.category}`)
+        } else {
+          toast({
+            title: "Access Denied",
+            description: "Your wallet address is not registered in the supply chain network",
+            variant: "destructive",
+          })
         }
       }
     } catch (error) {
@@ -76,98 +85,185 @@ export default function HomePage() {
   useEffect(() => {
     if (window.ethereum) {
       window.ethereum.on("accountsChanged", (accounts: string[]) => {
-        if (accounts.length > 0) {
-          setAccount(accounts[0].toLowerCase())
-        } else {
+        if (accounts.length === 0) {
           setAccount(null)
+          setUserRole(null)
+          setUserEntity(null)
+        } else {
+          const newAccount = accounts[0].toLowerCase()
+          setAccount(newAccount)
+
+          const allEntities = [
+            ...supplyChainData.manufacturers,
+            ...supplyChainData.distributors,
+            ...supplyChainData.retailers,
+          ]
+
+          const foundEntity = allEntities.find((entity) => entity.walletAddress.toLowerCase() === newAccount)
+
+          if (foundEntity) {
+            setUserRole(foundEntity.category)
+            setUserEntity(foundEntity)
+          } else {
+            setUserRole(null)
+            setUserEntity(null)
+          }
         }
       })
+    }
+
+    return () => {
+      if (window.ethereum) {
+        window.ethereum.removeAllListeners("accountsChanged")
+      }
     }
   }, [])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      {/* Header */}
-      <header className="border-b bg-white/80 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Shield className="h-8 w-8 text-blue-600" />
-              <h1 className="text-2xl font-bold text-gray-900">MediChain</h1>
-            </div>
-            {account && (
-              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                <CheckCircle className="h-3 w-3 mr-1" />
-                Connected: {account.slice(0, 6)}...{account.slice(-4)}
-              </Badge>
-            )}
-          </div>
-        </div>
-      </header>
-
-      {/* Hero Section */}
-      <main className="container mx-auto px-4 py-16">
+      <div className="container mx-auto px-4 py-16">
         <div className="text-center mb-16">
-          <h1 className="text-5xl font-bold text-gray-900 mb-6">Welcome to MediChain</h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            A decentralized medical supply tracking platform. Track medical crates securely using blockchain technology.
-            Roles include Manufacturer, Distributor, and Retailer.
+          <div className="flex justify-center mb-6">
+            <div className="p-4 bg-blue-600 rounded-full">
+              <Shield className="h-12 w-12 text-white" />
+            </div>
+          </div>
+          <h1 className="text-5xl font-bold text-gray-900 mb-6">
+            Welcome to <span className="text-blue-600">MediChain</span>
+          </h1>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
+            A decentralized medical supply tracking platform with 3-level supply chain workflow. Connect manufacturers,
+            distributors, and retailers in a secure blockchain network.
           </p>
 
           {!account ? (
-            <Card className="max-w-md mx-auto">
-              <CardHeader>
-                <CardTitle className="flex items-center justify-center space-x-2">
-                  <Wallet className="h-5 w-5" />
-                  <span>Connect Your Wallet</span>
-                </CardTitle>
-                <CardDescription>Connect your MetaMask wallet to access your portal</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button onClick={connectWallet} disabled={isConnecting} className="w-full" size="lg">
-                  {isConnecting ? "Connecting..." : "Connect MetaMask"}
-                </Button>
-              </CardContent>
-            </Card>
+            <Button
+              onClick={connectWallet}
+              disabled={isConnecting}
+              size="lg"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg"
+            >
+              {isConnecting ? "Connecting..." : "Connect MetaMask Wallet"}
+            </Button>
           ) : (
-            <Card className="max-w-md mx-auto">
-              <CardHeader>
-                <CardTitle className="text-green-600">Wallet Connected</CardTitle>
-                <CardDescription>Redirecting to your portal...</CardDescription>
-              </CardHeader>
-            </Card>
+            <div className="space-y-4">
+              <Badge variant="outline" className="text-green-600 border-green-600 px-4 py-2">
+                Connected: {account.slice(0, 6)}...{account.slice(-4)}
+              </Badge>
+              {userEntity && (
+                <div className="p-4 bg-white rounded-lg shadow-sm max-w-md mx-auto">
+                  <h3 className="font-semibold text-gray-900">{userEntity.name}</h3>
+                  <p className="text-sm text-gray-600 capitalize">{userEntity.category}</p>
+                  <p className="text-xs text-gray-500">{userEntity.location}</p>
+                </div>
+              )}
+              <div className="flex gap-4 justify-center">
+                <Button onClick={() => window.location.reload()} variant="outline">
+                  Disconnect
+                </Button>
+                {userRole && <Button onClick={() => router.push(`/${userRole}`)}>Go to {userRole} Portal</Button>}
+              </div>
+            </div>
           )}
         </div>
 
-        {/* Features Section */}
-        <div className="grid md:grid-cols-3 gap-8 mt-16">
-          <Card className="text-center">
-            <CardHeader>
-              <Package className="h-12 w-12 text-blue-600 mx-auto mb-4" />
-              <CardTitle>Manufacturer Portal</CardTitle>
-              <CardDescription>
-                Generate crate codes, store manufacturing details, and set batch information
-              </CardDescription>
-            </CardHeader>
-          </Card>
+        {/* Supply Chain Workflow */}
+        <Card className="max-w-6xl mx-auto mb-16">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl">3-Level Supply Chain Workflow</CardTitle>
+            <CardDescription>Seamless product flow from manufacturing to retail</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid md:grid-cols-3 gap-8">
+              {[{
+                title: "Manufacturer",
+                icon: <Factory className="h-8 w-8 text-blue-600" />, color: "blue-600", bg: "bg-blue-100",
+                steps: ["Generate product batches", "Select distributor partners", "Track assignments"]
+              }, {
+                title: "Distributor",
+                icon: <Truck className="h-8 w-8 text-green-600" />, color: "green-600", bg: "bg-green-100",
+                steps: ["Manage inventory", "Select retailer partners", "Coordinate logistics"]
+              }, {
+                title: "Retailer",
+                icon: <Store className="h-8 w-8 text-purple-600" />, color: "purple-600", bg: "bg-purple-100",
+                steps: ["Track received products", "View supply chain path", "Manage inventory"]
+              }].map((item, idx) => (
+                <div key={idx} className="text-center">
+                  <div className={`w-16 h-16 ${item.bg} rounded-full flex items-center justify-center mx-auto mb-4`}>
+                    {item.icon}
+                  </div>
+                  <h3 className={`font-semibold mb-2 text-${item.color}`}>{idx + 1}. {item.title}</h3>
+                  <p className="text-sm text-gray-600 mb-4">
+                    {idx === 0 && "Create products and assign to distributors using searchable dropdown"}
+                    {idx === 1 && "Receive from manufacturers and forward to retailers"}
+                    {idx === 2 && "Receive products and view complete supply chain journey"}
+                  </p>
+                  <div className="text-xs text-gray-500 space-y-1">
+                    {item.steps.map((s, i) => <p key={i}>• {s}</p>)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
-          <Card className="text-center">
-            <CardHeader>
-              <Truck className="h-12 w-12 text-green-600 mx-auto mb-4" />
-              <CardTitle>Distributor Portal</CardTitle>
-              <CardDescription>Update storage locations, manage shipping details, and track dispatch</CardDescription>
-            </CardHeader>
-          </Card>
-
-          <Card className="text-center">
-            <CardHeader>
-              <Store className="h-12 w-12 text-purple-600 mx-auto mb-4" />
-              <CardTitle>Retailer Portal</CardTitle>
-              <CardDescription>View complete crate journey, verify authenticity, and confirm delivery</CardDescription>
-            </CardHeader>
-          </Card>
+        {/* Network Statistics */}
+        <div className="grid md:grid-cols-4 gap-6 mb-16">
+          {[{
+            title: "Manufacturers",
+            count: supplyChainData.manufacturers.length,
+            icon: <Factory className="h-8 w-8 text-blue-600 mx-auto mb-2" />, color: "text-blue-600"
+          }, {
+            title: "Distributors",
+            count: supplyChainData.distributors.length,
+            icon: <Truck className="h-8 w-8 text-green-600 mx-auto mb-2" />, color: "text-green-600"
+          }, {
+            title: "Retailers",
+            count: supplyChainData.retailers.length,
+            icon: <Store className="h-8 w-8 text-purple-600 mx-auto mb-2" />, color: "text-purple-600"
+          }, {
+            title: "Total Network",
+            count: supplyChainData.manufacturers.length + supplyChainData.distributors.length + supplyChainData.retailers.length,
+            icon: <Network className="h-8 w-8 text-orange-600 mx-auto mb-2" />, color: "text-orange-600"
+          }].map((item, idx) => (
+            <Card key={idx} className="text-center">
+              <CardContent className="pt-6">
+                {item.icon}
+                <div className={`text-2xl font-bold ${item.color}`}>{item.count}</div>
+                <div className="text-sm text-gray-600">{item.title}</div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
-      </main>
+
+        {/* Features Section */}
+        <div className="grid md:grid-cols-3 gap-8 mb-16">
+          {[{
+            icon: <Users className="h-12 w-12 text-blue-600" />,
+            title: "Searchable Partner Selection",
+            color: "text-blue-600",
+            description: "Find and connect with supply chain partners using advanced search and filtering"
+          }, {
+            icon: <Network className="h-12 w-12 text-green-600" />,
+            title: "Connection Path Tracking",
+            color: "text-green-600",
+            description: "Visualize complete supply chain connections from manufacturer to retailer"
+          }, {
+            icon: <Shield className="h-12 w-12 text-purple-600" />,
+            title: "Secure Blockchain Network",
+            color: "text-purple-600",
+            description: "Role-based access control with wallet authentication and verification"
+          }].map((item, idx) => (
+            <Card key={idx} className="text-center hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <div className="flex justify-center mb-4">{item.icon}</div>
+                <CardTitle className={item.color}>{item.title}</CardTitle>
+                <CardDescription>{item.description}</CardDescription>
+              </CardHeader>
+            </Card>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }
