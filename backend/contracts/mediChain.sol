@@ -36,6 +36,7 @@ contract MedicineCrateTracking {
     event CrateReceived(string crateCode, address from, address to);
     event BottleScanned(string bottleCode, bool firstScan, bool suspicious);
     event BottleReported(string bottleCode);
+    event CertificationsActivated(string crateCode, address retailer);
 
     modifier onlyCurrentHolder(string memory crateCode) {
         require(crates[crateCode].exists, "Crate does not exist");

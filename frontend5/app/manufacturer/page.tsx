@@ -14,7 +14,7 @@ import { SearchableDropdown } from "@/components/searchable-dropdown"
 import { ConnectionPath } from "@/components/connection-path"
 import supplyChainData from "@/data/supplyChainData.json"
 import { useToast } from "@/hooks/use-toast"
-import { registerCrate } from "../../apis"
+import { registerCrate, getAccount } from "../../apis"
 
 interface CreatedCrate {
   crateCode: string
@@ -85,7 +85,8 @@ export default function ManufacturerPortal() {
     const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
     const bottleCodes: string[] = []
 
-    // Extract first 5 characters from the full crate code (before the hyphen)
+    // Extract first 5 characters 
+    //from the full crate code (before the hyphen)
     const cratePrefix = fullCrateCode.split("-")[0]
 
     for (let i = 0; i < count; i++) {
@@ -228,8 +229,20 @@ export default function ManufacturerPortal() {
         timestamp: new Date().toISOString(),
       }
 
+      const account = await getAccount()
+
       // Call the blockchain API
-      const receipt = await registerCrate(formData.crateCode, blockchainData)
+      const receipt = await registerCrate(
+        formData.crateCode,
+        formData.batchId,
+        formData.medicineId,
+        formData.medicineName,
+        account,
+        formData.manufacturerPhysicalAddress,
+        formData.cidDocuments || "",
+        Number.parseInt(formData.bottleCount),
+        bottleCodes
+      )
       console.log("Crate details submitted to blockchain:", receipt)
       console.log("Generated codes stored in system:", fullCrateCodes)
 
