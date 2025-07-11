@@ -79,3 +79,8 @@ export async function getBottleScan(bottleCode) {
 export function parseCrateFromBottle(bottleCode) {
   return bottleCode.split("-")[0];
 }
+
+export async function activateCertifications(crateCode) {
+  const account = await getAccount();
+  return contract.methods.activateCertifications(crateCode).send({ from: account });
+}

@@ -21,6 +21,7 @@ contract MedicineCrateTracking {
         bool retailLocationSet;
         int32 retailLat; // stored as x1000000
         int32 retailLong;
+        bool certificationsActivated;
     }
 
     struct BottleScanInfo {
@@ -39,6 +40,7 @@ contract MedicineCrateTracking {
     event CrateReceived(string crateCode, address from, address to);
     event BottleScanned(string bottleCode, bool firstScan, bool suspicious);
     event BottleReported(string bottleCode);
+    event CertificationsActivated(string crateCode, address retailer);
 
     modifier onlyCurrentHolder(string memory crateCode) {
         require(crates[crateCode].exists, "Crate does not exist");
@@ -121,6 +123,14 @@ contract MedicineCrateTracking {
 
         emit CrateReceived(crateCode, previousHolder, msg.sender);
     }
+
+    function activateCertifications(string memory crateCode) public onlyRetailReceiver(crateCode) {
+    Crate storage crate = crates[crateCode];
+    require(!crate.certificationsActivated, "Certifications already activated");
+    crate.certificationsActivated = true;
+
+    emit CertificationsActivated(crateCode, msg.sender);
+}
 
     function setRetailLocation(string memory crateCode, int32 lat, int32 longi) public onlyRetailReceiver(crateCode) {
         Crate storage crate = crates[crateCode];
