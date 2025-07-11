@@ -1,7 +1,8 @@
 import Web3 from "web3";
-import contractABI from './abi/MedicineCrateTracking.json';
+import contractABI from '../abi/MedicineCrateTracking.json';
 
-const contractAddress = process.env.NEXT_PUBLIC_CONRACT_ADDRESS_IN_SEPOLIA; // Use NEXT_PUBLIC_ to expose in frontend
+// const contractAddress = process.env.NEXT_PUBLIC_CONRACT_ADDRESS_IN_SEPOLIA; // Use NEXT_PUBLIC_ to expose in frontend
+const contractAddress = process.env.NEXT_PUBLIC_CONRACT_ADDRESS_IN_LOCAL; // Use NEXT_PUBLIC_ to expose in frontend
 
 // Helper: Get Web3 instance and contract (client-side only)
 function getWeb3AndContract() {
@@ -21,8 +22,10 @@ async function getAccount() {
 
 // 1. Register a new crate
 export async function registerCrate(crateCode, crate) {
+  console.log("running registerCrate")
   const { contract } = getWeb3AndContract();
   const account = await getAccount();
+  console.log(account)
   return contract.methods.registerCrate(
     crateCode,
     crate.batchId,

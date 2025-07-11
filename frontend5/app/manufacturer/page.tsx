@@ -15,7 +15,7 @@ import { ConnectionPath } from "@/components/connection-path"
 import { AssignmentForm } from "@/components/assignment-form"
 import supplyChainData from "@/data/supplyChainData.json"
 import { useToast } from "@/hooks/use-toast"
-import { registerCrate } from "../../apis"
+import { registerCrate } from "../../components/apis"
 
 interface CreatedCrate {
   crateCode: string
