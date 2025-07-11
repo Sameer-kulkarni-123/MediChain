@@ -55,8 +55,8 @@ export default function ManufacturerPortal() {
     setCurrentManufacturer(supplyChainData.manufacturers[0])
   }, [])
 
-  // Generate random 10-character code with hyphen (XXXXX-XXXXX format)
-  const generateRandom10CharCode = (): string => {
+  // Generate random 10-character crate code (XXXXX-XXXXX format)
+  const generateFullCrateCode = (): string => {
     const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
     let result = ""
 
@@ -81,27 +81,36 @@ export default function ManufacturerPortal() {
     return result
   }
 
-  // Generate random bottle codes for each bottle
-  const generateRandomBottleCodes = (count: number): string[] => {
+  // Generate bottle codes using the first 5 characters of crate code + unique suffixes
+  const generateBottleCodesWithCratePrefix = (fullCrateCode: string, count: number): string[] => {
+    const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
     const bottleCodes: string[] = []
 
+    // Extract first 5 characters from the full crate code (before the hyphen)
+    const cratePrefix = fullCrateCode.split("-")[0]
+
     for (let i = 0; i < count; i++) {
-      let bottleCode: string
+      let suffix: string
 
-      // Generate until we get a unique bottle code
+      // Generate unique 5-character suffix for each bottle
       do {
-        bottleCode = generateRandom10CharCode()
-      } while (usedCodes.has(bottleCode) || bottleCodes.includes(bottleCode))
+        suffix = ""
+        for (let j = 0; j < 5; j++) {
+          suffix += characters.charAt(Math.floor(Math.random() * characters.length))
+        }
+      } while (bottleCodes.some((code) => code.endsWith(`-${suffix}`)) || usedCodes.has(`${cratePrefix}-${suffix}`))
 
-      bottleCodes.push(bottleCode)
+      const fullBottleCode = `${cratePrefix}-${suffix}`
+      bottleCodes.push(fullBottleCode)
     }
-    console.log("Generated bottle codes:", bottleCodes)
 
+    console.log("Generated bottle codes:", bottleCodes)
+    console.log("All bottles linked to crate prefix:", cratePrefix)
     return bottleCodes
   }
 
   const generateCrateCode = () => {
-    const newCrateCode = generateRandom10CharCode()
+    const newCrateCode = generateFullCrateCode()
 
     setFormData((prev) => ({
       ...prev,
@@ -157,8 +166,8 @@ export default function ManufacturerPortal() {
         return
       }
 
-      // Generate random bottle codes (each is a 10-character code with hyphen)
-      const bottleCodes = generateRandomBottleCodes(bottleCount)
+      // Generate bottle codes using the first 5 characters of the crate code + unique suffixes
+      const bottleCodes = generateBottleCodesWithCratePrefix(crateCode, bottleCount)
 
       // Store the bottle codes as the full crate codes
       const fullCrateCodes = bottleCodes
@@ -260,7 +269,9 @@ export default function ManufacturerPortal() {
                   <div className="flex items-center justify-between mb-4">
                     <div>
                       <h3 className="font-medium text-gray-900">Crate Code</h3>
-                      <p className="text-sm text-gray-600">Generate a unique 10-character identifier for your crate</p>
+                      <p className="text-sm text-gray-600">
+                        Generate a unique 10-character crate code (XXXXX-XXXXX format)
+                      </p>
                     </div>
                     <Button type="button" onClick={generateCrateCode} variant="outline">
                       Generate Code
@@ -273,9 +284,15 @@ export default function ManufacturerPortal() {
                     className="bg-white font-mono text-lg"
                   />
                   {formData.crateCode && (
-                    <Badge variant="outline" className="text-green-600 border-green-600 mt-2">
-                      10-Character Code Generated Successfully
-                    </Badge>
+                    <div className="mt-2 space-y-1">
+                      <Badge variant="outline" className="text-green-600 border-green-600">
+                        10-Character Crate Code Generated Successfully
+                      </Badge>
+                      <p className="text-xs text-gray-600">
+                        All bottle codes will use prefix: {formData.crateCode.split("-")[0]}-XXXXX
+                      </p>
+                      <p className="text-xs text-blue-600">Bottles will be linked to crate: {formData.crateCode}</p>
+                    </div>
                   )}
                 </div>
 
@@ -337,10 +354,16 @@ export default function ManufacturerPortal() {
                     placeholder="Enter number of bottles (1-99999)"
                     required
                   />
-                  {formData.bottleCount && Number.parseInt(formData.bottleCount) > 0 && (
-                    <p className="text-sm text-gray-600 mt-1">
-                      Will generate {formData.bottleCount} random 10-character bottle codes (Format: XXXXX-XXXXX)
-                    </p>
+                  {formData.bottleCount && Number.parseInt(formData.bottleCount) > 0 && formData.crateCode && (
+                    <div className="text-sm text-gray-600 mt-1 space-y-1">
+                      <p>
+                        Will generate {formData.bottleCount} bottle codes using prefix "
+                        {formData.crateCode.split("-")[0]}-"
+                      </p>
+                      <p className="text-xs text-blue-600">
+                        All bottles will be linked to parent crate: {formData.crateCode}
+                      </p>
+                    </div>
                   )}
                 </div>
 
