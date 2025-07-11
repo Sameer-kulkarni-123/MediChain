@@ -1,5 +1,8 @@
 require("dotenv").config()
 require("@nomicfoundation/hardhat-toolbox");
+console.log("RPC:", process.env.SEPOLIA_END_POINT_URL);
+console.log("PK:", process.env.METAMASK_ACCOUNT_PRIVATE_KEY?.length);
+
 
 // require("@nomiclabs/hardhat-ethers")
 /** @type import('hardhat/config').HardhatUserConfig */

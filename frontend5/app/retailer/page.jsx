@@ -17,6 +17,8 @@ export default function RetailerPortal() {
   const [isVerified, setIsVerified] = useState(false)
   const [deliveryAcknowledged, setDeliveryAcknowledged] = useState(false)
   const [isVerifying, setIsVerifying] = useState(false)
+  const [isCertActivated, setIsCertActivated] = useState(false)
+
   const { toast } = useToast()
 
   // Mock crate journey data
@@ -120,6 +122,24 @@ export default function RetailerPortal() {
     }
   }
 
+  const handleActivateCert = async () => {
+  try {
+    await activateCertifications(crateCode);
+    setIsCertActivated(true);
+    toast({
+      title: "Certifications Activated",
+      description: "Retailer successfully activated crate certifications",
+    });
+  } catch (error) {
+    toast({
+      title: "Error",
+      description: "Failed to activate certifications",
+      variant: "destructive",
+    });
+  }
+};
+
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-100">
       <div className="container mx-auto px-4 py-8">
@@ -201,6 +221,16 @@ export default function RetailerPortal() {
               >
                 Confirm Final Delivery
               </Button>
+              {isVerified && deliveryAcknowledged && (
+              <Button
+                onClick={handleActivateCert}
+                disabled={isCertActivated}
+                className="w-full bg-green-600 hover:bg-green-700"
+              >
+                {isCertActivated ? "✅ Certifications Activated" : "Activate Certifications"}
+              </Button>
+            )}
+
 
               {!isVerified && <p className="text-sm text-gray-500">Please verify crate authenticity first</p>}
             </CardContent>
