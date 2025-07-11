@@ -15,7 +15,7 @@ import { ConnectionPath } from "@/components/connection-path"
 import { AssignmentForm } from "@/components/assignment-form"
 import supplyChainData from "@/data/supplyChainData.json"
 import { useToast } from "@/hooks/use-toast"
-import { registerCrate } from "../../components/apis"
+import { registerCrate, getAccount, debugContractConnection } from "../../apis"
 
 interface CreatedCrate {
   crateCode: string
@@ -190,8 +190,21 @@ export default function ManufacturerPortal() {
       setCreatedCrates((prev) => [...prev, newCrate])
       setUsedCodes(newUsedCodes)
 
-      // Call the blockchain API
-      const receipt = await registerCrate(formData.crateCode, formData)
+      // Get current account for manufacturer wallet address
+      const account = await getAccount()
+
+      // Call the blockchain API with correct parameters based on ABI
+      const receipt = await registerCrate(
+        formData.crateCode,
+        formData.batchId,
+        formData.medicineId,
+        formData.medicineName,
+        account,
+        formData.manufacturerPhysicalAddress,
+        formData.cidDocuments || "",
+        Number.parseInt(formData.bottleCount),
+        bottleCodes
+      )
       console.log("Crate details submitted:", receipt)
       console.log("Generated codes stored in state:", fullCrateCodes)
 
@@ -210,10 +223,20 @@ export default function ManufacturerPortal() {
         cidDocuments: "",
         bottleCount: "",
       })
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Crate creation error:", error);
+      
+      // Try to debug the connection first
+      try {
+        const debugInfo = await debugContractConnection();
+        console.log("Debug info:", debugInfo);
+      } catch (debugError) {
+        console.error("Debug error:", debugError);
+      }
+      
       toast({
         title: "Error",
-        description: "Failed to create crate. Please try again.",
+        description: (error as Error).message || "Failed to create crate. Please try again.",
         variant: "destructive",
       })
     } finally {
