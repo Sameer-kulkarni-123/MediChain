@@ -14,6 +14,7 @@ import { ConnectionPath } from "@/components/connection-path"
 import { AssignmentForm } from "@/components/assignment-form"
 import supplyChainData from "@/data/supplyChainData.json"
 import { useToast } from "@/hooks/use-toast"
+import { sendCrate, receiveCrate, getCrate, getAccount } from "../../apis"
 
 export default function DistributorPortal() {
   const [selectedRetailer, setSelectedRetailer] = useState<any>(null)
@@ -58,12 +59,16 @@ export default function DistributorPortal() {
     setIsSubmitting(true)
 
     try {
-      // Simulate blockchain transaction
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      // Get current account
+      const account = await getAccount()
+      
+      // Simulate receiving crate from manufacturer (in real app, this would be triggered by manufacturer)
+      // For demo purposes, we'll simulate the receive action
+      await receiveCrate(crateDetails.crateCode)
 
       toast({
         title: "Success",
-        description: "Distribution details updated on blockchain successfully!",
+        description: "Crate received and distribution details updated on blockchain successfully!",
       })
 
       // Reset form
