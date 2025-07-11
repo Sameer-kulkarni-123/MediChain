@@ -49,6 +49,25 @@
       {
         "indexed": false,
         "internalType": "address",
+        "name": "retailer",
+        "type": "address"
+      }
+    ],
+    "name": "CertificationsActivated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "crateCode",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
         "name": "from",
         "type": "address"
       },

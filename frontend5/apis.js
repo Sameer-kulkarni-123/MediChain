@@ -3,6 +3,7 @@ import contractABI from './abi/MedicineCrateTracking.json';
 
 // const contractAddress = process.env.NEXT_PUBLIC_CONRACT_ADDRESS_IN_SEPOLIA; // Use NEXT_PUBLIC_ to expose in frontend
 const contractAddress = process.env.NEXT_PUBLIC_CONRACT_ADDRESS_IN_LOCAL;
+console.log(contractAddress);
 
 // Helper: Get Web3 instance and contract (client-side only)
 function getWeb3AndContract() {
@@ -11,6 +12,7 @@ function getWeb3AndContract() {
   }
 
   const web3 = new Web3(window.ethereum);
+  
   
   if (!contractAddress) {
     throw new Error("Contract address not configured. Please check your environment variables.");
@@ -238,11 +240,16 @@ export async function debugContractConnection() {
 // 12. Get pending crates for a given address
 export async function getPendingCratesForAddress(address) {
   try {
-    const { contract } = getWeb3AndContract();
+    const { contract, web3 } = getWeb3AndContract();
+    console.log("[DEBUG] Contract address:", contract.options.address);
+    console.log("[DEBUG] ABI has getPendingCrates:", !!contract.methods.getPendingCrates);
+    const latestBlock = await web3.eth.getBlockNumber();
+    console.log("[DEBUG] Latest block number:", latestBlock);
     const crates = await contract.methods.getPendingCrates(address).call();
+    console.log("[DEBUG] getPendingCrates result:", crates);
     return crates && crates.length > 0 ? crates : null;
   } catch (error) {
-    console.error("Error getting pending crates:", error);
+    console.error("[DEBUG] Error getting pending crates:", error);
     throw new Error(`Failed to get pending crates: ${error.message}`);
   }
 }
@@ -250,5 +257,6 @@ export async function getPendingCratesForAddress(address) {
 // 13. Get pending crates for the current user
 export async function getMyPendingCrates() {
   const account = await getAccount();
+  console.log("[DEBUG] getMyPendingCrates for account:", account);
   return getPendingCratesForAddress(account);
 }
