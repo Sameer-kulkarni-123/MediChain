@@ -12,10 +12,9 @@ import { Factory, ArrowLeft, Users, Package, Clock } from "lucide-react"
 import Link from "next/link"
 import { SearchableDropdown } from "@/components/searchable-dropdown"
 import { ConnectionPath } from "@/components/connection-path"
-import { AssignmentForm } from "@/components/assignment-form"
 import supplyChainData from "@/data/supplyChainData.json"
 import { useToast } from "@/hooks/use-toast"
-import { registerCrate, getAccount, debugContractConnection } from "../../apis"
+import { registerCrate } from "../../apis"
 
 interface CreatedCrate {
   crateCode: string
@@ -130,6 +129,39 @@ export default function ManufacturerPortal() {
     }))
   }
 
+  const handleDistributorConfirmation = async () => {
+    if (!selectedDistributor) {
+      toast({
+        title: "Error",
+        description: "No distributor selected",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setIsSubmitting(true)
+
+    try {
+      // Simulate API call to confirm distributor selection
+      await new Promise((resolve) => setTimeout(resolve, 1500))
+
+      toast({
+        title: "Distributor Confirmed",
+        description: `${selectedDistributor.name} has been confirmed as your distribution partner`,
+      })
+
+      console.log("Distributor confirmed:", selectedDistributor)
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to confirm distributor selection. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -163,13 +195,12 @@ export default function ManufacturerPortal() {
           description: "Bottle count cannot exceed 99,999",
           variant: "destructive",
         })
+        setIsSubmitting(false)
         return
       }
 
       // Generate bottle codes using the first 5 characters of the crate code + unique suffixes
       const bottleCodes = generateBottleCodesWithCratePrefix(crateCode, bottleCount)
-
-      // Store the bottle codes as the full crate codes
       const fullCrateCodes = bottleCodes
 
       // Add all codes to used codes
@@ -190,23 +221,17 @@ export default function ManufacturerPortal() {
       setCreatedCrates((prev) => [...prev, newCrate])
       setUsedCodes(newUsedCodes)
 
-      // Get current account for manufacturer wallet address
-      const account = await getAccount()
+      // Prepare data for blockchain
+      const blockchainData = {
+        ...formData,
+        bottleCodes: fullCrateCodes,
+        timestamp: new Date().toISOString(),
+      }
 
-      // Call the blockchain API with correct parameters based on ABI
-      const receipt = await registerCrate(
-        formData.crateCode,
-        formData.batchId,
-        formData.medicineId,
-        formData.medicineName,
-        account,
-        formData.manufacturerPhysicalAddress,
-        formData.cidDocuments || "",
-        Number.parseInt(formData.bottleCount),
-        bottleCodes
-      )
-      console.log("Crate details submitted:", receipt)
-      console.log("Generated codes stored in state:", fullCrateCodes)
+      // Call the blockchain API
+      const receipt = await registerCrate(formData.crateCode, blockchainData)
+      console.log("Crate details submitted to blockchain:", receipt)
+      console.log("Generated codes stored in system:", fullCrateCodes)
 
       toast({
         title: "Success",
@@ -223,20 +248,11 @@ export default function ManufacturerPortal() {
         cidDocuments: "",
         bottleCount: "",
       })
-    } catch (error: any) {
-      console.error("Crate creation error:", error);
-      
-      // Try to debug the connection first
-      try {
-        const debugInfo = await debugContractConnection();
-        console.log("Debug info:", debugInfo);
-      } catch (debugError) {
-        console.error("Debug error:", debugError);
-      }
-      
+    } catch (error) {
+      console.error("Blockchain submission error:", error)
       toast({
         title: "Error",
-        description: (error as Error).message || "Failed to create crate. Please try again.",
+        description: "Failed to create crate on blockchain. Please try again.",
         variant: "destructive",
       })
     } finally {
@@ -440,7 +456,7 @@ export default function ManufacturerPortal() {
           </Card>
 
           {/* Distributor Selection */}
-          <Card className="w-full">
+          <Card>
             <CardHeader className="px-4 sm:px-6">
               <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                 <Users className="h-5 w-5" />
@@ -479,17 +495,18 @@ export default function ManufacturerPortal() {
                       <span className="font-medium">Wallet:</span> {selectedDistributor.walletAddress}
                     </p>
                   </div>
+
+                  <Button
+                    onClick={handleDistributorConfirmation}
+                    className="w-full mt-4 bg-green-600 hover:bg-green-700 text-sm sm:text-base py-2"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? "Confirming Selection..." : "Confirm Distributor Selection"}
+                  </Button>
                 </div>
               )}
             </CardContent>
           </Card>
-
-          {/* Product Assignment Form */}
-          {/* <AssignmentForm
-            fromEntity={currentManufacturer}
-            toEntity={selectedDistributor}
-            assignmentType="manufacturer-to-distributor"
-          /> */}
         </div>
 
         {/* Available Distributors Overview */}
