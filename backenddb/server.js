@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const dotenv = require('dotenv');
 const connectDB = require('./database/config');
 const Entry = require('./models/Entry');
+const Bottle = require('./models/Bottle');
 
 dotenv.config();
 
@@ -109,6 +110,93 @@ app.get('/api/entries/type/:type', async (req, res) => {
     res.json(entries);
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+});
+
+// Generate N bottles with blockchain_value and certificate
+app.post('/api/bottles/generate', async (req, res) => {
+  try {
+    const { count, blockchain_value, certificate, details } = req.body;
+    const bottles = [];
+    for (let i = 0; i < (count || 10); i++) {
+      // Use fallback values if blockchain_value or certificate are missing
+      const safeBlockchain = blockchain_value || `blockchain${Date.now()}`;
+      const safeCertificate = certificate || `cert${Math.floor(Math.random()*100000)}`;
+      const qr_code = `${safeBlockchain}-${safeCertificate}-${Date.now()}-${Math.floor(Math.random()*100000)}`;
+      bottles.push({
+        qr_code,
+        blockchain_value: safeBlockchain,
+        certificate: safeCertificate,
+        details: details || '',
+        scanned: false,
+        scan_history: [],
+        report: { flagged: false }
+      });
+    }
+    const created = await Bottle.insertMany(bottles);
+    res.json(created);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Get bottle by QR code and update scan status
+app.get('/api/bottles/:qr_code', async (req, res) => {
+  try {
+    const bottle = await Bottle.findOne({ qr_code: req.params.qr_code });
+    if (!bottle) return res.status(404).json({ message: 'Bottle not found' });
+
+    // If not scanned, mark as scanned
+    if (!bottle.scanned) {
+      bottle.scanned = true;
+      bottle.scan_history.push({
+        user_agent: req.headers['user-agent'],
+        ip: req.ip
+      });
+      await bottle.save();
+      return res.json({ ...bottle.toObject(), firstScan: true });
+    } else {
+      // Already scanned
+      return res.json({ ...bottle.toObject(), firstScan: false });
+    }
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Report bottle
+app.post('/api/bottles/:qr_code/report', async (req, res) => {
+  try {
+    const bottle = await Bottle.findOne({ qr_code: req.params.qr_code });
+    if (!bottle) return res.status(404).json({ message: 'Bottle not found' });
+
+    bottle.report = {
+      flagged: true,
+      reason: req.body.reason,
+      reported_at: new Date()
+    };
+    await bottle.save();
+    res.json({ message: 'Report submitted' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+app.get('/api/bottles', async (req, res) => {
+  try {
+    const bottles = await Bottle.find();
+    res.json(bottles);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+app.delete('/api/bottles', async (req, res) => {
+  try {
+    await Bottle.deleteMany({});
+    res.status(200).json({ message: 'All bottles deleted' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
