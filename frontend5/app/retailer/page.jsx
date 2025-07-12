@@ -179,9 +179,9 @@ export default function RetailerPortal() {
                     onChange={(e) => setCrateCode(e.target.value)}
                     placeholder="Enter crate code (e.g., MC-1704123456-7890)"
                   />
-                  <Button onClick={verifyCrate} disabled={isVerifying} variant="outline">
+                  {/* <Button onClick={verifyCrate} disabled={isVerifying} variant="outline">
                     {isVerifying ? "Verifying..." : "Verify"}
-                  </Button>
+                  </Button> */}
                 </div>
               </div>
 

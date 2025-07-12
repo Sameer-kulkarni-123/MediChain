@@ -47,6 +47,7 @@ export default function ManufacturerPortal() {
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { toast } = useToast()
+  const [manualCrateCodeForAssignment, setManualCrateCodeForAssignment] = useState("")
 
   useEffect(() => {
     // Simulate getting current manufacturer from wallet/auth
@@ -482,6 +483,16 @@ export default function ManufacturerPortal() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 px-4 sm:px-6">
+            <Label htmlFor="crateCodeForAssignment" className="text-sm sm:text-base">
+                Crate Code
+              </Label>
+              <Input
+                id="crateCodeForAssignment"
+                value={manualCrateCodeForAssignment}
+                onChange={(e) => setManualCrateCodeForAssignment(e.target.value)}
+                placeholder="Enter crate code (e.g., XXXXX-XXXXX)"
+                className="text-sm sm:text-base"
+              />
               <SearchableDropdown
                 options={supplyChainData.distributors}
                 value={selectedDistributor}
@@ -512,7 +523,7 @@ export default function ManufacturerPortal() {
                   </div>
 
                   <Button
-                    onClick={() => handleDistributorConfirmation("MRCZO", selectedDistributor["walletAddress"])}
+                    onClick={() => handleDistributorConfirmation(manualCrateCodeForAssignment, selectedDistributor["walletAddress"])}
                     className="w-full mt-4 bg-green-600 hover:bg-green-700 text-sm sm:text-base py-2"
                     disabled={isSubmitting}
                   >
