@@ -38,7 +38,7 @@ export default function DistributorPortal() {
 
   // Mock crate data
   const crateDetails = {
-    crateCode: "MRCZO",
+    crateCode: "3UKOX",
     medicineName: "Paracetamol 500mg",
     batchId: "B001",
     manufacturerId: "MFG001",

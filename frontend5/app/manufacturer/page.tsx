@@ -512,7 +512,7 @@ export default function ManufacturerPortal() {
                   </div>
 
                   <Button
-                    onClick={() => handleDistributorConfirmation("MRCZO", selectedDistributor["walletAddress"])}
+                    onClick={() => handleDistributorConfirmation("3UKOX", selectedDistributor["walletAddress"])}
                     className="w-full mt-4 bg-green-600 hover:bg-green-700 text-sm sm:text-base py-2"
                     disabled={isSubmitting}
                   >
