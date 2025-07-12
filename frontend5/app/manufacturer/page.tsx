@@ -8,18 +8,17 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { Factory, ArrowLeft, Users, Package, Clock } from "lucide-react"
+import { Factory, ArrowLeft, Users, Package, Clock, Send } from "lucide-react" // Added Send icon
 import Link from "next/link"
 import { SearchableDropdown } from "@/components/searchable-dropdown"
 import { ConnectionPath } from "@/components/connection-path"
 import supplyChainData from "@/data/supplyChainData.json"
 import { useToast } from "@/hooks/use-toast"
-import { registerCrate, getAccount, sendCrate } from "../../apis"
+import { createCrate, getAccount, sendCrateToDistributor, getCrateEvents } from "../../apis" // Updated imports
 
 interface CreatedCrate {
   crateCode: string
   bottleCodes: string[]
-  fullCrateCodes: string[] // Format: XXXXX-XXXXX
   formData: {
     batchId: string
     medicineId: string
@@ -29,6 +28,7 @@ interface CreatedCrate {
     bottleCount: string
   }
   timestamp: string
+  status: 'Created' | 'In Transit' | 'Received by Distributor' | 'Received by Retailer'; // Added status
 }
 
 export default function ManufacturerPortal() {
@@ -46,13 +46,32 @@ export default function ManufacturerPortal() {
     bottleCount: "",
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSending, setIsSending] = useState(false); // New state for sending crates
   const { toast } = useToast()
 
   useEffect(() => {
     // Simulate getting current manufacturer from wallet/auth
     // In real app, this would come from authentication
     setCurrentManufacturer(supplyChainData.manufacturers[0])
+    // Optionally fetch existing crates for the manufacturer on load
+    // fetchManufacturerCrates();
   }, [])
+
+  // Function to fetch and update crate statuses from blockchain events
+  // This is a placeholder and would need more robust implementation
+  // to track all crates and their real-time status.
+  // For simplicity, we'll update the status locally after a successful transaction.
+  // async function fetchManufacturerCrates() {
+  //   try {
+  //     const account = await getAccount();
+  //     // This would require a contract function to get all crates by manufacturer
+  //     // or iterating through events, which can be heavy.
+  //     // For now, we rely on local state updates.
+  //   } catch (error) {
+  //     console.error("Error fetching manufacturer crates:", error);
+  //   }
+  // }
+
 
   // Generate random 10-character crate code (XXXXX-XXXXX format)
   const generateFullCrateCode = (): string => {
@@ -85,7 +104,7 @@ export default function ManufacturerPortal() {
     const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
     const bottleCodes: string[] = []
 
-    // Extract first 5 characters 
+    // Extract first 5 characters
     //from the full crate code (before the hyphen)
     const cratePrefix = fullCrateCode.split("-")[0]
 
@@ -130,40 +149,44 @@ export default function ManufacturerPortal() {
     }))
   }
 
-  const handleDistributorConfirmation = async (crateCode:string, toAddress:string) => {
+  // New function to handle sending a specific crate to the selected distributor
+  const handleSendCrate = async (crateCode: string) => {
     if (!selectedDistributor) {
       toast({
         title: "Error",
-        description: "No distributor selected",
+        description: "Please select a distributor first.",
         variant: "destructive",
       })
       return
     }
 
-    setIsSubmitting(true)
-
+    setIsSending(true)
     try {
-      // Simulate API call to confirm distributor selection
-      // await new Promise((resolve) => setTimeout(resolve, 15000))
-      const receipt = await sendCrate(crateCode, toAddress)
-      console.log(receipt)
+      const receipt = await sendCrateToDistributor(crateCode, selectedDistributor.walletAddress);
+      console.log("Crate sent to distributor successful:", receipt);
+
+      // Update the status of the sent crate in the local state
+      setCreatedCrates(prevCrates =>
+        prevCrates.map(crate =>
+          crate.crateCode === crateCode ? { ...crate, status: 'In Transit' } : crate
+        )
+      );
 
       toast({
-        title: "Distributor Confirmed",
-        description: `${selectedDistributor.name} has been confirmed as your distribution partner`,
-      })
-
-      console.log("Distributor confirmed:", selectedDistributor)
-    } catch (error) {
+        title: "Crate Sent",
+        description: `Crate ${crateCode} successfully sent to ${selectedDistributor.name}.`,
+      });
+    } catch (error: any) {
+      console.error("Error sending crate to distributor:", error);
       toast({
         title: "Error",
-        description: "Failed to confirm distributor selection. Please try again.",
+        description: error.message || "Failed to send crate to distributor. Please try again.",
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsSubmitting(false)
+      setIsSending(false);
     }
-  }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -204,49 +227,41 @@ export default function ManufacturerPortal() {
 
       // Generate bottle codes using the first 5 characters of the crate code + unique suffixes
       const bottleCodes = generateBottleCodesWithCratePrefix(crateCode, bottleCount)
-      const fullCrateCodes = bottleCodes
 
       // Add all codes to used codes
       const newUsedCodes = new Set(usedCodes)
       newUsedCodes.add(crateCode)
       bottleCodes.forEach((code) => newUsedCodes.add(code))
 
-      // Create crate object
-      const newCrate: CreatedCrate = {
-        crateCode,
-        bottleCodes,
-        fullCrateCodes,
-        formData: { ...formData },
-        timestamp: new Date().toLocaleString(),
-      }
-
-      // Update state (stored but not displayed)
-      setCreatedCrates((prev) => [...prev, newCrate])
-      setUsedCodes(newUsedCodes)
-
-      // Prepare data for blockchain
-      const blockchainData = {
-        ...formData,
-        bottleCodes: fullCrateCodes,
-        timestamp: new Date().toISOString(),
-      }
-
       const account = await getAccount()
 
       // Call the blockchain API
-      const receipt = await registerCrate(
+      const receipt = await createCrate( // Changed from registerCrate to createCrate
         formData.crateCode,
         formData.batchId,
         formData.medicineId,
         formData.medicineName,
-        account,
         formData.manufacturerPhysicalAddress,
         formData.cidDocuments || "",
         Number.parseInt(formData.bottleCount),
         bottleCodes
       )
       console.log("Crate details submitted to blockchain:", receipt)
-      console.log("Generated codes stored in system:", fullCrateCodes)
+      console.log("Generated codes stored in system:", bottleCodes)
+
+      // Create crate object
+      const newCrate: CreatedCrate = {
+        crateCode,
+        bottleCodes,
+        formData: { ...formData },
+        timestamp: new Date().toLocaleString(),
+        status: 'Created', // Initial status
+      }
+
+      // Update state
+      setCreatedCrates((prev) => [...prev, newCrate])
+      setUsedCodes(newUsedCodes)
+
 
       toast({
         title: "Success",
@@ -263,11 +278,11 @@ export default function ManufacturerPortal() {
         cidDocuments: "",
         bottleCount: "",
       })
-    } catch (error) {
+    } catch (error: any) {
       console.error("Blockchain submission error:", error)
       toast({
         title: "Error",
-        description: "Failed to create crate on blockchain. Please try again.",
+        description: error.message || "Failed to create crate on blockchain. Please try again.",
         variant: "destructive",
       })
     } finally {
@@ -510,14 +525,66 @@ export default function ManufacturerPortal() {
                       <span className="font-medium">Wallet:</span> {selectedDistributor.walletAddress}
                     </p>
                   </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-                  <Button
-                    onClick={() => handleDistributorConfirmation("abcde", selectedDistributor["walletAddress"])}
-                    className="w-full mt-4 bg-green-600 hover:bg-green-700 text-sm sm:text-base py-2"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? "Confirming Selection..." : "Confirm Distributor Selection"}
-                  </Button>
+          {/* My Created Crates */}
+          <Card>
+            <CardHeader className="px-4 sm:px-6">
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                <Package className="h-5 w-5" />
+                My Created Crates
+              </CardTitle>
+              <CardDescription className="text-sm sm:text-base">
+                Overview of crates created by you. Select a distributor above to send.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="px-4 sm:px-6">
+              {createdCrates.length === 0 ? (
+                <p className="text-gray-600 text-sm">No crates created yet. Use the form above to create one.</p>
+              ) : (
+                <div className="space-y-4">
+                  {createdCrates.map((crate) => (
+                    <div key={crate.crateCode} className="p-4 border rounded-lg bg-white shadow-sm">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-semibold text-base text-gray-900">{crate.crateCode}</h4>
+                        <Badge
+                          variant="outline"
+                          className={
+                            crate.status === 'Created'
+                              ? "text-blue-600 border-blue-600"
+                              : crate.status === 'In Transit'
+                                ? "text-yellow-600 border-yellow-600"
+                                : "text-green-600 border-green-600"
+                          }
+                        >
+                          {crate.status}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-gray-700">
+                        Medicine: {crate.formData.medicineName} ({crate.formData.medicineId})
+                      </p>
+                      <p className="text-sm text-gray-700">Batch: {crate.formData.batchId}</p>
+                      <p className="text-sm text-gray-700">Bottles: {crate.formData.bottleCount}</p>
+                      <p className="text-xs text-gray-500 mt-1">Created: {crate.timestamp}</p>
+
+                      {crate.status === 'Created' && (
+                        <Button
+                          onClick={() => handleSendCrate(crate.crateCode)}
+                          className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-sm py-2"
+                          disabled={isSending || !selectedDistributor}
+                        >
+                          <Send className="h-4 w-4 mr-2" />
+                          {isSending ? "Sending Crate..." : `Send to ${selectedDistributor ? selectedDistributor.name : 'Distributor'}`}
+                        </Button>
+                      )}
+                      {crate.status === 'In Transit' && (
+                        <p className="text-sm text-yellow-700 mt-4">Awaiting receipt by distributor.</p>
+                      )}
+                    </div>
+                  ))}
                 </div>
               )}
             </CardContent>
@@ -558,13 +625,17 @@ export default function ManufacturerPortal() {
           </CardContent>
         </Card>
 
-        {/* Recent Activity */}
+        {/* Recent Activity - Placeholder */}
         <Card className="mt-6 sm:mt-8">
           <CardHeader className="px-4 sm:px-6">
             <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
               <Clock className="h-5 w-5" />
-              Recent Activity
+              Recent Activity (Blockchain Events)
             </CardTitle>
+            <CardDescription className="text-sm sm:text-base">
+              This section would display real-time events from the blockchain (e.g., CrateCreated, CrateInTransit, CrateReceived).
+              A full implementation would involve fetching and parsing these events using `getCrateEvents`.
+            </CardDescription>
           </CardHeader>
           <CardContent className="px-4 sm:px-6">
             <div className="space-y-3">
