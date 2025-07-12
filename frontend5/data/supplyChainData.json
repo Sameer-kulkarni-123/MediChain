@@ -64,7 +64,7 @@
       {
         "id": "dist_004",
         "name": "National MedSupply",
-        "walletAddress": "0xaaabbbcccdddeeefff000111222333444555666",
+        "walletAddress": "0xfd5Bb320199E6bEA38ac1A2C7bf51Bfa0d3E5ab4",
         "category": "distributor",
         "location": "Phoenix, USA",
         "coverage": "Southwest Region",
@@ -147,7 +147,7 @@
       {
         "id": "ret_008",
         "name": "Downtown Medical Supply",
-        "walletAddress": "0x7070e0e0fcfcffffff000333666999cccffffffff",
+        "walletAddress": "0x84Ba1f39b0453aE2749A55f4C6f48eAE813584c7",
         "category": "retailer",
         "location": "San Francisco, CA",
         "type": "Medical Supply Store",

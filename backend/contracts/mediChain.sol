@@ -95,6 +95,7 @@ contract MedicineCrateTracking {
 
     function crateSent(string memory crateCode, address to) public onlyCurrentHolder(crateCode) {
         Crate storage crate = crates[crateCode];
+        require(crate.exists, "crate doesnt exist 1");
         require(!crate.inTransit, "Crate is already in transit");
 
         crate.inTransit = true;

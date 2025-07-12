@@ -23,7 +23,7 @@ export default function RetailerPortal() {
 
   // Mock crate journey data
   const crateJourney = {
-    crateCode: "MC-1704123456-7890",
+    crateCode: "BFIT0",
     medicineName: "Paracetamol 500mg",
     batchId: "B001",
     bottleCount: 100,
@@ -216,7 +216,7 @@ export default function RetailerPortal() {
 
               <Button
                 onClick={confirmDelivery}
-                disabled={!deliveryAcknowledged || !isVerified}
+                disabled={!deliveryAcknowledged || isVerified}
                 className="w-full bg-purple-600 hover:bg-purple-700"
               >
                 Confirm Final Delivery
@@ -232,7 +232,7 @@ export default function RetailerPortal() {
             )}
 
 
-              {!isVerified && <p className="text-sm text-gray-500">Please verify crate authenticity first</p>}
+              {isVerified && <p className="text-sm text-gray-500">Please verify crate authenticity first</p>}
             </CardContent>
           </Card>
         </div>
