@@ -20,6 +20,8 @@ export default function DistributorPortal() {
   const [selectedCrate, setSelectedCrate] = useState("MC-1704123456-7890")
   const [selectedRetailer, setSelectedRetailer] = useState<any>(null)
   const [currentDistributor, setCurrentDistributor] = useState<any>(null)
+  const [receiveCrateCodeForAssignment, setreceiveCrateCodeForAssignment] = useState("")
+  const [sendCrateCodeForAssignment, setsendCrateCodeForAssignment] = useState("")
   const [assignedManufacturer, setAssignedManufacturer] = useState<any>(null)
   const [distributorData, setDistributorData] = useState({
     storageLocation: "",
@@ -65,7 +67,7 @@ export default function DistributorPortal() {
       
       // Simulate receiving crate from manufacturer (in real app, this would be triggered by manufacturer)
       // For demo purposes, we'll simulate the receive action
-      await receiveCrate(crateDetails.crateCode)
+      await receiveCrate(receiveCrateCodeForAssignment)
 
       toast({
         title: "Success",
@@ -197,47 +199,16 @@ export default function DistributorPortal() {
             </CardHeader>
             <CardContent className="px-4 sm:px-6">
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <Label htmlFor="storageLocation" className="text-sm sm:text-base">
-                    Storage Location
-                  </Label>
-                  <Input
-                    id="storageLocation"
-                    value={distributorData.storageLocation}
-                    onChange={(e) => handleInputChange("storageLocation", e.target.value)}
-                    placeholder="Enter storage facility address"
-                    required
-                    className="text-sm sm:text-base"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="shippingDetails" className="text-sm sm:text-base">
-                    Shipping Details
-                  </Label>
-                  <Input
-                    id="shippingDetails"
-                    value={distributorData.shippingDetails}
-                    onChange={(e) => handleInputChange("shippingDetails", e.target.value)}
-                    placeholder="Enter shipping method and carrier"
-                    required
-                    className="text-sm sm:text-base"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="dispatchTimestamp" className="text-sm sm:text-base">
-                    Dispatch Timestamp
-                  </Label>
-                  <Input
-                    id="dispatchTimestamp"
-                    type="datetime-local"
-                    value={distributorData.dispatchTimestamp}
-                    onChange={(e) => handleInputChange("dispatchTimestamp", e.target.value)}
-                    required
-                    className="text-sm sm:text-base"
-                  />
-                </div>
+              <Label htmlFor="crateCodeForAssignment" className="text-sm sm:text-base">
+                Crate Code
+              </Label>
+              <Input
+                id="crateCodeForAssignment"
+                value={receiveCrateCodeForAssignment}
+                onChange={(e) => setreceiveCrateCodeForAssignment(e.target.value)}
+                placeholder="Enter crate code (e.g., XXXXX-XXXXX)"
+                className="text-sm sm:text-base"
+              />
 
                 <Button
                   type="submit"
@@ -257,6 +228,16 @@ export default function DistributorPortal() {
                 <Users className="h-5 w-5" />
                 Select Retailer
               </CardTitle>
+              <Label htmlFor="crateCodeForAssignment" className="text-sm sm:text-base">
+                Crate Code
+              </Label>
+              <Input
+                id="crateCodeForAssignment"
+                value={sendCrateCodeForAssignment}
+                onChange={(e) => setsendCrateCodeForAssignment(e.target.value)}
+                placeholder="Enter crate code (e.g., XXXXX-XXXXX)"
+                className="text-sm sm:text-base"
+              />
               <CardDescription className="text-sm sm:text-base">
                 Choose a retailer to forward your products to
               </CardDescription>
@@ -299,6 +280,7 @@ export default function DistributorPortal() {
           <AssignmentForm
             fromEntity={currentDistributor}
             toEntity={selectedRetailer}
+            crateCode={sendCrateCodeForAssignment}
             assignmentType="distributor-to-retailer"
           />
         </div>

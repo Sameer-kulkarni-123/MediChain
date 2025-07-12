@@ -22,10 +22,11 @@ interface Entity {
 interface AssignmentFormProps {
   fromEntity: Entity | null
   toEntity: Entity | null
+  crateCode: string | null
   assignmentType: "manufacturer-to-distributor" | "distributor-to-retailer"
 }
 
-export function AssignmentForm({ fromEntity, toEntity, assignmentType }: AssignmentFormProps) {
+export function AssignmentForm({ fromEntity, toEntity, crateCode, assignmentType }: AssignmentFormProps) {
   const [assignmentData, setAssignmentData] = useState({
     productName: "",
     batchId: "",
@@ -59,7 +60,7 @@ export function AssignmentForm({ fromEntity, toEntity, assignmentType }: Assignm
     try {
       // Simulate blockchain transaction
       // await new Promise((resolve) => setTimeout(resolve, 2000))
-      const receipt = await sendCrate("MRCZO", toEntity.walletAddress)
+      const receipt = await sendCrate(crateCode, toEntity.walletAddress)
 
       toast({
         title: "Assignment Successful",
