@@ -69,12 +69,12 @@ export default function ManufacturerPortal() {
 
       // Generate second 5 characters
       let secondPart = ""
-      for (let i = 0; i < 5; i++) {
-        secondPart += characters.charAt(Math.floor(Math.random() * characters.length))
-      }
+      // for (let i = 0; i < 5; i++) {
+      //   secondPart += characters.charAt(Math.floor(Math.random() * characters.length))
+      // }
 
       // Combine with hyphen
-      result = `${firstPart}-${secondPart}`
+      result = `${firstPart}${secondPart}`
     } while (usedCodes.has(result))
 
     return result
@@ -512,7 +512,7 @@ export default function ManufacturerPortal() {
                   </div>
 
                   <Button
-                    onClick={() => handleDistributorConfirmation("abcde", selectedDistributor["walletAddress"])}
+                    onClick={() => handleDistributorConfirmation("MRCZO", selectedDistributor["walletAddress"])}
                     className="w-full mt-4 bg-green-600 hover:bg-green-700 text-sm sm:text-base py-2"
                     disabled={isSubmitting}
                   >

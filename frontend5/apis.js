@@ -2,7 +2,7 @@ import Web3 from "web3";
 import contractABI from './abi/MedicineCrateTracking.json';
 
 // const contractAddress = process.env.NEXT_PUBLIC_CONRACT_ADDRESS_IN_SEPOLIA; // Use NEXT_PUBLIC_ to expose in frontend
-const contractAddress = process.env.NEXT_PUBLIC_CONRACT_ADDRESS_IN_LOCAL;
+const contractAddress = process.env.NEXT_PUBLIC_CONRACT_ADDRESS_IN_SEPOLIA;
 
 // Helper: Get Web3 instance and contract (client-side only)
 function getWeb3AndContract() {
@@ -126,6 +126,7 @@ export async function receiveCrate(crateCode) {
 // 4. Mark crate as received by retailer (final destination)
 export async function retailerReceivedCrate(crateCode) {
   try {
+    console.log("calling the retailerReceivedCrate api")
     const { contract } = getWeb3AndContract();
     const account = await getAccount();
     return contract.methods.crateRetailerReceived(crateCode).send({ from: account });

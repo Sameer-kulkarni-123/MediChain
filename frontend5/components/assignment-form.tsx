@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Send } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { sendCrate } from "../apis"
 
 interface Entity {
   id: string
@@ -57,7 +58,8 @@ export function AssignmentForm({ fromEntity, toEntity, assignmentType }: Assignm
 
     try {
       // Simulate blockchain transaction
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      // await new Promise((resolve) => setTimeout(resolve, 2000))
+      const receipt = await sendCrate("MRCZO", toEntity.walletAddress)
 
       toast({
         title: "Assignment Successful",
@@ -103,7 +105,7 @@ export function AssignmentForm({ fromEntity, toEntity, assignmentType }: Assignm
       </CardHeader>
       <CardContent className="px-4 sm:px-6">
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
+          {/* <div>
             <Label htmlFor="productName" className="text-sm sm:text-base">
               Product Name
             </Label>
@@ -115,10 +117,10 @@ export function AssignmentForm({ fromEntity, toEntity, assignmentType }: Assignm
               required
               className="text-sm sm:text-base"
             />
-          </div>
+          </div> */}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
+            {/* <div>
               <Label htmlFor="batchId" className="text-sm sm:text-base">
                 Batch ID
               </Label>
@@ -130,8 +132,8 @@ export function AssignmentForm({ fromEntity, toEntity, assignmentType }: Assignm
                 required
                 className="text-sm sm:text-base"
               />
-            </div>
-            <div>
+            </div> */}
+            {/* <div>
               <Label htmlFor="quantity" className="text-sm sm:text-base">
                 Quantity
               </Label>
@@ -144,10 +146,10 @@ export function AssignmentForm({ fromEntity, toEntity, assignmentType }: Assignm
                 required
                 className="text-sm sm:text-base"
               />
-            </div>
+            </div> */}
           </div>
 
-          <div>
+          {/* <div>
             <Label htmlFor="notes" className="text-sm sm:text-base">
               Notes (Optional)
             </Label>
@@ -159,7 +161,7 @@ export function AssignmentForm({ fromEntity, toEntity, assignmentType }: Assignm
               rows={3}
               className="text-sm sm:text-base"
             />
-          </div>
+          </div> */}
 
           <Button
             type="submit"
