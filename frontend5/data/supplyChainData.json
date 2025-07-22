@@ -3,7 +3,7 @@
       {
         "id": "mfg_001",
         "name": "PharmaCorp Industries",
-        "walletAddress": "0xc4546db5F94e4bf5ef3D85f249768F469C5446C6",
+        "walletAddress": "0x34e6d1B4703CCEa0Ba1BAfE6521aCf141400b2c4",
         "category": "manufacturer",
         "location": "New York, USA",
         "specialization": "Antibiotics & Pain Relief"
@@ -37,7 +37,7 @@
       {
         "id": "dist_001",
         "name": "MediLogistics Corp",
-        "walletAddress": "0xb0F4fe3c7fb8C0a82486BC651cf7430131046Cc1",
+        "walletAddress": "0x445c42B2d513a069daf48B0120D70F7012dcFe09",
         "category": "distributor",
         "location": "Chicago, USA",
         "coverage": "Midwest Region",
@@ -84,7 +84,7 @@
       {
         "id": "ret_001",
         "name": "HealthMart Pharmacy",
-        "walletAddress": "0x08BD476389cE4Df4904a1139E53DdD3A6D384BD0",
+        "walletAddress": "0xeE4Fa8D72b6981524517EfD01fD3eC1e7EfF43cb",
         "category": "retailer",
         "location": "Miami, FL",
         "type": "Chain Pharmacy",
