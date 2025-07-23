@@ -105,10 +105,10 @@ function App() {
 
       <section>
         <h3>Send Sub Crate</h3>
-        <input name="crateCode" placeholder="Crate Code" onChange={(e) => handleChange(e, setSendData)} />
+        {/* <input name="crateCode" placeholder="Crate Code" onChange={(e) => handleChange(e, setSendData)} /> */}
         <input name="subCrateCode" placeholder="Sub Crate Code" onChange={(e) => handleChange(e, setSendData)} />
         <input name="receiverAddress" placeholder="Receiver Address" onChange={(e) => handleChange(e, setSendData)} />
-        <button onClick={() => sendSubCrate(sendData.crateCode, sendData.subCrateCode, sendData.receiverAddress)}>Send Sub Crate</button>
+        <button onClick={() => sendSubCrate(sendData.subCrateCode, sendData.receiverAddress)}>Send Sub Crate</button>
       </section>
 
       <section>
@@ -125,9 +125,9 @@ function App() {
 
       <section>
         <h3>Retailer Receives Sub Crate</h3>
-        <input placeholder="Crate Code" onChange={(e) => setSendData(prev => ({ ...prev, crateCode: e.target.value }))} />
+        {/* <input placeholder="Crate Code" onChange={(e) => setSendData(prev => ({ ...prev, crateCode: e.target.value }))} /> */}
         <input name="subCrateCode" placeholder="Sub Crate Code" onChange={(e) => handleChange(e, setSendData)} />
-        <button onClick={() => retailerReceivedSubCrate(sendData.crateCode, sendData.subCrateCode)}>Retailer Receives Sub Crate</button>
+        <button onClick={() => retailerReceivedSubCrate(sendData.subCrateCode)}>Retailer Receives Sub Crate</button>
       </section>
 
       <section>

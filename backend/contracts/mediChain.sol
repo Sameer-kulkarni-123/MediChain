@@ -102,6 +102,8 @@ contract MedicineCrateTracking {
 
     function createSubCrate(string memory parentCrateCode, string memory subCrateID, string[] memory bottlesIDs) public {
         require(crates[parentCrateCode].isExists, "crate doesn't exist");
+        require(crates[parentCrateCode].currentWalletAddress == msg.sender, "only parent crate holders can create sub crates");
+        require(!crates[parentCrateCode].subCrates[subCrateID].isExists, "the subcrate already exists");
         crates[parentCrateCode].isSubCrateExists = false;
 
         // SubCrate memory newSubCrate = SubCrate
@@ -186,13 +188,14 @@ contract MedicineCrateTracking {
         crate.nextCrateReceiverWalletAddress = address(0);
     }
 
-    function crateRetailerReceived(string memory parentCrateCode, string memory subCrateCode) public {
+    function subCrateRetailerReceived(string memory subCrateCode) public {
+        string memory parentCrateCode = parseCrateFromSubCrate(subCrateCode);
         Crate storage crate = crates[parentCrateCode];
         require(crate.isExists, "crate doesn't exist");
-        require(crate.nextCrateReceiverWalletAddress == msg.sender, "not the allocated receiver");
         require(crate.inTransit, "Crate is not in transit");
         SubCrate storage subCrate = crate.subCrates[subCrateCode];
         require(subCrate.isExists, "subCrate doesn't exist");
+        require(subCrate.nextSubCrateReceiverWalletAddress == msg.sender, "not the allocated receiver for the sub crate");
 
         crate.currentWalletAddress = msg.sender; // to get full backtrack info, M & D addr from pastWalletAddress + currentWalletAddress(from crate)
         crate.inTransit = false;

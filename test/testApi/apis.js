@@ -185,20 +185,18 @@ export async function sendCrate(parentCrateCode, receiverWalletAddress) {
   }
 }
 
-export async function sendSubCrate(parentCrateCode, subCrateCode, receiverWalletAddress){
+export async function sendSubCrate(subCrateCode, receiverWalletAddress){
   /* 
     4. Send Sub Crate to the next holder
 
     params:
-      string parentCrateCode : crate code of sub crate's parent
       string subCrateCode : code of the sub crate you want to send
       address receiverWalletAddress : sub crate reciver's wallet address
     */
   try{
     const { contract } = getWeb3AndContract();
     const account = await getAccount();
-    const Tx = await contract.methods.crateSend(
-      parentCrateCode,
+    const Tx = await contract.methods.subCrateSend(
       subCrateCode,
       receiverWalletAddress
     ).send({ from: account })
@@ -253,19 +251,17 @@ export async function retailerReceivedCrate(parentCrateCode) {
 }
 
 
-export async function retailerReceivedSubCrate(parentCrateCode, subCrateCode){
+export async function retailerReceivedSubCrate(subCrateCode){
   /* 
     7. Receive sub crate by the retailer
 
     params:
-      string parentCrateCode : crate code of the sub crate's parent 
       string subCrateCode : crate code of the sub crate
   */
   try{
     const { contract } = getWeb3AndContract();
     const account = await getAccount();
-    const Tx = await contract.methods.crateRetailerReceived(
-      parentCrateCode, 
+    const Tx = await contract.methods.subCrateRetailerReceived(
       subCrateCode
     ).send({ from: account }) 
     console.log("successfully received sub crate", Tx , "by retail receiver : ", account);
