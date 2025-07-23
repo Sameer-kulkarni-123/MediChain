@@ -22,9 +22,8 @@ interface CreatedCrate {
   fullCrateCodes: string[] // Format: XXXXX-XXXXX
   formData: {
     batchId: string
-    medicineId: string
+    productId: string
     medicineName: string
-    manufacturerPhysicalAddress: string
     cidDocuments: string
     bottleCount: string
   }
@@ -39,9 +38,8 @@ export default function ManufacturerPortal() {
   const [formData, setFormData] = useState({
     crateCode: "",
     batchId: "",
-    medicineId: "",
+    productId: "",
     medicineName: "",
-    manufacturerPhysicalAddress: "",
     cidDocuments: "",
     bottleCount: "",
   })
@@ -238,13 +236,12 @@ export default function ManufacturerPortal() {
       const receipt = await registerCrate(
         formData.crateCode,
         formData.batchId,
-        formData.medicineId,
+        formData.productId,
         formData.medicineName,
         account,
-        formData.manufacturerPhysicalAddress,
         formData.cidDocuments || "",
-        Number.parseInt(formData.bottleCount),
-        bottleCodes
+        // Number.parseInt(formData.bottleCount),
+        // bottleCodes
       )
       console.log("Crate details submitted to blockchain:", receipt)
       console.log("Generated codes stored in system:", fullCrateCodes)
@@ -258,9 +255,8 @@ export default function ManufacturerPortal() {
       setFormData({
         crateCode: "",
         batchId: "",
-        medicineId: "",
+        productId: "",
         medicineName: "",
-        manufacturerPhysicalAddress: "",
         cidDocuments: "",
         bottleCount: "",
       })
@@ -376,14 +372,14 @@ export default function ManufacturerPortal() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="medicineId" className="text-sm sm:text-base">
-                      Medicine ID
+                    <Label htmlFor="productId" className="text-sm sm:text-base">
+                      Product ID
                     </Label>
                     <Input
-                      id="medicineId"
-                      value={formData.medicineId}
-                      onChange={(e) => handleInputChange("medicineId", e.target.value)}
-                      placeholder="Enter medicine ID"
+                      id="productId"
+                      value={formData.productId}
+                      onChange={(e) => handleInputChange("productId", e.target.value)}
+                      placeholder="Enter Product ID"
                       required
                       className="text-sm sm:text-base"
                     />
@@ -403,21 +399,6 @@ export default function ManufacturerPortal() {
                     className="text-sm sm:text-base"
                   />
                 </div>
-
-                <div>
-                  <Label htmlFor="manufacturerPhysicalAddress" className="text-sm sm:text-base">
-                    Manufacturer Physical Address
-                  </Label>
-                  <Input
-                    id="manufacturerPhysicalAddress"
-                    value={formData.manufacturerPhysicalAddress}
-                    onChange={(e) => handleInputChange("manufacturerPhysicalAddress", e.target.value)}
-                    placeholder="Enter manufacturer physical address"
-                    required
-                    className="text-sm sm:text-base"
-                  />
-                </div>
-
                 <div>
                   <Label htmlFor="bottleCount" className="text-sm sm:text-base">
                     Bottle Count
