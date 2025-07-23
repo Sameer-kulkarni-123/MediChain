@@ -1,0 +1,270 @@
+[
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "parentCrateCode",
+          "type": "string"
+        }
+      ],
+      "name": "crateReceived",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "parentCrateCode",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "subCrateCode",
+          "type": "string"
+        }
+      ],
+      "name": "crateRetailerReceived",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "parentCrateCode",
+          "type": "string"
+        }
+      ],
+      "name": "crateRetailerReceived",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "parentCrateCode",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "subCrateCode",
+          "type": "string"
+        },
+        {
+          "internalType": "address",
+          "name": "receiverWalletAddress",
+          "type": "address"
+        }
+      ],
+      "name": "crateSend",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "parentCrateCode",
+          "type": "string"
+        },
+        {
+          "internalType": "address",
+          "name": "receiverWalletAddress",
+          "type": "address"
+        }
+      ],
+      "name": "crateSend",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "name": "crates",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "crateCode",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "productID",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "medicineName",
+          "type": "string"
+        },
+        {
+          "internalType": "address",
+          "name": "manufacturerWalletAddress",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "currentWalletAddress",
+          "type": "address"
+        },
+        {
+          "internalType": "string",
+          "name": "cidDocument",
+          "type": "string"
+        },
+        {
+          "internalType": "uint256",
+          "name": "bottleCount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "nextCrateReceiverWalletAddress",
+          "type": "address"
+        },
+        {
+          "internalType": "bool",
+          "name": "inTransit",
+          "type": "bool"
+        },
+        {
+          "internalType": "bool",
+          "name": "isExists",
+          "type": "bool"
+        },
+        {
+          "internalType": "bool",
+          "name": "isCrateFinalDestination",
+          "type": "bool"
+        },
+        {
+          "internalType": "bool",
+          "name": "isSubCrateExists",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "parentCrateCode",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "subCrateID",
+          "type": "string"
+        },
+        {
+          "internalType": "string[]",
+          "name": "bottlesIDs",
+          "type": "string[]"
+        }
+      ],
+      "name": "createSubCrate",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "bottleCode",
+          "type": "string"
+        }
+      ],
+      "name": "parseCrateFromBottle",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "crateCode",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "productID",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "medicineName",
+          "type": "string"
+        },
+        {
+          "internalType": "address",
+          "name": "manufacturerWalletAddress",
+          "type": "address"
+        },
+        {
+          "internalType": "string",
+          "name": "cidDocument",
+          "type": "string"
+        },
+        {
+          "internalType": "uint256",
+          "name": "bottleCount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "string[]",
+          "name": "bottleIds",
+          "type": "string[]"
+        }
+      ],
+      "name": "registerCrate",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "bottleCode",
+          "type": "string"
+        }
+      ],
+      "name": "scanBottle",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ]

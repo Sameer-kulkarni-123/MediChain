@@ -1,0 +1,87 @@
+
+// export async function getCrate(crateCode) {
+//   try {
+//     const { contract } = getWeb3AndContract();
+//     return contract.methods.crates(crateCode).call();
+//   } catch (error) {
+//     console.error("Error getting crate info:", error);
+//     throw new Error(`Failed to get crate info: ${error.message}`);
+//   }
+// }
+
+// // 7. Get bottle scan info
+// export async function getBottleScan(bottleCode) {
+//   try {
+//     const { contract } = getWeb3AndContract();
+//     return contract.methods.bottleScans(bottleCode).call();
+//   } catch (error) {
+//     console.error("Error getting bottle scan info:", error);
+//     throw new Error(`Failed to get bottle scan info: ${error.message}`);
+//   }
+// }
+
+// // 8. Parse crateCode from bottleCode (helper function)
+// export function parseCrateFromBottle(bottleCode) {
+//   return bottleCode.split("-")[0];
+// }
+
+// // 9. Get all events for a crate (helper function)
+// export async function getCrateEvents(crateCode) {
+//   try {
+//     const { contract } = getWeb3AndContract();
+//     const events = await contract.getPastEvents('allEvents', {
+//       filter: { crateCode: crateCode },
+//       fromBlock: 0,
+//       toBlock: 'latest'
+//     });
+//     return events;
+//   } catch (error) {
+//     console.error("Error getting crate events:", error);
+//     throw new Error(`Failed to get crate events: ${error.message}`);
+//   }
+// }
+
+// // 10. Get bottle scan events (helper function)
+// export async function getBottleScanEvents(bottleCode) {
+//   try {
+//     const { contract } = getWeb3AndContract();
+//     const events = await contract.getPastEvents('BottleScanned', {
+//       filter: { bottleCode: bottleCode },
+//       fromBlock: 0,
+//       toBlock: 'latest'
+//     });
+//     return events;
+//   } catch (error) {
+//     console.error("Error getting bottle scan events:", error);
+//     throw new Error(`Failed to get bottle scan events: ${error.message}`);
+//   }
+// }
+
+// // 11. Debug function to check contract connection
+// export async function debugContractConnection() {
+//   try {
+//     const { contract, web3 } = getWeb3AndContract();
+//     const account = await getAccount();
+//     const networkId = await web3.eth.net.getId();
+//     const balance = await web3.eth.getBalance(account);
+    
+//     console.log("Debug Info:", {
+//       contractAddress,
+//       account,
+//       networkId,
+//       balance: web3.utils.fromWei(balance, 'ether') + " ETH",
+//       isConnected: !!account
+//     });
+    
+//     return {
+//       contractAddress,
+//       account,
+//       networkId,
+//       balance: web3.utils.fromWei(balance, 'ether'),
+//       isConnected: !!account
+//     };
+//   } catch (error) {
+//     console.error("Debug connection error:", error);
+//     throw error;
+//   }
+// }
