@@ -41,6 +41,7 @@ contract MedicineCrateTracking {
         bool isSubCrateFinalDestination;
         bool isExists;
         string parentCrateID;
+        address subCrateCurrentHolderWalletAddress;
     }
 
     mapping(string => Crate) public crates;
@@ -111,6 +112,7 @@ contract MedicineCrateTracking {
         newSubCrate.isSubCrateFinalDestination = false;
         newSubCrate.isExists = true;
         newSubCrate.parentCrateID = parentCrateCode;
+        newSubCrate.subCrateCurrentHolderWalletAddress = msg.sender;
         crates[parentCrateCode].subCratesList.push(subCrateID);
 
         uint bottlesArrLen = bottlesIDs.length;
@@ -135,6 +137,8 @@ contract MedicineCrateTracking {
         Crate storage crate = crates[parentCrateCode];
         require(crate.isExists, "crate doesn't exist");
         require(!crate.inTransit, "crate already in transit");
+        require(!crate.isSubCrateExists, "The crate has been divided into subCrates and cannot be sent");
+
         //add new require to enforce only the crate holder can send the crate
         require(crate.currentWalletAddress == msg.sender, "crate can only be sent by the one holding it");
 
@@ -143,13 +147,16 @@ contract MedicineCrateTracking {
         crate.pastWalletAddress.push(crate.currentWalletAddress);
     }
 
-    function crateSend(string memory parentCrateCode, string memory subCrateCode, address receiverWalletAddress) public {
+    //for sub crates
+    function subCrateSend(string memory subCrateCode, address receiverWalletAddress) public {
+        string memory parentCrateCode = parseCrateFromSubCrate(subCrateCode);
         Crate storage crate = crates[parentCrateCode];
         require(crate.isExists, "crate doesn't exist");
         require(crate.subCrates[subCrateCode].isExists, "subCrate doesn't exist");
         require(!crate.inTransit, "crate already in transit");
 
         SubCrate storage subCrate = crate.subCrates[subCrateCode];
+        require(subCrate.subCrateCurrentHolderWalletAddress == msg.sender, "you dont currently hold the subCrate you are trying to send");
 
         crate.inTransit = true;
         subCrate.nextSubCrateReceiverWalletAddress = receiverWalletAddress;
@@ -194,7 +201,7 @@ contract MedicineCrateTracking {
     }
 
     function scanBottle(string memory bottleCode) public returns(bool){
-        (string memory crateCode, string memory bottleId) = parseCrateFromBottle(bottleCode);
+        string memory crateCode = parseCrateFromBottle(bottleCode);
         Crate storage crate = crates[crateCode];
         require(crate.isExists, "crate doesn't exists");
 
@@ -202,7 +209,7 @@ contract MedicineCrateTracking {
             bool flag = false;
             string memory subCrateConsists;
             for(uint i = 0; i < crate.subCratesList.length; i++){
-               if(crate.subCrates[crate.subCratesList[i]].bottles[bottleId].isExists){
+               if(crate.subCrates[crate.subCratesList[i]].bottles[bottleCode].isExists){
                 flag = true;
                 subCrateConsists = crate.subCratesList[i];
                 break;
@@ -228,7 +235,7 @@ contract MedicineCrateTracking {
 
         }
         else{
-            Bottle storage bottle = crate.bottles[bottleId];
+            Bottle storage bottle = crate.bottles[bottleCode];
             if(bottle.isExists){
                 if(bottle.scanned){
                     return false;
@@ -245,8 +252,45 @@ contract MedicineCrateTracking {
         
     }
 
-    function parseCrateFromBottle(string memory bottleCode) public pure returns(string memory, string memory){
-        //pass
+
+    function parseCrateFromBottle(string memory bottleCode) public pure returns (string memory crateCode){
+        bytes memory bottleBytes = bytes(bottleCode);
+
+        require(bottleBytes.length == 11, "Bottle code not of the right size");
+
+        bytes memory crateBytes = new bytes(5);
+        for (uint256 i = 0; i < 5; i++) {
+            crateBytes[i] = bottleBytes[i];
+        }
+
+        bytes memory remainingBytes = new bytes(5);
+        for (uint256 i = 6; i < 11; i++) {
+            remainingBytes[i - 6] = bottleBytes[i];
+        }
+
+        return string(crateBytes);
+    }
+
+
+    //{crateCode}_{subCrateCode} GF2IG_JGH8C
+    function parseCrateFromSubCrate(string memory subCrateCode) public pure returns(string memory){
+        bytes memory bottleBytes = bytes(subCrateCode);
+
+        require(bottleBytes.length == 11, "Sub Crate code not of the right size");
+
+        bytes memory crateBytes = new bytes(5);
+        for (uint256 i = 0; i < 5; i++) {
+            crateBytes[i] = bottleBytes[i];
+        }
+
+        bytes memory remainingBytes = new bytes(5);
+        for (uint256 i = 6; i < 11; i++) {
+            remainingBytes[i - 6] = bottleBytes[i];
+        }
+
+        return string(crateBytes);
+
+
     }
 
 }
