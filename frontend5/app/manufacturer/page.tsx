@@ -325,7 +325,7 @@ export default function ManufacturerPortal() {
                     <div className="min-w-0 flex-1">
                       <h3 className="font-medium text-gray-900 text-sm sm:text-base">Crate Code</h3>
                       <p className="text-xs sm:text-sm text-gray-600">
-                        Generate a unique 10-character crate code (XXXXX format)
+                        Generate a unique 5-character crate code (XXXXX format)
                       </p>
                     </div>
                     <Button
@@ -346,7 +346,7 @@ export default function ManufacturerPortal() {
                   {formData.crateCode && (
                     <div className="mt-2 space-y-1">
                       <Badge variant="outline" className="text-green-600 border-green-600 text-xs sm:text-sm">
-                        10-Character Crate Code Generated Successfully
+                        5-Character Crate Code Generated Successfully
                       </Badge>
                       <p className="text-xs text-gray-600">
                         All bottle codes will use prefix: {formData.crateCode.split("-")[0]}-XXXXX
@@ -471,7 +471,7 @@ export default function ManufacturerPortal() {
                 id="crateCodeForAssignment"
                 value={manualCrateCodeForAssignment}
                 onChange={(e) => setManualCrateCodeForAssignment(e.target.value)}
-                placeholder="Enter crate code (e.g., XXXXX)"
+                placeholder="Enter crate code (e.g., EQ5K6)"
                 className="text-sm sm:text-base"
               />
               <SearchableDropdown
