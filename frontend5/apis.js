@@ -305,19 +305,18 @@ export async function scanBottle(bottleCode){
 
 //Blockchain Read only functions:
 
-export async function getAllCrates(){
-
-}
-
-export async function getAllSubCratesOfCrate(parentCrateCode){
-
-}
-
-export async function getCrateInfo(){
-
-}
-
 export async function getAllBottlesOfCrate(parentCrateCode){
+  /* 
+    8. Get all the bottles available to be made into sub crate
+
+    params:
+      string parentCrateCode : parentCrateCode
+    
+    returns:
+      string[] : a list of all the available bottle codes
+
+  */
+
   try{
     const { contract } = getWeb3AndContract();
     const account = await getAccount();
@@ -332,6 +331,21 @@ export async function getAllBottlesOfCrate(parentCrateCode){
   }
 
 }
+
+//yet to be implemented functions:
+
+export async function getAllCrates(){
+
+}
+
+export async function getAllSubCratesOfCrate(parentCrateCode){
+
+}
+
+export async function getCrateInfo(){
+
+}
+
 
 export async function getAllBottlesOfSubCrate(){
 
