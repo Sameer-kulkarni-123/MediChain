@@ -2,7 +2,29 @@ import Web3 from "web3";
 import contractABI from './abi/MedicineCrateTracking.json';
 
 // const contractAddress = process.env.NEXT_PUBLIC_CONRACT_ADDRESS_IN_SEPOLIA;
-const contractAddress = process.env.NEXT_PUBLIC_CONRACT_ADDRESS_IN_LOCAL;
+// const contractAddress = process.env.NEXT_PUBLIC_CONRACT_ADDRESS_IN_LOCAL;
+// const contractAddress = process.env.VITE_REACT_APP_CONRACT_ADDRESS_IN_LOCAL;
+const contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS_IN_LOCAL;
+
+
+export async function debugIsExists(crateCode){
+  try{
+    const { web3, contract } = getWeb3AndContract();
+    const account = await getAccount();
+    console.log("Network ID:", await web3.eth.net.getId());
+    console.log("Code at addr:", await web3.eth.getCode(contractAddress));
+    const Tx =  await contract.methods.debugIsExists(
+      crateCode, 
+    ).call({from : account})
+    console.log("debug crate code", Tx);
+    return Tx;
+  }catch(e){
+    console.error("Error debug crate code", e)
+    throw new Error(`Failed to debug crate code: ${e.message}`)
+  }
+
+}
+
 
 
 // Helper functions: Get Web3 instance and contract (client-side only)
@@ -37,7 +59,7 @@ export async function getAccount() {
 
 //Blockchain Read and Write Functions:
 
-export async function registerCrate(crateCode, productID, medicineName, cidDocument, bottleCount, bottleIds){
+export async function registerCrate(crateCode, productID, medicineName, cidDocument, bottleCount, bottleIds ) {
   /* 
     1. Register a new crate
 
@@ -68,7 +90,7 @@ export async function registerCrate(crateCode, productID, medicineName, cidDocum
     const account = await getAccount();
     
     // Validate parameters
-    if (!crateCode || !productID || !medicineName || !manufacturerWalletAddress || cidDocument || bottleCount) {
+    if (!crateCode || !productID || !medicineName || !cidDocument || !bottleCount) {
       throw new Error("Missing required parameters for crate registration");
     }
     
@@ -86,7 +108,7 @@ export async function registerCrate(crateCode, productID, medicineName, cidDocum
       crateCode,
       productID,
       medicineName,
-      manufacturerWalletAddress,
+      // manufacturerWalletAddress,
       cidDocument,
       bottleCount,
       bottleIds
@@ -163,20 +185,18 @@ export async function sendCrate(parentCrateCode, receiverWalletAddress) {
   }
 }
 
-export async function sendSubCrate(parentCrateCode, subCrateCode, receiverWalletAddress){
+export async function sendSubCrate(subCrateCode, receiverWalletAddress){
   /* 
     4. Send Sub Crate to the next holder
 
     params:
-      string parentCrateCode : crate code of sub crate's parent
       string subCrateCode : code of the sub crate you want to send
       address receiverWalletAddress : sub crate reciver's wallet address
     */
   try{
     const { contract } = getWeb3AndContract();
     const account = await getAccount();
-    const Tx = await contract.methods.crateSend(
-      parentCrateCode,
+    const Tx = await contract.methods.subCrateSend(
       subCrateCode,
       receiverWalletAddress
     ).send({ from: account })
@@ -231,28 +251,17 @@ export async function retailerReceivedCrate(parentCrateCode) {
 }
 
 
-export async function retailerReceivedSubCrate(parentCrateCode, subCrateCode){
+export async function retailerReceivedSubCrate(subCrateCode){
   /* 
     7. Receive sub crate by the retailer
 
     params:
-      string parentCrateCode : crate code of the sub crate's parent 
       string subCrateCode : crate code of the sub crate
   */
   try{
     const { contract } = getWeb3AndContract();
     const account = await getAccount();
-    const Tx = await contract.methods.crateRetailerReceived(
-      parentCrateCode, 
-      subCrateCode
-    ).send({ from: account }) 
-    console.log("successfully received sub crate", Tx , "by retail receiver : ", account);
-    return Tx;
-  }catch(error){
-    console.error("Error marking crate as received by retailer:", error);
-    throw new Error(`Failed to mark crate as received: ${error.message}`);
-    const Tx = await contract.methods.crateRetailerReceived(
-      parentCrateCode, 
+    const Tx = await contract.methods.subCrateRetailerReceived(
       subCrateCode
     ).send({ from: account }) 
     console.log("successfully received sub crate", Tx , "by retail receiver : ", account);
