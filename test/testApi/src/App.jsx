@@ -8,7 +8,8 @@ import {
   retailerReceivedCrate,
   retailerReceivedSubCrate,
   scanBottle,
-  debugIsExists
+  debugIsExists,
+  getAllBottlesOfCrate
 } from "../apis"
 
 function App() {
@@ -36,6 +37,7 @@ function App() {
   const[ crateCodeForDebug, setcrateCodeForDebug ] = useState("")
 
   const [bottleCode, setBottleCode] = useState("");
+    const [retrivedBottles, setretrivedBottles] = useState([]);
 
   const handleChange = (e, objSetter) => {
     const { name, value } = e.target;
@@ -75,6 +77,21 @@ function App() {
           crateData.bottleIds
         )
         }}>Register Crate</button>
+      </section>
+
+      <section>
+        <h3>View all bottles in Crate</h3>
+        <input name="crateCode" placeholder="Crate Code" onChange={(e) => handleChange(e, setSendData)} />
+        <button onClick={async () => {
+          const bottlesOfCrate = await getAllBottlesOfCrate(sendData.crateCode)
+          setretrivedBottles(bottlesOfCrate)
+        }
+        }>Retrieve bottles</button>
+        <ul>
+          {retrivedBottles.map((bottle, index) => (
+            <li key={index}>{bottle}</li>
+          ))}
+        </ul>
       </section>
 
       <section>

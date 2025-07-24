@@ -206,7 +206,7 @@ export default function ManufacturerPortal() {
       const fullCrateCodes = bottleCodes
 
       // Add all codes to used codes
-      const newUsedCodes = new Set(usedCodes)
+      const newUsedCodes = new Set(usedCodes) //have to use backend
       newUsedCodes.add(crateCode)
       bottleCodes.forEach((code) => newUsedCodes.add(code))
 
@@ -235,13 +235,13 @@ export default function ManufacturerPortal() {
       // Call the blockchain API
       const receipt = await registerCrate(
         formData.crateCode,
-        formData.batchId,
+        // formData.batchId,    //adding it to contract later
         formData.productId,
         formData.medicineName,
-        account,
+        // account,
         formData.cidDocuments || "",
-        // Number.parseInt(formData.bottleCount),
-        // bottleCodes
+        Number.parseInt(formData.bottleCount),
+        bottleCodes
       )
       console.log("Crate details submitted to blockchain:", receipt)
       console.log("Generated codes stored in system:", fullCrateCodes)
@@ -325,7 +325,7 @@ export default function ManufacturerPortal() {
                     <div className="min-w-0 flex-1">
                       <h3 className="font-medium text-gray-900 text-sm sm:text-base">Crate Code</h3>
                       <p className="text-xs sm:text-sm text-gray-600">
-                        Generate a unique 10-character crate code (XXXXX-XXXXX format)
+                        Generate a unique 10-character crate code (XXXXX format)
                       </p>
                     </div>
                     <Button
@@ -471,7 +471,7 @@ export default function ManufacturerPortal() {
                 id="crateCodeForAssignment"
                 value={manualCrateCodeForAssignment}
                 onChange={(e) => setManualCrateCodeForAssignment(e.target.value)}
-                placeholder="Enter crate code (e.g., XXXXX-XXXXX)"
+                placeholder="Enter crate code (e.g., XXXXX)"
                 className="text-sm sm:text-base"
               />
               <SearchableDropdown

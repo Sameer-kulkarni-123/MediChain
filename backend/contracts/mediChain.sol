@@ -20,6 +20,7 @@ contract MedicineCrateTracking {
         bool isCrateFinalDestination;
         bool isSubCrateExists;
         mapping(string => Bottle) bottles; 
+        string[] bottlesList;
     }
 
     struct Bottle {
@@ -37,6 +38,7 @@ contract MedicineCrateTracking {
     struct SubCrate {
         string subCrateID;
         mapping(string => Bottle) bottles;
+        string[] bottlesList;
         address nextSubCrateReceiverWalletAddress;
         bool isSubCrateFinalDestination;
         bool isExists;
@@ -85,6 +87,8 @@ contract MedicineCrateTracking {
 
     uint bottleIdsLength = bottleIds.length;
 
+    c.bottlesList = bottleIds;
+
     for(uint i = 0; i < bottleIdsLength; i++){
         Bottle storage b = crates[crateCode].bottles[bottleIds[i]];
 
@@ -119,7 +123,10 @@ contract MedicineCrateTracking {
 
         uint bottlesArrLen = bottlesIDs.length;
 
+        crates[parentCrateCode].subCrates[subCrateID].bottlesList = bottlesIDs;
+
         for(uint i = 0; i < bottlesArrLen; i++) {
+            require(crates[parentCrateCode].bottles[bottlesIDs[i]].isExists, "The bottles to be put in the sub crate don't exist in the parent crate");
             Bottle storage b = crates[parentCrateCode].subCrates[subCrateID].bottles[bottlesIDs[i]];
             
             b.bottleID = bottlesIDs[i];
@@ -131,6 +138,9 @@ contract MedicineCrateTracking {
             b.parentCrateID = parentCrateCode;
             b.parentSubCrateID = subCrateID;
             b.isSubCrateExists = true;
+
+            crates[parentCrateCode].bottles[bottlesIDs[i]].isExists = false;
+
         }
     }
 
@@ -294,6 +304,33 @@ contract MedicineCrateTracking {
         return string(crateBytes);
 
 
+    }
+
+    function getAllBottlesOfCrate(string memory parentCrateCode) public view returns(string[] memory){
+        Crate storage crate = crates[parentCrateCode];
+        require(crate.isExists, "the crate doesn't exitst");
+
+        string[] memory bottleIds = crate.bottlesList;
+
+        uint256 count = 0;
+        for(uint256 i = 0; i < bottleIds.length; i++){
+            if(crate.bottles[bottleIds[i]].isExists){
+                count++;
+            }
+        }
+
+        string[] memory validBottleIds = new string[](count);
+        uint256 temp = 0;
+
+        for(uint256 i = 0; i < bottleIds.length; i++){
+            if(crate.bottles[bottleIds[i]].isExists){
+                validBottleIds[temp] = bottleIds[i];
+                temp++;
+            }
+
+        }
+        
+        return validBottleIds;
     }
 
 }

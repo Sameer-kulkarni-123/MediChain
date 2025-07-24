@@ -27,7 +27,7 @@
       {
         "id": "mfg_004",
         "name": "Global Pharma Ltd",
-        "walletAddress": "0x1234567890abcdef1234567890abcdef12345678",
+        "walletAddress": "0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199",
         "category": "manufacturer",
         "location": "Illinois, USA",
         "specialization": "Vaccines & Immunology"
@@ -46,7 +46,7 @@
       {
         "id": "dist_002",
         "name": "HealthSupply Networks",
-        "walletAddress": "0xabcdef1234567890abcdef1234567890abcdef12",
+        "walletAddress": "0xdD2FD4581271e230360230F9337D5c0430Bf44C0",
         "category": "distributor",
         "location": "Atlanta, USA",
         "coverage": "Southeast Region",
@@ -93,7 +93,7 @@
       {
         "id": "ret_002",
         "name": "City Medical Center",
-        "walletAddress": "0x1010202030304040505060607070808090909090",
+        "walletAddress": "0xbDA5747bFD65F08deb54cb465eB87D40e51B197E",
         "category": "retailer",
         "location": "Boston, MA",
         "type": "Hospital",

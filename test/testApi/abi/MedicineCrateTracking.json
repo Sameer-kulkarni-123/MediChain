@@ -163,6 +163,25 @@
       "inputs": [
         {
           "internalType": "string",
+          "name": "parentCrateCode",
+          "type": "string"
+        }
+      ],
+      "name": "getAllBottlesOfCrate",
+      "outputs": [
+        {
+          "internalType": "string[]",
+          "name": "",
+          "type": "string[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
           "name": "bottleCode",
           "type": "string"
         }
@@ -285,4 +304,4 @@
       "stateMutability": "nonpayable",
       "type": "function"
     }
-  ]
+]

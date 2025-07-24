@@ -108,7 +108,7 @@ export default function DistributorPortal() {
 
     try {
       // Get current account
-      const account = await getAccount()
+      // const account = await getAccount()
 
       // Simulate receiving crate from manufacturer (in real app, this would be triggered by manufacturer)
       // For demo purposes, we'll simulate the receive action

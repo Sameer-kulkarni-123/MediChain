@@ -5,6 +5,8 @@ import contractABI from './abi/MedicineCrateTracking.json';
 // const contractAddress = process.env.NEXT_PUBLIC_CONRACT_ADDRESS_IN_LOCAL;
 // const contractAddress = process.env.VITE_REACT_APP_CONRACT_ADDRESS_IN_LOCAL;
 const contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS_IN_LOCAL;
+// const contractAddress = process.env.NEXT_PUBLIC_CONRACT_ADDRESS_IN_LOCAL;
+
 
 
 export async function debugIsExists(crateCode){
@@ -315,16 +317,22 @@ export async function getCrateInfo(){
 
 }
 
-export async function getAllBottlesOfCrate(){
+export async function getAllBottlesOfCrate(parentCrateCode){
+  try{
+    const { contract } = getWeb3AndContract();
+    const account = await getAccount();
+    const Tx = await contract.methods.getAllBottlesOfCrate(
+      parentCrateCode
+    ).call({ from: account });
+    console.log("successfully retrived all bottleIds");
+    return Tx; 
+  }catch(error){
+    console.error("error retriving the bottleIds");
+    throw new Error(`failed to retrive the bottleIds ${error.message}`);
+  }
 
 }
 
 export async function getAllBottlesOfSubCrate(){
 
 }
-
-
-
-
-//Blockchain Pure functions:
-
