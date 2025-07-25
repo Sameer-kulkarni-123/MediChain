@@ -59,7 +59,7 @@ export function AssignmentForm({
           })
           return
         }
-        receipt = await sendSubCrate(parentCrateCode, subCrateCode, toEntity.walletAddress)
+        receipt = await sendSubCrate(subCrateCode, toEntity.walletAddress)
       } else {
         // assignmentType === "crate"
         if (!crateCode) {

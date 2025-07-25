@@ -13,7 +13,7 @@ import { SearchableDropdown } from "@/components/searchable-dropdown"
 import { ConnectionPath } from "@/components/connection-path"
 import supplyChainData from "@/data/supplyChainData.json"
 import { useToast } from "@/hooks/use-toast"
-import { receiveCrate, getAccount, createSubCrate,getCrateInfo } from "../../apis"
+import { receiveCrate, getAccount, createSubCrate,getAllBottlesOfCrate} from "../../apis"
 import { MultiSelectDropdown } from "@/components/multi-select-dropdown"
 import { AssignmentForm } from "@/components/assignment-form" // Ensure this is imported
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select" // Import Select components
@@ -101,25 +101,38 @@ export default function DistributorPortal() {
       [field]: value,
     }))
   }
-const [crateInfo, setCrateInfo] = useState<any>(null); // To store crate info result
-
 const handleGetCrateInfo = async () => {
-  try {
-    const result = await getCrateInfo(parentCrateCodeForSubCrate);
-    console.log("Crate Info:", result);
-    setCrateInfo(result);
-    toast({
-      title: "Crate Found",
-      description: `Crate ${parentCrateCodeForSubCrate} is valid.`,
-    });
-  } catch (error: any) {
-    console.error("Failed to fetch crate info:", error);
+  if (!parentCrateCodeForSubCrate) {
     toast({
       title: "Error",
-      description: error.message || "Could not fetch crate info.",
+      description: "Please enter a valid Parent Crate Code first.",
       variant: "destructive",
     });
-    setCrateInfo(null); // Clear previous info
+    return;
+  }
+
+  try {
+    const bottleIds = await getAllBottlesOfCrate(parentCrateCodeForSubCrate) as string[];
+    console.log("Bottle IDs:", bottleIds);
+    
+    // Convert to the format expected by MultiSelectDropdown
+    const formattedBottleIds = bottleIds.map((id: string) => ({
+      value: id,
+      label: id,
+    }));
+    setAvailableBottleIds(formattedBottleIds);
+
+    toast({
+      title: "Success",
+      description: `Fetched ${bottleIds.length} bottles for crate ${parentCrateCodeForSubCrate}`,
+    });
+  } catch (error: any) {
+    console.error("Error fetching bottle IDs:", error);
+    toast({
+      title: "Error",
+      description: `Failed to fetch bottle IDs: ${error.message}`,
+      variant: "destructive",
+    });
   }
 };
 
@@ -357,12 +370,12 @@ const handleGetCrateInfo = async () => {
                   className="text-sm sm:text-base"
                 />
               </div>
-             <Button onClick={handleGetCrateInfo}
-             className="w-full bg-blue-600 hover:bg-blue-700 text-sm sm:text-base py-2 sm:py-3"
-             disabled={!parentCrateCodeForSubCrate || isCreatingSubCrate}>
-              
+            <Button onClick={handleGetCrateInfo}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-sm sm:text-base py-2 sm:py-3"
+               disabled={!parentCrateCodeForSubCrate}>
                 Get Crate Info
-             </Button>
+            </Button>
+
 
               <MultiSelectDropdown
                 label="Bottle IDs"
