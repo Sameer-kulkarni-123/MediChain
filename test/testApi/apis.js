@@ -294,6 +294,13 @@ export async function scanBottle(bottleCode){
     const Tx = await contract.methods.scanBottle(
       bottleCode
     ).send({ from: account });
+    
+    const event = Tx.events.BottleScanned;
+    if (event) {
+      const result = event.returnValues.success;
+      console.log("Scan result from event: ", result);
+    }
+
     console.log("scanned the bottle successfully (return may be true or false) : ", Tx);
     return Tx; // this doesnt directly return if the bottle is valid
   }catch(error){

@@ -1,5 +1,24 @@
 [
     {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "bottleCode",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "bool",
+          "name": "success",
+          "type": "bool"
+        }
+      ],
+      "name": "BottleScanned",
+      "type": "event"
+    },
+    {
       "inputs": [
         {
           "internalType": "string",

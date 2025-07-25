@@ -213,10 +213,13 @@ contract MedicineCrateTracking {
         crate.nextCrateReceiverWalletAddress = address(0);
     }
 
+    event BottleScanned(string bottleCode, bool success);
+
     function scanBottle(string memory bottleCode) public returns(bool){
         string memory crateCode = parseCrateFromBottle(bottleCode);
         Crate storage crate = crates[crateCode];
         require(crate.isExists, "crate doesn't exists");
+
 
         if (crate.isSubCrateExists) {
             bool flag = false;
@@ -229,20 +232,30 @@ contract MedicineCrateTracking {
                } 
             }
             if (!flag){
-                return false;
+                bool isValid = false;
+                emit BottleScanned(bottleCode, isValid);
+                return isValid;
             }
             
             if(crate.subCrates[subCrateConsists].isSubCrateFinalDestination){
                 if(crate.subCrates[subCrateConsists].bottles[bottleCode].scanned){
-                    return false;
+                    bool isValid = false;
+                    emit BottleScanned(bottleCode, isValid);
+                    return isValid;
                 }
                 else{
                     crate.subCrates[subCrateConsists].bottles[bottleCode].scanned = true;
-                    return true;
+                    
+                    bool isValid = true;
+                    emit BottleScanned(bottleCode, isValid);
+                    return isValid;
+                    
                 }
             }
             else{
-                return false;
+                bool isValid = false;
+                emit BottleScanned(bottleCode, isValid);
+                return isValid;
             }
 
 
@@ -251,15 +264,21 @@ contract MedicineCrateTracking {
             Bottle storage bottle = crate.bottles[bottleCode];
             if(bottle.isExists){
                 if(bottle.scanned){
-                    return false;
+                    bool isValid = false;
+                    emit BottleScanned(bottleCode, isValid);
+                    return isValid;
                 }
                 else{
+                    bool isValid = true;
                     bottle.scanned = true;
-                    return true;
+                    emit BottleScanned(bottleCode, isValid);
+                    return isValid;
                 }
             }
             else{
-                return false;
+                bool isValid = false;
+                emit BottleScanned(bottleCode, isValid);
+                return isValid;
             }
         }
         
