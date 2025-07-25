@@ -320,8 +320,8 @@ export async function getAllSubCratesOfCrate(parentCrateCode){
 
 }
 
-export async function getCrateInfo(){
-
+export async function getCrateInfo(parentCrateCode){
+  console.log("getting crate info for crate code: ", parentCrateCode);
 }
 
 export async function getAllBottlesOfCrate(parentCrateCode){
