@@ -235,13 +235,13 @@ export default function ManufacturerPortal() {
       // Call the blockchain API
       const receipt = await registerCrate(
         formData.crateCode,
-        // formData.batchId,    //adding it to contract later
+        formData.batchId,    //adding it to contract later
         formData.productId,
         formData.medicineName,
         // account,
         formData.cidDocuments || "",
         Number.parseInt(formData.bottleCount),
-        bottleCodes
+        bottleCodes,
       )
       console.log("Crate details submitted to blockchain:", receipt)
       console.log("Generated codes stored in system:", fullCrateCodes)

@@ -5,6 +5,7 @@ contract MedicineCrateTracking {
 
     struct Crate {
         string crateCode;
+        string batchID;
         string productID;
         string medicineName;
         address manufacturerWalletAddress;
@@ -56,6 +57,7 @@ contract MedicineCrateTracking {
 
     function registerCrate(
         string memory crateCode,
+        string memory batchID,
         string memory productID,
         string memory medicineName,
         // address manufacturerWalletAddress,
@@ -71,6 +73,7 @@ contract MedicineCrateTracking {
     Crate storage c = crates[crateCode];
 
     c.crateCode = crateCode;
+    c.batchID = batchID;
     c.productID = productID;
     c.medicineName = medicineName;
     c.manufacturerWalletAddress = msg.sender;
@@ -351,6 +354,43 @@ contract MedicineCrateTracking {
         
         return validBottleIds;
     }
+    
+    function retrieveCrateInfo(string memory parentCrateCode) public view returns(string[] memory){
+        Crate storage crate = crates[parentCrateCode];
+        require(crate.isExists, "The crate doesn't exist");
+        string[] memory retArr = new string[](4);
+
+        string memory strBottleCount = uintToString(crate.bottleCount);
+
+        retArr[0] = crate.crateCode;
+        retArr[1] = crate.medicineName;
+        retArr[2] = "placeholder batchID";
+        retArr[3] = strBottleCount;
+
+        return retArr;
+
+
+    }
+
+    function uintToString(uint256 _value) internal pure returns (string memory) {
+        if (_value == 0) {
+            return "0";
+        }
+        uint256 temp = _value;
+        uint256 digits;
+        while (temp != 0) {
+            digits++;
+            temp /= 10;
+        }
+        bytes memory buffer = new bytes(digits);
+        while (_value != 0) {
+            digits -= 1;
+            buffer[digits] = bytes1(uint8(48 + uint256(_value % 10)));
+            _value /= 10;
+        }
+        return string(buffer);
+    }
+
 
 }
 

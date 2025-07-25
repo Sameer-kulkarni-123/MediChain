@@ -51,7 +51,7 @@ export function AssignmentForm({
 
       let receipt
       if (assignmentType === "subCrate") {
-        if (!parentCrateCode || !subCrateCode) {
+        if (!subCrateCode) {
           toast({
             title: "Error",
             description: "Please enter both parent and sub-crate codes for sub-crate assignment.",
@@ -95,7 +95,7 @@ export function AssignmentForm({
     isSending ||
     !fromEntity ||
     !toEntity ||
-    (assignmentType === "subCrate" ? !parentCrateCode || !subCrateCode : !crateCode)
+    (assignmentType === "subCrate" ? !subCrateCode : !crateCode)
 
   const getTitle = () => {
     return assignmentType === "subCrate" ? "Send SubCrate" : "Send Crate"

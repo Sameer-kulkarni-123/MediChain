@@ -61,12 +61,13 @@ export async function getAccount() {
 
 //Blockchain Read and Write Functions:
 
-export async function registerCrate(crateCode, productID, medicineName, cidDocument, bottleCount, bottleIds ) {
+export async function registerCrate(crateCode, batchID, productID, medicineName, cidDocument, bottleCount, bottleIds ) {
   /* 
     1. Register a new crate
 
     params:
       string crateCode : manufacturer assigns crateCode
+      string batchID : batch ID of the crate
       string productID : productID of the medicine
       string medicineName : medicineName
       (removed) address manufacturerWalletAddress : wallet address of the manufacturer
@@ -80,6 +81,7 @@ export async function registerCrate(crateCode, productID, medicineName, cidDocum
   try {
     console.log("Registering crate with parameters:", {
       crateCode,
+      batchID,
       productID,
       medicineName,
       // manufacturerWalletAddress,
@@ -108,6 +110,7 @@ export async function registerCrate(crateCode, productID, medicineName, cidDocum
     
     const Tx = await contract.methods.registerCrate(
       crateCode,
+      batchID,
       productID,
       medicineName,
       // manufacturerWalletAddress,
@@ -321,7 +324,32 @@ export async function getAllSubCratesOfCrate(parentCrateCode){
 }
 
 export async function getCrateInfo(parentCrateCode){
-  console.log("getting crate info for crate code: ", parentCrateCode);
+  /* 
+    retrives the info about the crate
+    
+    params:
+      string parentCrateCode : crate code of the crate you want to get the info of
+
+    returns :
+      string[] retArr:
+        retArr[0] : crateCode
+        retArr[1] : medicineName
+        retArr[2] : batchID
+        retArr[3] : bottleCount
+
+  */
+  try{
+    const { contract } = getWeb3AndContract();
+    const account = await getAccount();
+    const Tx = await contract.methods.retrieveCrateInfo(
+      parentCrateCode
+    ).call({ from: account });
+  }catch(e){
+    console.error("error getting crate info");
+    throw new Error(`failed to get crate info ${error.message}`);
+  }
+    
+
 }
 
 export async function getAllBottlesOfCrate(parentCrateCode){
