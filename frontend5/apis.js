@@ -320,12 +320,13 @@ export async function getAllSubCratesOfCrate(parentCrateCode){
 
 }
 
-export async function getCrateInfo(){
-
+export async function getCrateInfo(parentCrateCode){
+  console.log("getting crate info for crate code: ", parentCrateCode);
 }
 
 export async function getAllBottlesOfCrate(parentCrateCode){
   try{
+    console.log("getting all bottles of crate code: ", parentCrateCode);
     const { contract } = getWeb3AndContract();
     const account = await getAccount();
     const Tx = await contract.methods.getAllBottlesOfCrate(
@@ -337,6 +338,7 @@ export async function getAllBottlesOfCrate(parentCrateCode){
     console.error("error retriving the bottleIds");
     throw new Error(`failed to retrive the bottleIds ${error.message}`);
   }
+
 
 }
 

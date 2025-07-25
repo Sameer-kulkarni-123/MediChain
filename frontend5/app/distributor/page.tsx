@@ -13,7 +13,7 @@ import { SearchableDropdown } from "@/components/searchable-dropdown"
 import { ConnectionPath } from "@/components/connection-path"
 import supplyChainData from "@/data/supplyChainData.json"
 import { useToast } from "@/hooks/use-toast"
-import { receiveCrate, getAccount, createSubCrate } from "../../apis"
+import { receiveCrate, getAccount, createSubCrate,getAllBottlesOfCrate} from "../../apis"
 import { MultiSelectDropdown } from "@/components/multi-select-dropdown"
 import { AssignmentForm } from "@/components/assignment-form" // Ensure this is imported
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select" // Import Select components
@@ -63,23 +63,23 @@ export default function DistributorPortal() {
   }
 
   // Simulate fetching bottle IDs based on parentCrateCode
-  useEffect(() => {
-    if (parentCrateCodeForSubCrate.length >= 5) {
-      // Trigger mock generation after a few characters
-      // In a real app, you would call a blockchain API here to get actual bottle IDs
-      // For now, we'll generate mock IDs based on the parent crate code prefix
-      const mockBottlePrefix = parentCrateCodeForSubCrate.substring(0, 5).toUpperCase()
-      const generatedBottles = Array.from({ length: 20 }, (_, i) => {
-        const suffix = Math.random().toString(36).substring(2, 7).toUpperCase()
-        const bottleCode = `${mockBottlePrefix}-${suffix}`
-        return { value: bottleCode, label: bottleCode }
-      })
-      setAvailableBottleIds(generatedBottles)
-    } else {
-      setAvailableBottleIds([])
-      setSelectedBottleIds([]) // Clear selected bottles if parent crate code is too short
-    }
-  }, [parentCrateCodeForSubCrate])
+  // useEffect(() => {
+  //   if (parentCrateCodeForSubCrate.length >= 5) {
+  //     // Trigger mock generation after a few characters
+  //     // In a real app, you would call a blockchain API here to get actual bottle IDs
+  //     // For now, we'll generate mock IDs based on the parent crate code prefix
+  //     const mockBottlePrefix = parentCrateCodeForSubCrate.substring(0, 5).toUpperCase()
+  //     const generatedBottles = Array.from({ length: 20 }, (_, i) => {
+  //       const suffix = Math.random().toString(36).substring(2, 7).toUpperCase()
+  //       const bottleCode = `${mockBottlePrefix}-${suffix}`
+  //       return { value: bottleCode, label: bottleCode }
+  //     })
+  //     setAvailableBottleIds(generatedBottles)
+  //   } else {
+  //     setAvailableBottleIds([])
+  //     setSelectedBottleIds([]) // Clear selected bottles if parent crate code is too short
+  //   }
+  // }, [parentCrateCodeForSubCrate])
 
   // Generate SubCrate ID when bottles are selected
   useEffect(() => {
@@ -101,6 +101,41 @@ export default function DistributorPortal() {
       [field]: value,
     }))
   }
+const handleGetCrateInfo = async () => {
+  if (!parentCrateCodeForSubCrate) {
+    toast({
+      title: "Error",
+      description: "Please enter a valid Parent Crate Code first.",
+      variant: "destructive",
+    });
+    return;
+  }
+
+  try {
+    const bottleIds = await getAllBottlesOfCrate(parentCrateCodeForSubCrate) as string[];
+    console.log("Bottle IDs:", bottleIds);
+    
+    // Convert to the format expected by MultiSelectDropdown
+    const formattedBottleIds = bottleIds.map((id: string) => ({
+      value: id,
+      label: id,
+    }));
+    setAvailableBottleIds(formattedBottleIds);
+
+    toast({
+      title: "Success",
+      description: `Fetched ${bottleIds.length} bottles for crate ${parentCrateCodeForSubCrate}`,
+    });
+  } catch (error: any) {
+    console.error("Error fetching bottle IDs:", error);
+    toast({
+      title: "Error",
+      description: `Failed to fetch bottle IDs: ${error.message}`,
+      variant: "destructive",
+    });
+  }
+};
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -335,6 +370,12 @@ export default function DistributorPortal() {
                   className="text-sm sm:text-base"
                 />
               </div>
+            <Button onClick={handleGetCrateInfo}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-sm sm:text-base py-2 sm:py-3"
+               disabled={!parentCrateCodeForSubCrate}>
+                Get Crate Info
+            </Button>
+
 
               <MultiSelectDropdown
                 label="Bottle IDs"
