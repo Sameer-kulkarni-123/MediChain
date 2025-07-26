@@ -1,7 +1,6 @@
-from pydantic import BaseModel, Field, GetCoreSchemaHandler
-from typing import Optional, Union, Literal, Any
+from typing import List, Optional, Union, Literal, Any
+from pydantic import BaseModel, Field, conint, conlist, constr, GetCoreSchemaHandler, EmailStr
 from bson import ObjectId
-from datetime import datetime
 from pydantic_core import core_schema
 from pydantic.json_schema import JsonSchemaValue
 
@@ -35,22 +34,46 @@ class PyObjectId(ObjectId):
     def __get_pydantic_json_schema__(cls, _core_schema, handler) -> JsonSchemaValue:
         return handler(core_schema.str_schema())
 
-class LocationModel(BaseModel):
-    type: Literal['manufacturer', 'distributor', 'retailer']
-    id: PyObjectId
 
-class ProductModel(BaseModel):
-    id: PyObjectId = Field(alias="_id", default=None)
+class GeoModel(BaseModel):
+    type: Literal['Point']
+    coordinates: List[float] = Field(..., min_items=2, max_items=2)
+
+class ContactsModel(BaseModel):
+    phone: Optional[str] = None
+    email: Optional[EmailStr] = None
+
+
+class InventoryModel(BaseModel):
     productName: str
-    atcCode: Optional[str]
-    coldChain: bool = False
-    unitWeight: Optional[Union[float, str]]
-    batchId: Optional[PyObjectId]
-    createdAt: Optional[datetime] = None
-    inTransit: bool = False
-    location: Optional[LocationModel]
+    qty: conint(ge=0)
+    reorderLevel: Optional[conint(ge=0)] = None
 
-class ProductInDB(ProductModel):
+
+
+class RetailerModel(BaseModel):
+    id: PyObjectId = Field(alias="_id", default=None)
+    retailerId: str
+    name: str
+    address: Optional[str] = None
+    walletAddress: str
+    geo: GeoModel
+    licenceNo: str
+    contacts: Optional[ContactsModel] = None
+    inventory: Optional[List[InventoryModel]] = []
+
+
+class RetailerUpdateModel(BaseModel):
+    name: Optional[str]
+    address: Optional[str] = None
+    walletAddress: Optional[str]
+    geo: Optional[GeoModel]
+    licenceNo: Optional[str]
+    contacts: Optional[ContactsModel] = None
+    inventory: Optional[List[InventoryModel]] = []
+
+
+class ProductInDB(RetailerModel):
     id: PyObjectId = Field(default_factory=PyObjectId, alias='_id')
 
     class Config:

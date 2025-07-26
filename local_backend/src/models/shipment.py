@@ -1,5 +1,5 @@
-from pydantic import BaseModel, Field, GetCoreSchemaHandler
-from typing import Optional, Union, Literal, Any
+from typing import  Optional,  Literal, Any, List
+from pydantic import BaseModel, Field, conint,  GetCoreSchemaHandler
 from bson import ObjectId
 from datetime import datetime
 from pydantic_core import core_schema
@@ -35,22 +35,24 @@ class PyObjectId(ObjectId):
     def __get_pydantic_json_schema__(cls, _core_schema, handler) -> JsonSchemaValue:
         return handler(core_schema.str_schema())
 
+
+
 class LocationModel(BaseModel):
     type: Literal['manufacturer', 'distributor', 'retailer']
     id: PyObjectId
 
-class ProductModel(BaseModel):
-    id: PyObjectId = Field(alias="_id", default=None)
+class ShipmentModel(BaseModel):
     productName: str
-    atcCode: Optional[str]
-    coldChain: bool = False
-    unitWeight: Optional[Union[float, str]]
-    batchId: Optional[PyObjectId]
-    createdAt: Optional[datetime] = None
+    qty: conint(ge=0)
+    unitIds: Optional[List[PyObjectId]]
     inTransit: bool = False
+    status: Literal['sealed','opened']
     location: Optional[LocationModel]
+    createdAt: Optional[datetime]
+    updatedAt: Optional[datetime]
+    
 
-class ProductInDB(ProductModel):
+class ProductInDB(ShipmentModel):
     id: PyObjectId = Field(default_factory=PyObjectId, alias='_id')
 
     class Config:

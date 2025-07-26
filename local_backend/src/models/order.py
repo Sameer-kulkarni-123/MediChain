@@ -1,5 +1,6 @@
-from pydantic import BaseModel, Field, GetCoreSchemaHandler
-from typing import Optional, Union, Literal, Any
+from pickletools import pybool
+from typing import List, Optional,  Literal, Any
+from pydantic import BaseModel, Field, conint,  GetCoreSchemaHandler
 from bson import ObjectId
 from datetime import datetime
 from pydantic_core import core_schema
@@ -35,22 +36,38 @@ class PyObjectId(ObjectId):
     def __get_pydantic_json_schema__(cls, _core_schema, handler) -> JsonSchemaValue:
         return handler(core_schema.str_schema())
 
-class LocationModel(BaseModel):
-    type: Literal['manufacturer', 'distributor', 'retailer']
-    id: PyObjectId
 
-class ProductModel(BaseModel):
-    id: PyObjectId = Field(alias="_id", default=None)
-    productName: str
-    atcCode: Optional[str]
-    coldChain: bool = False
-    unitWeight: Optional[Union[float, str]]
+class PathModel(BaseModel):
+    fromType:Literal ['manufacturer', 'distributor']
+    fromId: PyObjectId
+    toType: Literal['distributor', 'retailer']
+    toId: PyObjectId
+    etaDays: float
+    scannedAt: Optional[datetime]
+
+class AllocationsModel(BaseModel):
+    qty: conint(ge=0)
     batchId: Optional[PyObjectId]
-    createdAt: Optional[datetime] = None
-    inTransit: bool = False
-    location: Optional[LocationModel]
+    productUnitIds: Optional[List[PyObjectId]]
+    currentStage: Optional[conint(ge=0)]
+    fulfilled: bool = False
+    path: PathModel
 
-class ProductInDB(ProductModel):
+class LineItemsModel (BaseModel):
+    productName: str
+    qty: conint(ge = 0)
+    allocations: AllocationsModel
+
+class OrderModel(BaseModel):
+    retailerId: PyObjectId
+    lineItems: LineItemsModel
+    status: Literal['created','in-transit','completed','cancelled']
+    createdAt: Optional[datetime]
+    updatedAt: Optional[datetime]
+
+
+
+class ProductInDB(OrderModel):
     id: PyObjectId = Field(default_factory=PyObjectId, alias='_id')
 
     class Config:

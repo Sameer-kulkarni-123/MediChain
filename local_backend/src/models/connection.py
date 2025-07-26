@@ -1,7 +1,6 @@
-from pydantic import BaseModel, Field, GetCoreSchemaHandler
-from typing import Optional, Union, Literal, Any
+from typing import  Optional,  Literal, Any
+from pydantic import BaseModel, Field, conint,  GetCoreSchemaHandler
 from bson import ObjectId
-from datetime import datetime
 from pydantic_core import core_schema
 from pydantic.json_schema import JsonSchemaValue
 
@@ -35,22 +34,29 @@ class PyObjectId(ObjectId):
     def __get_pydantic_json_schema__(cls, _core_schema, handler) -> JsonSchemaValue:
         return handler(core_schema.str_schema())
 
-class LocationModel(BaseModel):
-    type: Literal['manufacturer', 'distributor', 'retailer']
-    id: PyObjectId
 
-class ProductModel(BaseModel):
-    id: PyObjectId = Field(alias="_id", default=None)
-    productName: str
-    atcCode: Optional[str]
-    coldChain: bool = False
-    unitWeight: Optional[Union[float, str]]
-    batchId: Optional[PyObjectId]
-    createdAt: Optional[datetime] = None
-    inTransit: bool = False
-    location: Optional[LocationModel]
 
-class ProductInDB(ProductModel):
+class ConnectionModel(BaseModel):
+    fromID: str
+    fromType: Literal['manufacturer', 'distributor', 'retailer']
+    toID: str
+    toType: Literal['manufacturer', 'distributor', 'retailer']
+    distanceKm: Optional[float]
+    transitTimeDays: Optional[conint(ge=0)]
+    costPerUnit: Optional[float]
+    active: Optional[bool]
+
+class ConnectionUpdateModel(BaseModel):
+    fromID: Optional[str]
+    fromType: Optional[Literal['manufacturer', 'distributor', 'retailer']]
+    toID: Optional[str]
+    toType: Optional[Literal['manufacturer', 'distributor', 'retailer']]
+    distanceKm: Optional[float]
+    transitTimeDays: Optional[conint(ge=0)]
+    costPerUnit: Optional[float]
+    active: Optional[bool]
+
+class ProductInDB(ConnectionModel):
     id: PyObjectId = Field(default_factory=PyObjectId, alias='_id')
 
     class Config:

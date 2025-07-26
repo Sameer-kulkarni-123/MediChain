@@ -14,6 +14,10 @@ async def create_product(product: ProductModel):
     return ProductInDB(**new_product)
 
 async def all_products():
+    try:
+        await db.command("ping")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"MongoDB not reachable: {str(e)}")
     products = []
     async for docs in collection.find():
         products.append(ProductInDB(**docs))
