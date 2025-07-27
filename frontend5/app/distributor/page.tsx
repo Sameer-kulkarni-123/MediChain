@@ -337,7 +337,7 @@ const handleGetCrateInfo = async () => {
                   <p className="text-xs sm:text-sm bg-gray-50 p-2 rounded">{crateDetails.bottleCount}</p>
                 </div>
                 <div>
-                  <Label className="text-xs sm:text-sm font-medium text-gray-600">Current Status <br></br></Label>
+                  <Label className="text-xs sm:text-sm font-medium text-gray-600">Current Status </Label>
                   <Badge variant="outline" className="text-green-600 border-green-600 text-xs sm:text-sm">
                     {crateDetails.currentStatus}
                   </Badge>
@@ -357,18 +357,49 @@ const handleGetCrateInfo = async () => {
                 Divide a main crate into smaller sub-crates
               </CardDescription>
             </CardHeader>
-            <CardContent className="px-4 sm:px-6">
-              <form onSubmit={handleSubmit} className="space-y-4">
-              <Label htmlFor="crateCodeForAssignment" className="text-sm sm:text-base">
-                Crate Code
-              </Label>
-              <Input
-                id="crateCodeForAssignment"
-                value={receiveCrateCodeForAssignment}
-                onChange={(e) => setreceiveCrateCodeForAssignment(e.target.value)}
-                placeholder="Enter crate code (e.g., EQ5K6)"
-                className="text-sm sm:text-base"
+            <CardContent className="px-4 sm:px-6 space-y-4">
+              <div>
+                <Label htmlFor="parentCrateCodeForSubCrate" className="text-sm sm:text-base">
+                  Parent Crate Code
+                </Label>
+                <Input
+                  id="parentCrateCodeForSubCrate"
+                  value={parentCrateCodeForSubCrate}
+                  onChange={(e) => setParentCrateCodeForSubCrate(e.target.value)}
+                  placeholder="Enter parent crate code (e.g., XXXXX-XXXXX)"
+                  className="text-sm sm:text-base"
+                />
+              </div>
+            <Button onClick={handleGetCrateInfo}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-sm sm:text-base py-2 sm:py-3"
+               disabled={!parentCrateCodeForSubCrate}>
+                Get Crate Info
+            </Button>
+
+
+              <MultiSelectDropdown
+                label="Bottle IDs"
+                options={availableBottleIds}
+                selected={selectedBottleIds}
+                onSelect={setSelectedBottleIds}
+                placeholder="Select bottle IDs for sub-crate"
               />
+
+              <div>
+                <Label htmlFor="subCrateId" className="text-sm sm:text-base">
+                  Generated SubCrate ID
+                </Label>
+                <Input
+                  id="subCrateId"
+                  value={subCrateId}
+                  readOnly
+                  placeholder="Auto-generated after selecting bottles"
+                  className="bg-gray-50 font-mono text-sm sm:text-base"
+                />
+                {subCrateId && (
+                  <p className="text-xs text-gray-600 mt-1">This unique ID will be assigned to your new sub-crate.</p>
+                )}
+              </div>
 
               <Button
                 onClick={handleCreateSubCrate}
