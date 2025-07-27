@@ -153,6 +153,8 @@ export default function ManufacturerPortal() {
       })
 
       console.log("Distributor confirmed:", selectedDistributor)
+      setManualCrateCodeForAssignment("");
+      setSelectedDistributor(null);
     } catch (error) {
       toast({
         title: "Error",
