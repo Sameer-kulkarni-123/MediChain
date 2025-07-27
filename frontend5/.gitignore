@@ -1,5 +1,6 @@
 node_modules
 .next/
 .env
+frontend5/.next/
 /venv/
 /frontend5/.next/

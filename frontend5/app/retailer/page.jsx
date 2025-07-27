@@ -10,17 +10,20 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Store, ArrowLeft, Shield, CheckCircle, Package, Truck, Factory } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
+import { retailerReceivedCrate, scanBottle, getCrate, getAccount } from "../../apis"
 
 export default function RetailerPortal() {
   const [crateCode, setCrateCode] = useState("")
   const [isVerified, setIsVerified] = useState(false)
   const [deliveryAcknowledged, setDeliveryAcknowledged] = useState(false)
   const [isVerifying, setIsVerifying] = useState(false)
+  const [isCertActivated, setIsCertActivated] = useState(false)
+
   const { toast } = useToast()
 
   // Mock crate journey data
   const crateJourney = {
-    crateCode: "MC-1704123456-7890",
+    crateCode: "BFIT0",
     medicineName: "Paracetamol 500mg",
     batchId: "B001",
     bottleCount: 100,
@@ -65,10 +68,10 @@ export default function RetailerPortal() {
     setIsVerifying(true)
 
     try {
-      // Simulate blockchain verification
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-
-      if (crateCode === crateJourney.crateCode) {
+      // Get crate data from blockchain
+      const crateData = await getCrate(crateCode)
+      
+      if (crateData && crateData.exists) {
         setIsVerified(true)
         toast({
           title: "Verification Successful",
@@ -103,8 +106,8 @@ export default function RetailerPortal() {
     }
 
     try {
-      // Simulate blockchain transaction
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      // Mark crate as received by retailer (final destination)
+      await retailerReceivedCrate(crateCode)
 
       toast({
         title: "Delivery Confirmed",
@@ -118,6 +121,24 @@ export default function RetailerPortal() {
       })
     }
   }
+
+  const handleActivateCert = async () => {
+  try {
+    await activateCertifications(crateCode);
+    setIsCertActivated(true);
+    toast({
+      title: "Certifications Activated",
+      description: "Retailer successfully activated crate certifications",
+    });
+  } catch (error) {
+    toast({
+      title: "Error",
+      description: "Failed to activate certifications",
+      variant: "destructive",
+    });
+  }
+};
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-100">
@@ -195,13 +216,23 @@ export default function RetailerPortal() {
 
               <Button
                 onClick={confirmDelivery}
-                disabled={!deliveryAcknowledged || !isVerified}
+                disabled={!deliveryAcknowledged || isVerified}
                 className="w-full bg-purple-600 hover:bg-purple-700"
               >
                 Confirm Final Delivery
               </Button>
+              {isVerified && deliveryAcknowledged && (
+              <Button
+                onClick={handleActivateCert}
+                disabled={isCertActivated}
+                className="w-full bg-green-600 hover:bg-green-700"
+              >
+                {isCertActivated ? "✅ Certifications Activated" : "Activate Certifications"}
+              </Button>
+            )}
 
-              {!isVerified && <p className="text-sm text-gray-500">Please verify crate authenticity first</p>}
+
+              {isVerified && <p className="text-sm text-gray-500">Please verify crate authenticity first</p>}
             </CardContent>
           </Card>
         </div>

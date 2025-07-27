@@ -11,7 +11,7 @@
       {
         "id": "mfg_002",
         "name": "MediTech Solutions",
-        "walletAddress": "0x742d35cc6634c0532925a3b8d4c9db96590c6c87",
+        "walletAddress": "0x0707C981F6EA01Dddf8D918C14bC6f48ceB0a69A",
         "category": "manufacturer",
         "location": "California, USA",
         "specialization": "Cardiovascular Medicines"
@@ -19,7 +19,7 @@
       {
         "id": "mfg_003",
         "name": "BioHealth Manufacturing",
-        "walletAddress": "0x8ba1f109551bd432803012645hac136c0c8326b",
+        "walletAddress": "0xA3C8EE9981112A27998D9A77E95110672c9765cE",
         "category": "manufacturer",
         "location": "Texas, USA",
         "specialization": "Diabetes & Insulin"
@@ -64,7 +64,7 @@
       {
         "id": "dist_004",
         "name": "National MedSupply",
-        "walletAddress": "0xaaabbbcccdddeeefff000111222333444555666",
+        "walletAddress": "0xfd5Bb320199E6bEA38ac1A2C7bf51Bfa0d3E5ab4",
         "category": "distributor",
         "location": "Phoenix, USA",
         "coverage": "Southwest Region",
@@ -147,7 +147,7 @@
       {
         "id": "ret_008",
         "name": "Downtown Medical Supply",
-        "walletAddress": "0x7070e0e0fcfcffffff000333666999cccffffffff",
+        "walletAddress": "0x84Ba1f39b0453aE2749A55f4C6f48eAE813584c7",
         "category": "retailer",
         "location": "San Francisco, CA",
         "type": "Medical Supply Store",

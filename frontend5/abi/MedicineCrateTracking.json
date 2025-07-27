@@ -49,6 +49,25 @@
         {
           "indexed": false,
           "internalType": "address",
+          "name": "retailer",
+          "type": "address"
+        }
+      ],
+      "name": "CertificationsActivated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "crateCode",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
           "name": "from",
           "type": "address"
         },
@@ -127,16 +146,6 @@
           "type": "uint256"
         },
         {
-          "internalType": "int32",
-          "name": "scanLat",
-          "type": "int32"
-        },
-        {
-          "internalType": "int32",
-          "name": "scanLong",
-          "type": "int32"
-        },
-        {
           "internalType": "bool",
           "name": "reported",
           "type": "bool"
@@ -151,14 +160,22 @@
           "internalType": "string",
           "name": "crateCode",
           "type": "string"
-        },
-        {
-          "internalType": "string",
-          "name": "newLocationId",
-          "type": "string"
         }
       ],
       "name": "crateReceived",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "crateCode",
+          "type": "string"
+        }
+      ],
+      "name": "crateRetailerReceived",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -174,11 +191,6 @@
           "internalType": "address",
           "name": "to",
           "type": "address"
-        },
-        {
-          "internalType": "string",
-          "name": "toId",
-          "type": "string"
         }
       ],
       "name": "crateSent",
@@ -218,27 +230,27 @@
         },
         {
           "internalType": "string",
-          "name": "manufacturerId",
+          "name": "manufacturerPhysicalAddress",
           "type": "string"
         },
         {
           "internalType": "address",
-          "name": "manufacturerAddress",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "currentAddress",
+          "name": "manufacturerWalletAddress",
           "type": "address"
         },
         {
           "internalType": "string",
-          "name": "currentAddressId",
+          "name": "currentPhysicalAddress",
           "type": "string"
         },
         {
+          "internalType": "address",
+          "name": "currentWalletAddress",
+          "type": "address"
+        },
+        {
           "internalType": "string",
-          "name": "cidDocuments",
+          "name": "cidDocument",
           "type": "string"
         },
         {
@@ -253,13 +265,8 @@
         },
         {
           "internalType": "address",
-          "name": "nextHolder",
+          "name": "nextHolderWalletAddress",
           "type": "address"
-        },
-        {
-          "internalType": "string",
-          "name": "nextHolderId",
-          "type": "string"
         },
         {
           "internalType": "bool",
@@ -268,18 +275,8 @@
         },
         {
           "internalType": "bool",
-          "name": "retailLocationSet",
+          "name": "isFinalDestination",
           "type": "bool"
-        },
-        {
-          "internalType": "int32",
-          "name": "retailLat",
-          "type": "int32"
-        },
-        {
-          "internalType": "int32",
-          "name": "retailLong",
-          "type": "int32"
         }
       ],
       "stateMutability": "view",
@@ -308,34 +305,29 @@
           "type": "string"
         },
         {
-          "internalType": "string",
-          "name": "manufacturerId",
-          "type": "string"
-        },
-        {
           "internalType": "address",
-          "name": "manufacturerAddress",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "currentAddress",
+          "name": "manufacturerWalletAddress",
           "type": "address"
         },
         {
           "internalType": "string",
-          "name": "currentAddressId",
+          "name": "manufacturerPhysicalAddress",
           "type": "string"
         },
         {
           "internalType": "string",
-          "name": "cidDocuments",
+          "name": "cidDocument",
           "type": "string"
         },
         {
           "internalType": "uint256",
           "name": "bottleCount",
           "type": "uint256"
+        },
+        {
+          "internalType": "string[]",
+          "name": "bottleCodes",
+          "type": "string[]"
         }
       ],
       "name": "registerCrate",
@@ -349,42 +341,9 @@
           "internalType": "string",
           "name": "bottleCode",
           "type": "string"
-        },
-        {
-          "internalType": "int32",
-          "name": "scanLat",
-          "type": "int32"
-        },
-        {
-          "internalType": "int32",
-          "name": "scanLong",
-          "type": "int32"
         }
       ],
       "name": "scanBottle",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "string",
-          "name": "crateCode",
-          "type": "string"
-        },
-        {
-          "internalType": "int32",
-          "name": "lat",
-          "type": "int32"
-        },
-        {
-          "internalType": "int32",
-          "name": "longi",
-          "type": "int32"
-        }
-      ],
-      "name": "setRetailLocation",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"

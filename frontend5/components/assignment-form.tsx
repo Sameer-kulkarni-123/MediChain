@@ -10,10 +10,18 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Send } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { sendCrate } from "../apis"
+
+interface Entity {
+  id: string
+  name: string
+  walletAddress: string
+  [key: string]: any
+}
 
 interface AssignmentFormProps {
-  fromEntity: any
-  toEntity: any
+  fromEntity: Entity | null
+  toEntity: Entity | null
   assignmentType: "manufacturer-to-distributor" | "distributor-to-retailer"
 }
 
@@ -37,7 +45,7 @@ export function AssignmentForm({ fromEntity, toEntity, assignmentType }: Assignm
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!toEntity) {
+    if (!fromEntity || !toEntity) {
       toast({
         title: "Error",
         description: `Please select a ${assignmentType.includes("distributor") ? "retailer" : "distributor"} first`,
@@ -50,12 +58,12 @@ export function AssignmentForm({ fromEntity, toEntity, assignmentType }: Assignm
 
     try {
       // Simulate blockchain transaction
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      // await new Promise((resolve) => setTimeout(resolve, 2000))
+      const receipt = await sendCrate("3UKOX", toEntity.walletAddress)
 
-      const targetType = assignmentType.includes("distributor") ? "retailer" : "distributor"
       toast({
         title: "Assignment Successful",
-        description: `Product assigned to ${toEntity.name} successfully!`,
+        description: `Product assigned from ${fromEntity.name} to ${toEntity.name}`,
       })
 
       // Reset form
@@ -88,39 +96,47 @@ export function AssignmentForm({ fromEntity, toEntity, assignmentType }: Assignm
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+      <CardHeader className="px-4 sm:px-6">
+        <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
           <Send className="h-5 w-5" />
           {getTitle()}
         </CardTitle>
-        <CardDescription>{getDescription()}</CardDescription>
+        <CardDescription className="text-sm sm:text-base">{getDescription()}</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-4 sm:px-6">
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="productName">Product Name</Label>
+          {/* <div>
+            <Label htmlFor="productName" className="text-sm sm:text-base">
+              Product Name
+            </Label>
             <Input
               id="productName"
               value={assignmentData.productName}
               onChange={(e) => handleInputChange("productName", e.target.value)}
               placeholder="Enter product name"
               required
+              className="text-sm sm:text-base"
             />
-          </div>
+          </div> */}
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="batchId">Batch ID</Label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* <div>
+              <Label htmlFor="batchId" className="text-sm sm:text-base">
+                Batch ID
+              </Label>
               <Input
                 id="batchId"
                 value={assignmentData.batchId}
                 onChange={(e) => handleInputChange("batchId", e.target.value)}
                 placeholder="Enter batch ID"
                 required
+                className="text-sm sm:text-base"
               />
-            </div>
-            <div>
-              <Label htmlFor="quantity">Quantity</Label>
+            </div> */}
+            {/* <div>
+              <Label htmlFor="quantity" className="text-sm sm:text-base">
+                Quantity
+              </Label>
               <Input
                 id="quantity"
                 type="number"
@@ -128,27 +144,35 @@ export function AssignmentForm({ fromEntity, toEntity, assignmentType }: Assignm
                 onChange={(e) => handleInputChange("quantity", e.target.value)}
                 placeholder="Enter quantity"
                 required
+                className="text-sm sm:text-base"
               />
-            </div>
+            </div> */}
           </div>
 
-          <div>
-            <Label htmlFor="notes">Notes (Optional)</Label>
+          {/* <div>
+            <Label htmlFor="notes" className="text-sm sm:text-base">
+              Notes (Optional)
+            </Label>
             <Textarea
               id="notes"
               value={assignmentData.notes}
               onChange={(e) => handleInputChange("notes", e.target.value)}
-              placeholder="Add any special instructions or notes"
+              placeholder="Enter any additional notes"
               rows={3}
+              className="text-sm sm:text-base"
             />
-          </div>
+          </div> */}
 
-          <Button type="submit" className="w-full" disabled={isSubmitting || !toEntity}>
+          <Button
+            type="submit"
+            className="w-full text-sm sm:text-base py-2 sm:py-3"
+            disabled={isSubmitting || !fromEntity || !toEntity}
+          >
             {isSubmitting ? "Assigning..." : `Assign to ${toEntity?.name || "Selected Entity"}`}
           </Button>
 
-          {!toEntity && (
-            <p className="text-sm text-gray-500 text-center">
+          {(!fromEntity || !toEntity) && (
+            <p className="text-xs sm:text-sm text-gray-500 text-center">
               Please select a {assignmentType.includes("distributor") ? "retailer" : "distributor"} to enable assignment
             </p>
           )}

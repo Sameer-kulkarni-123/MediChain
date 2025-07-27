@@ -36,6 +36,7 @@ contract MedicineCrateTracking {
     event CrateReceived(string crateCode, address from, address to);
     event BottleScanned(string bottleCode, bool firstScan, bool suspicious);
     event BottleReported(string bottleCode);
+    event CertificationsActivated(string crateCode, address retailer);
 
     modifier onlyCurrentHolder(string memory crateCode) {
         require(crates[crateCode].exists, "Crate does not exist");
@@ -94,6 +95,7 @@ contract MedicineCrateTracking {
 
     function crateSent(string memory crateCode, address to) public onlyCurrentHolder(crateCode) {
         Crate storage crate = crates[crateCode];
+        require(crate.exists, "crate doesnt exist 1");
         require(!crate.inTransit, "Crate is already in transit");
 
         crate.inTransit = true;
