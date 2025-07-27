@@ -10,7 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Store, ArrowLeft, Shield, CheckCircle, Package, Truck, Factory } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
-import { retailerReceivedCrate, scanBottle, getCrate, getAccount } from "../../apis"
+import { retailerReceivedCrate, scanBottle, getCrateInfo, getAccount } from "../../apis"
 
 export default function RetailerPortal() {
   const [crateCode, setCrateCode] = useState("")
@@ -69,7 +69,7 @@ export default function RetailerPortal() {
 
     try {
       // Get crate data from blockchain
-      const crateData = await getCrate(crateCode)
+      const crateData = await getCrateInfo(crateCode)
       
       if (crateData && crateData.exists) {
         setIsVerified(true)
