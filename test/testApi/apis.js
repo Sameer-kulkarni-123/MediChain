@@ -4,8 +4,8 @@ import contractABI from './abi/MedicineCrateTracking.json';
 // const contractAddress = process.env.NEXT_PUBLIC_CONRACT_ADDRESS_IN_SEPOLIA;
 // const contractAddress = process.env.NEXT_PUBLIC_CONRACT_ADDRESS_IN_LOCAL;
 // const contractAddress = process.env.VITE_REACT_APP_CONRACT_ADDRESS_IN_LOCAL;
-// const contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS_IN_LOCAL;
-const contractAddress = process.env.NEXT_PUBLIC_CONRACT_ADDRESS_IN_LOCAL;
+const contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS_IN_LOCAL;
+// const contractAddress = process.env.NEXT_PUBLIC_CONRACT_ADDRESS_IN_LOCAL;
 
 
 
@@ -61,13 +61,12 @@ export async function getAccount() {
 
 //Blockchain Read and Write Functions:
 
-export async function registerCrate(crateCode, batchID, productID, medicineName, cidDocument, bottleCount, bottleIds ) {
+export async function registerCrate(crateCode, productID, medicineName, cidDocument, bottleCount, bottleIds ) {
   /* 
     1. Register a new crate
 
     params:
       string crateCode : manufacturer assigns crateCode
-      string batchID : batch ID of the crate
       string productID : productID of the medicine
       string medicineName : medicineName
       (removed) address manufacturerWalletAddress : wallet address of the manufacturer
@@ -81,7 +80,6 @@ export async function registerCrate(crateCode, batchID, productID, medicineName,
   try {
     console.log("Registering crate with parameters:", {
       crateCode,
-      batchID,
       productID,
       medicineName,
       // manufacturerWalletAddress,
@@ -110,7 +108,6 @@ export async function registerCrate(crateCode, batchID, productID, medicineName,
     
     const Tx = await contract.methods.registerCrate(
       crateCode,
-      batchID,
       productID,
       medicineName,
       // manufacturerWalletAddress,
@@ -323,38 +320,12 @@ export async function getAllSubCratesOfCrate(parentCrateCode){
 
 }
 
-export async function getCrateInfo(parentCrateCode){
-  /* 
-    retrives the info about the crate
-    
-    params:
-      string parentCrateCode : crate code of the crate you want to get the info of
-
-    returns :
-      string[] retArr:
-        retArr[0] : crateCode
-        retArr[1] : medicineName
-        retArr[2] : batchID
-        retArr[3] : bottleCount
-
-  */
-  try{
-    const { contract } = getWeb3AndContract();
-    const account = await getAccount();
-    const Tx = await contract.methods.retrieveCrateInfo(
-      parentCrateCode
-    ).call({ from: account });
-  }catch(e){
-    console.error("error getting crate info");
-    throw new Error(`failed to get crate info ${error.message}`);
-  }
-    
+export async function getCrateInfo(){
 
 }
 
 export async function getAllBottlesOfCrate(parentCrateCode){
   try{
-    console.log("getting all bottles of crate code: ", parentCrateCode);
     const { contract } = getWeb3AndContract();
     const account = await getAccount();
     const Tx = await contract.methods.getAllBottlesOfCrate(
@@ -366,7 +337,6 @@ export async function getAllBottlesOfCrate(parentCrateCode){
     console.error("error retriving the bottleIds");
     throw new Error(`failed to retrive the bottleIds ${error.message}`);
   }
-
 
 }
 

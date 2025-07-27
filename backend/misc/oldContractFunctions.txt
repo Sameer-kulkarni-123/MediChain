@@ -1,0 +1,67 @@
+
+    // function scanBottle(string memory bottleCode) public {
+    //     (string memory crateCode, string memory bottleId) = parseCrateFromBottle(bottleCode);
+    //     Crate storage crate = crates[crateCode];
+    //     require(crate.exists, "Invalid crate");
+    //     require(crate.isFinalDestination, "crate didn't reached");
+    //     bool bottleExists = false;
+
+    //     BottleScanInfo storage info = bottleScans[bottleCode];
+    //     for (uint i =0; i< crate.bottleCodes.length; i++){
+    //         if (keccak256(bytes(bottleId)) == keccak256(bytes(crate.bottleCodes[i]))) {
+    //             bottleExists = true;
+    //             break;
+    //         }
+    //     }
+
+    //     require(bottleExists, "Bottle doesn't exist");
+        
+        
+
+    //     bool suspicious = false;
+
+    //     if (!info.scanned) {
+    //         info.scanned = true;
+    //         info.scanTimestamp = block.timestamp;
+    //     } else {
+    //         suspicious = true; // repeated scan
+    //     }
+
+    //     emit BottleScanned(bottleCode, !suspicious, suspicious);
+    // }
+
+//     function parseCrateFromBottle(string memory bottleCode) internal pure returns (string memory, string memory) {
+//     bytes memory b = bytes(bottleCode);
+//     for (uint i = 0; i < b.length; i++) {
+//         if (b[i] == "-") {
+
+//             bytes memory crateBytes = new bytes(i);
+//             bytes memory bottleBytes = new bytes(i);
+//             for (uint j = 0; j < i; j++) {
+//                 crateBytes[j] = b[j];
+//             }
+//             for (uint j = i+1; i<b.length; j++){
+//                 bottleBytes[j] = b[j];
+//             }
+//             return (string(crateBytes), string(bottleBytes));
+//         }
+//     }
+//     revert("Invalid bottle code");
+//     }
+    // modifier onlyCurrentHolder(string memory crateCode) {
+    //     require(crates[crateCode].exists, "Crate does not exist");
+    //     require(crates[crateCode].currentWalletAddress == msg.sender, "Only current holder can perform this");
+    //     _;
+    // }
+
+    // modifier onlyNextHolder(string memory crateCode) {
+    //     require(crates[crateCode].exists, "Crate does not exist");
+    //     require(crates[crateCode].nextHolderWalletAddress == msg.sender, "Only assigned receiver can confirm receipt");
+    //     _;
+    // }
+    
+    //modifier onlyRetailReceiver(string memory crateCode) {
+        //require(crates[crateCode].exists, "Crate does not exist");
+        //require(crates[crateCode].currentAddress == msg.sender, "Not current holder");
+        //_;
+    //}

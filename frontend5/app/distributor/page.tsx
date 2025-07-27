@@ -7,21 +7,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { Truck, ArrowLeft, MapPin, Calendar, Package, Users } from "lucide-react"
+import { Truck, ArrowLeft, MapPin, Calendar, Package, Users, PlusCircle } from "lucide-react"
 import Link from "next/link"
 import { SearchableDropdown } from "@/components/searchable-dropdown"
 import { ConnectionPath } from "@/components/connection-path"
-import { AssignmentForm } from "@/components/assignment-form"
 import supplyChainData from "@/data/supplyChainData.json"
 import { useToast } from "@/hooks/use-toast"
-import { sendCrate, receiveCrate, getCrate, getAccount } from "../../apis"
+import { receiveCrate, getAccount, createSubCrate,getAllBottlesOfCrate} from "../../apis"
+import { MultiSelectDropdown } from "@/components/multi-select-dropdown"
+import { AssignmentForm } from "@/components/assignment-form" // Ensure this is imported
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select" // Import Select components
 
 export default function DistributorPortal() {
   const [selectedCrate, setSelectedCrate] = useState("MC-1704123456-7890")
   const [selectedRetailer, setSelectedRetailer] = useState<any>(null)
   const [currentDistributor, setCurrentDistributor] = useState<any>(null)
   const [receiveCrateCodeForAssignment, setreceiveCrateCodeForAssignment] = useState("")
-  const [sendCrateCodeForAssignment, setsendCrateCodeForAssignment] = useState("")
   const [assignedManufacturer, setAssignedManufacturer] = useState<any>(null)
   const [distributorData, setDistributorData] = useState({
     storageLocation: "",
@@ -31,6 +32,19 @@ export default function DistributorPortal() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { toast } = useToast()
 
+  // New states for SubCrate creation
+  const [parentCrateCodeForSubCrate, setParentCrateCodeForSubCrate] = useState("")
+  const [availableBottleIds, setAvailableBottleIds] = useState<Array<{ value: string; label: string }>>([])
+  const [selectedBottleIds, setSelectedBottleIds] = useState<string[]>([])
+  const [subCrateId, setSubCrateId] = useState("")
+  const [isCreatingSubCrate, setIsCreatingSubCrate] = useState(false)
+
+  // New states for sending Crate/SubCrate
+  const [assignmentType, setAssignmentType] = useState<"crate" | "subCrate">("crate")
+  const [crateCodeForSend, setCrateCodeForSend] = useState("") // For main crate
+  const [parentCrateCodeForSend, setParentCrateCodeForSend] = useState("") // For sub-crate
+  const [subCrateCodeForSend, setSubCrateCodeForSend] = useState("") // For sub-crate
+
   useEffect(() => {
     // Simulate getting current distributor from wallet/auth
     setCurrentDistributor(supplyChainData.distributors[0])
@@ -38,17 +52,48 @@ export default function DistributorPortal() {
     setAssignedManufacturer(supplyChainData.manufacturers[0])
   }, [])
 
-  // Mock crate data
+  // Mock crate data (for display purposes)
   const crateDetails = {
-    crateCode: "MRCZO",
+    crateCode: "3UKOX",
     medicineName: "Paracetamol 500mg",
     batchId: "B001",
     manufacturerId: "MFG001",
-    manufacturingDate: "2024-01-15",
-    expiryDate: "2026-01-15",
     bottleCount: 100,
     currentStatus: "At Distributor",
   }
+
+  // Simulate fetching bottle IDs based on parentCrateCode
+  // useEffect(() => {
+  //   if (parentCrateCodeForSubCrate.length >= 5) {
+  //     // Trigger mock generation after a few characters
+  //     // In a real app, you would call a blockchain API here to get actual bottle IDs
+  //     // For now, we'll generate mock IDs based on the parent crate code prefix
+  //     const mockBottlePrefix = parentCrateCodeForSubCrate.substring(0, 5).toUpperCase()
+  //     const generatedBottles = Array.from({ length: 20 }, (_, i) => {
+  //       const suffix = Math.random().toString(36).substring(2, 7).toUpperCase()
+  //       const bottleCode = `${mockBottlePrefix}-${suffix}`
+  //       return { value: bottleCode, label: bottleCode }
+  //     })
+  //     setAvailableBottleIds(generatedBottles)
+  //   } else {
+  //     setAvailableBottleIds([])
+  //     setSelectedBottleIds([]) // Clear selected bottles if parent crate code is too short
+  //   }
+  // }, [parentCrateCodeForSubCrate])
+
+  // Generate SubCrate ID when bottles are selected
+  useEffect(() => {
+    if (selectedBottleIds.length > 0) {
+      const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+      let result = ""
+      for (let i = 0; i < 5; i++) {
+        result += characters.charAt(Math.floor(Math.random() * characters.length))
+      }
+      setSubCrateId(result)
+    } else {
+      setSubCrateId("")
+    }
+  }, [selectedBottleIds])
 
   const handleInputChange = (field: string, value: string) => {
     setDistributorData((prev) => ({
@@ -56,6 +101,41 @@ export default function DistributorPortal() {
       [field]: value,
     }))
   }
+const handleGetCrateInfo = async () => {
+  if (!parentCrateCodeForSubCrate) {
+    toast({
+      title: "Error",
+      description: "Please enter a valid Parent Crate Code first.",
+      variant: "destructive",
+    });
+    return;
+  }
+
+  try {
+    const bottleIds = await getAllBottlesOfCrate(parentCrateCodeForSubCrate) as string[];
+    console.log("Bottle IDs:", bottleIds);
+    
+    // Convert to the format expected by MultiSelectDropdown
+    const formattedBottleIds = bottleIds.map((id: string) => ({
+      value: id,
+      label: id,
+    }));
+    setAvailableBottleIds(formattedBottleIds);
+
+    toast({
+      title: "Success",
+      description: `Fetched ${bottleIds.length} bottles for crate ${parentCrateCodeForSubCrate}`,
+    });
+  } catch (error: any) {
+    console.error("Error fetching bottle IDs:", error);
+    toast({
+      title: "Error",
+      description: `Failed to fetch bottle IDs: ${error.message}`,
+      variant: "destructive",
+    });
+  }
+};
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -63,8 +143,8 @@ export default function DistributorPortal() {
 
     try {
       // Get current account
-      const account = await getAccount()
-      
+      // const account = await getAccount()
+
       // Simulate receiving crate from manufacturer (in real app, this would be triggered by manufacturer)
       // For demo purposes, we'll simulate the receive action
       await receiveCrate(receiveCrateCodeForAssignment)
@@ -80,14 +160,68 @@ export default function DistributorPortal() {
         shippingDetails: "",
         dispatchTimestamp: "",
       })
-    } catch (error) {
+      setreceiveCrateCodeForAssignment("")
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to update distribution details. Please try again.",
+        description: `Failed to update distribution details: ${error.message}`,
         variant: "destructive",
       })
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  const handleCreateSubCrate = async () => {
+    if (!parentCrateCodeForSubCrate) {
+      toast({
+        title: "Error",
+        description: "Please enter a Parent Crate Code.",
+        variant: "destructive",
+      })
+      return
+    }
+    if (selectedBottleIds.length === 0) {
+      toast({
+        title: "Error",
+        description: "Please select at least one bottle ID.",
+        variant: "destructive",
+      })
+      return
+    }
+    if (!subCrateId) {
+      toast({
+        title: "Error",
+        description: "SubCrate ID could not be generated. Please select bottles.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setIsCreatingSubCrate(true)
+    try {
+      // Call the blockchain API to create a sub-crate
+      const receipt = await createSubCrate(parentCrateCodeForSubCrate, subCrateId, selectedBottleIds)
+      console.log("SubCrate creation successful:", receipt)
+
+      toast({
+        title: "SubCrate Created",
+        description: `SubCrate ${subCrateId} created successfully for parent crate ${parentCrateCodeForSubCrate}.`,
+      })
+
+      // Reset form
+      setParentCrateCodeForSubCrate("")
+      setSelectedBottleIds([])
+      setSubCrateId("")
+    } catch (error: any) {
+      console.error("Error creating sub-crate:", error)
+      toast({
+        title: "Error",
+        description: `Failed to create sub-crate: ${error.message}`,
+        variant: "destructive",
+      })
+    } finally {
+      setIsCreatingSubCrate(false)
     }
   }
 
@@ -126,6 +260,39 @@ export default function DistributorPortal() {
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 sm:gap-8">
+          {/* Distribution Update Form */}
+          <Card>
+            <CardHeader className="px-4 sm:px-6">
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                <MapPin className="h-5 w-5" />
+                Update Distribution Details
+              </CardTitle>
+              <CardDescription className="text-sm sm:text-base">Add shipping and storage information</CardDescription>
+            </CardHeader>
+            <CardContent className="px-4 sm:px-6">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <Label htmlFor="crateCodeForAssignment" className="text-sm sm:text-base">
+                  Crate Code
+                </Label>
+                <Input
+                  id="crateCodeForAssignment"
+                  value={receiveCrateCodeForAssignment}
+                  onChange={(e) => setreceiveCrateCodeForAssignment(e.target.value)}
+                  placeholder="Enter crate code (e.g., XXXXX-XXXXX)"
+                  className="text-sm sm:text-base"
+                />
+
+                <Button
+                  type="submit"
+                  className="w-full bg-green-600 hover:bg-green-700 text-sm sm:text-base py-2 sm:py-3"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Updating Blockchain..." : "Update Distribution Details"}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+
           {/* Crate Details */}
           <Card>
             <CardHeader className="px-4 sm:px-6">
@@ -162,16 +329,7 @@ export default function DistributorPortal() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-xs sm:text-sm font-medium text-gray-600">Manufacturing Date</Label>
-                  <p className="text-xs sm:text-sm bg-gray-50 p-2 rounded">{crateDetails.manufacturingDate}</p>
-                </div>
-                <div>
-                  <Label className="text-xs sm:text-sm font-medium text-gray-600">Expiry Date</Label>
-                  <p className="text-xs sm:text-sm bg-gray-50 p-2 rounded">{crateDetails.expiryDate}</p>
-                </div>
-              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -179,7 +337,7 @@ export default function DistributorPortal() {
                   <p className="text-xs sm:text-sm bg-gray-50 p-2 rounded">{crateDetails.bottleCount}</p>
                 </div>
                 <div>
-                  <Label className="text-xs sm:text-sm font-medium text-gray-600">Current Status</Label>
+                  <Label className="text-xs sm:text-sm font-medium text-gray-600">Current Status </Label>
                   <Badge variant="outline" className="text-green-600 border-green-600 text-xs sm:text-sm">
                     {crateDetails.currentStatus}
                   </Badge>
@@ -188,36 +346,70 @@ export default function DistributorPortal() {
             </CardContent>
           </Card>
 
-          {/* Distribution Update Form */}
+          {/* New: Create SubCrate Card */}
           <Card>
             <CardHeader className="px-4 sm:px-6">
               <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                <MapPin className="h-5 w-5" />
-                Update Distribution Details
+                <PlusCircle className="h-5 w-5" />
+                Create SubCrate
               </CardTitle>
-              <CardDescription className="text-sm sm:text-base">Add shipping and storage information</CardDescription>
+              <CardDescription className="text-sm sm:text-base">
+                Divide a main crate into smaller sub-crates
+              </CardDescription>
             </CardHeader>
-            <CardContent className="px-4 sm:px-6">
-              <form onSubmit={handleSubmit} className="space-y-4">
-              <Label htmlFor="crateCodeForAssignment" className="text-sm sm:text-base">
-                Crate Code
-              </Label>
-              <Input
-                id="crateCodeForAssignment"
-                value={receiveCrateCodeForAssignment}
-                onChange={(e) => setreceiveCrateCodeForAssignment(e.target.value)}
-                placeholder="Enter crate code (e.g., XXXXX-XXXXX)"
-                className="text-sm sm:text-base"
+            <CardContent className="px-4 sm:px-6 space-y-4">
+              <div>
+                <Label htmlFor="parentCrateCodeForSubCrate" className="text-sm sm:text-base">
+                  Parent Crate Code
+                </Label>
+                <Input
+                  id="parentCrateCodeForSubCrate"
+                  value={parentCrateCodeForSubCrate}
+                  onChange={(e) => setParentCrateCodeForSubCrate(e.target.value)}
+                  placeholder="Enter parent crate code (e.g., XXXXX-XXXXX)"
+                  className="text-sm sm:text-base"
+                />
+              </div>
+            <Button onClick={handleGetCrateInfo}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-sm sm:text-base py-2 sm:py-3"
+               disabled={!parentCrateCodeForSubCrate}>
+                Get Crate Info
+            </Button>
+
+
+              <MultiSelectDropdown
+                label="Bottle IDs"
+                options={availableBottleIds}
+                selected={selectedBottleIds}
+                onSelect={setSelectedBottleIds}
+                placeholder="Select bottle IDs for sub-crate"
               />
 
-                <Button
-                  type="submit"
-                  className="w-full bg-green-600 hover:bg-green-700 text-sm sm:text-base py-2 sm:py-3"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? "Updating Blockchain..." : "Update Distribution Details"}
-                </Button>
-              </form>
+              <div>
+                <Label htmlFor="subCrateId" className="text-sm sm:text-base">
+                  Generated SubCrate ID
+                </Label>
+                <Input
+                  id="subCrateId"
+                  value={subCrateId}
+                  readOnly
+                  placeholder="Auto-generated after selecting bottles"
+                  className="bg-gray-50 font-mono text-sm sm:text-base"
+                />
+                {subCrateId && (
+                  <p className="text-xs text-gray-600 mt-1">This unique ID will be assigned to your new sub-crate.</p>
+                )}
+              </div>
+
+              <Button
+                onClick={handleCreateSubCrate}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-sm sm:text-base py-2 sm:py-3"
+                disabled={
+                  isCreatingSubCrate || !parentCrateCodeForSubCrate || selectedBottleIds.length === 0 || !subCrateId
+                }
+              >
+                {isCreatingSubCrate ? "Creating SubCrate..." : "Create SubCrate"}
+              </Button>
             </CardContent>
           </Card>
 
@@ -228,21 +420,59 @@ export default function DistributorPortal() {
                 <Users className="h-5 w-5" />
                 Select Retailer
               </CardTitle>
-              <Label htmlFor="crateCodeForAssignment" className="text-sm sm:text-base">
-                Crate Code
-              </Label>
-              <Input
-                id="crateCodeForAssignment"
-                value={sendCrateCodeForAssignment}
-                onChange={(e) => setsendCrateCodeForAssignment(e.target.value)}
-                placeholder="Enter crate code (e.g., XXXXX-XXXXX)"
-                className="text-sm sm:text-base"
-              />
               <CardDescription className="text-sm sm:text-base">
                 Choose a retailer to forward your products to
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 px-4 sm:px-6">
+              <div className="space-y-2">
+                <Label htmlFor="assignmentType" className="text-sm sm:text-base">
+                  Assignment Type
+                </Label>
+                <Select
+                  value={assignmentType}
+                  onValueChange={(value: "crate" | "subCrate") => setAssignmentType(value)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select assignment type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="crate">Crate</SelectItem>
+                    <SelectItem value="subCrate">SubCrate</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {assignmentType === "crate" ? (
+                <div>
+                  <Label htmlFor="crateCodeForSend" className="text-sm sm:text-base">
+                    Enter Crate Code
+                  </Label>
+                  <Input
+                    id="crateCodeForSend"
+                    value={crateCodeForSend}
+                    onChange={(e) => setCrateCodeForSend(e.target.value)}
+                    placeholder="Enter crate code (e.g., XXXXX-XXXXX)"
+                    className="text-sm sm:text-base"
+                  />
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="subCrateCodeForSend" className="text-sm sm:text-base">
+                      Enter SubCrate Code
+                    </Label>
+                    <Input
+                      id="subCrateCodeForSend"
+                      value={subCrateCodeForSend}
+                      onChange={(e) => setSubCrateCodeForSend(e.target.value)}
+                      placeholder="Enter sub-crate code"
+                      className="text-sm sm:text-base"
+                    />
+                  </div>
+                </div>
+              )}
+
               <SearchableDropdown
                 options={supplyChainData.retailers}
                 value={selectedRetailer}
@@ -280,8 +510,10 @@ export default function DistributorPortal() {
           <AssignmentForm
             fromEntity={currentDistributor}
             toEntity={selectedRetailer}
-            crateCode={sendCrateCodeForAssignment}
-            assignmentType="distributor-to-retailer"
+            assignmentType={assignmentType}
+            crateCode={crateCodeForSend}
+            parentCrateCode={parentCrateCodeForSend}
+            subCrateCode={subCrateCodeForSend}
           />
         </div>
 
