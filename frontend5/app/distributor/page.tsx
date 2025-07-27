@@ -89,7 +89,8 @@ export default function DistributorPortal() {
       for (let i = 0; i < 5; i++) {
         result += characters.charAt(Math.floor(Math.random() * characters.length))
       }
-      result = parentCrateCodeForSubCrate + 
+
+      result = parentCrateCodeForSubCrate + "-" + result
       setSubCrateId(result)
     } else {
       setSubCrateId("")
