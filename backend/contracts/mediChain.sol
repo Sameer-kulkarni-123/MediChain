@@ -8,26 +8,23 @@ contract MedicineCrateTracking {
         string batchId;
         string medicineId;
         string medicineName;
-        string manufacturerId;
-        address manufacturerAddress;
-        address currentAddress;
-        string currentAddressId;
-        string cidDocuments;
+        string manufacturerPhysicalAddress;
+        address manufacturerWalletAddress;
+        string currentPhysicalAddress;
+        address currentWalletAddress;
+        string cidDocument;
         uint256 bottleCount;
         bool inTransit;
-        address nextHolder;
-        string nextHolderId;
+        address nextHolderWalletAddress;     
         bool exists;
-        bool retailLocationSet;
-        int32 retailLat; // stored as x1000000
-        int32 retailLong;
+        address[] pastWalletAddress; 
+        bool isFinalDestination;
+        string[] bottleCodes; 
     }
 
     struct BottleScanInfo {
         bool scanned;
         uint256 scanTimestamp;
-        int32 scanLat;
-        int32 scanLong;
         bool reported;
     }
 
@@ -42,109 +39,122 @@ contract MedicineCrateTracking {
 
     modifier onlyCurrentHolder(string memory crateCode) {
         require(crates[crateCode].exists, "Crate does not exist");
-        require(crates[crateCode].currentAddress == msg.sender, "Only current holder can perform this");
+        require(crates[crateCode].currentWalletAddress == msg.sender, "Only current holder can perform this");
         _;
     }
 
     modifier onlyNextHolder(string memory crateCode) {
         require(crates[crateCode].exists, "Crate does not exist");
-        require(crates[crateCode].nextHolder == msg.sender, "Only assigned receiver can confirm receipt");
+        require(crates[crateCode].nextHolderWalletAddress == msg.sender, "Only assigned receiver can confirm receipt");
         _;
     }
     
-    modifier onlyRetailReceiver(string memory crateCode) {
-        require(crates[crateCode].exists, "Crate does not exist");
-        require(crates[crateCode].currentAddress == msg.sender, "Not current holder");
-        _;
-    }
+    //modifier onlyRetailReceiver(string memory crateCode) {
+        //require(crates[crateCode].exists, "Crate does not exist");
+        //require(crates[crateCode].currentAddress == msg.sender, "Not current holder");
+        //_;
+    //}
 
     function registerCrate(
         string memory crateCode,
         string memory batchId,
         string memory medicineId,
         string memory medicineName,
-        string memory manufacturerId,
-        address manufacturerAddress,
-        address currentAddress,
-        string memory currentAddressId,
-        string memory cidDocuments,
-        uint256 bottleCount
+        address manufacturerWalletAddress,
+        string memory manufacturerPhysicalAddress,
+        string memory cidDocument,
+        uint256 bottleCount,
+        string[] memory bottleCodes
     ) public {
         require(!crates[crateCode].exists, "Crate already registered");
+        address[] memory emptyAddressArray;
 
     crates[crateCode] = Crate({
         crateCode: crateCode,
         batchId: batchId,
         medicineId: medicineId,
         medicineName: medicineName,
-        manufacturerId: manufacturerId,
-        manufacturerAddress: manufacturerAddress,
-        currentAddress: currentAddress,
-        currentAddressId: currentAddressId,
-        cidDocuments: cidDocuments,
+        manufacturerPhysicalAddress: manufacturerPhysicalAddress,
+        manufacturerWalletAddress: manufacturerWalletAddress,
+        currentWalletAddress: manufacturerWalletAddress,
+        currentPhysicalAddress: manufacturerPhysicalAddress,
+        cidDocument: cidDocument,
         bottleCount: bottleCount,
         inTransit: false,
-        nextHolder: address(0),
-        nextHolderId: "",
+        isFinalDestination: false,
+        nextHolderWalletAddress: address(0),
         exists: true,
-        retailLocationSet: false,
-        retailLat: 0,
-        retailLong: 0
+        bottleCodes: bottleCodes,
+        pastWalletAddress: emptyAddressArray
     });
 
 
         emit CrateRegistered(crateCode, bottleCount);
     }
 
-    function crateSent(string memory crateCode, address to, string memory toId) public onlyCurrentHolder(crateCode) {
+    function crateSent(string memory crateCode, address to) public onlyCurrentHolder(crateCode) {
         Crate storage crate = crates[crateCode];
         require(!crate.inTransit, "Crate is already in transit");
 
         crate.inTransit = true;
-        crate.nextHolder = to;
-        crate.nextHolderId = toId;
+        crate.nextHolderWalletAddress = to;
+        crate.pastWalletAddress.push(crate.currentWalletAddress);
+        
 
         emit CrateSent(crateCode, msg.sender, to);
     }
 
-    function crateReceived(string memory crateCode, string memory newLocationId) public onlyNextHolder(crateCode) {
+    function crateReceived(string memory crateCode) public onlyNextHolder(crateCode) {
         Crate storage crate = crates[crateCode];
         require(crate.inTransit, "Crate is not in transit");
 
-        address previousHolder = crate.currentAddress;
+        
 
-        crate.currentAddress = msg.sender;
-        crate.currentAddressId = newLocationId;
+        crate.currentWalletAddress = msg.sender;
         crate.inTransit = false;
-        crate.nextHolder = address(0);
-        crate.nextHolderId = "";
+        crate.nextHolderWalletAddress = address(0);
 
-        emit CrateReceived(crateCode, previousHolder, msg.sender);
+        emit CrateReceived(crateCode, crate.pastWalletAddress[crate.pastWalletAddress.length - 1], msg.sender);
     }
 
-    function setRetailLocation(string memory crateCode, int32 lat, int32 longi) public onlyRetailReceiver(crateCode) {
+
+
+    function crateRetailerReceived(string memory crateCode) public {
         Crate storage crate = crates[crateCode];
-        crate.retailLat = lat;
-        crate.retailLong = longi;
-        crate.retailLocationSet = true;
+        require(crate.exists, "Invalid crate");
+
+        crate.isFinalDestination = true;
+        crate.inTransit = false;
+        crate.currentWalletAddress = msg.sender;
+        crate.pastWalletAddress.push(crate.currentWalletAddress);
+        crate.nextHolderWalletAddress = address(0);
     }
 
     
-    function scanBottle(string memory bottleCode, int32 scanLat, int32 scanLong) public {
-        string memory crateCode = parseCrateFromBottle(bottleCode);
+    function scanBottle(string memory bottleCode) public {
+        (string memory crateCode, string memory bottleId) = parseCrateFromBottle(bottleCode);
         Crate storage crate = crates[crateCode];
         require(crate.exists, "Invalid crate");
-        require(crate.retailLocationSet, "Crate not at retail yet");
+        require(crate.isFinalDestination, "crate didn't reached");
+        bool bottleExists = false;
 
         BottleScanInfo storage info = bottleScans[bottleCode];
+        for (uint i =0; i< crate.bottleCodes.length; i++){
+            if (keccak256(bytes(bottleId)) == keccak256(bytes(crate.bottleCodes[i]))) {
+                bottleExists = true;
+                break;
+            }
+        }
+
+        require(bottleExists, "Bottle doesn't exist");
+        
+        
 
         bool suspicious = false;
 
         if (!info.scanned) {
             info.scanned = true;
             info.scanTimestamp = block.timestamp;
-            info.scanLat = scanLat;
-            info.scanLong = scanLong;
         } else {
             suspicious = true; // repeated scan
         }
@@ -152,15 +162,20 @@ contract MedicineCrateTracking {
         emit BottleScanned(bottleCode, !suspicious, suspicious);
     }
 
-        function parseCrateFromBottle(string memory bottleCode) internal pure returns (string memory) {
+        function parseCrateFromBottle(string memory bottleCode) internal pure returns (string memory, string memory) {
         bytes memory b = bytes(bottleCode);
         for (uint i = 0; i < b.length; i++) {
             if (b[i] == "-") {
+
                 bytes memory crateBytes = new bytes(i);
+                bytes memory bottleBytes = new bytes(i);
                 for (uint j = 0; j < i; j++) {
                     crateBytes[j] = b[j];
                 }
-                return string(crateBytes);
+                for (uint j = i+1; i<b.length; j++){
+                    bottleBytes[j] = b[j];
+                }
+                return (string(crateBytes), string(bottleBytes));
             }
         }
         revert("Invalid bottle code");
