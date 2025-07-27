@@ -79,11 +79,6 @@
         },
         {
           "internalType": "string",
-          "name": "batchID",
-          "type": "string"
-        },
-        {
-          "internalType": "string",
           "name": "productID",
           "type": "string"
         },
@@ -249,11 +244,6 @@
         },
         {
           "internalType": "string",
-          "name": "batchID",
-          "type": "string"
-        },
-        {
-          "internalType": "string",
           "name": "productID",
           "type": "string"
         },
@@ -281,25 +271,6 @@
       "name": "registerCrate",
       "outputs": [],
       "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "string",
-          "name": "parentCrateCode",
-          "type": "string"
-        }
-      ],
-      "name": "retrieveCrateInfo",
-      "outputs": [
-        {
-          "internalType": "string[]",
-          "name": "",
-          "type": "string[]"
-        }
-      ],
-      "stateMutability": "view",
       "type": "function"
     },
     {
@@ -352,4 +323,4 @@
       "stateMutability": "nonpayable",
       "type": "function"
     }
-  ]
+]

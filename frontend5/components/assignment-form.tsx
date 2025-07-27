@@ -1,16 +1,11 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Send } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { sendCrate } from "../apis"
+import { useState } from "react"
+import { getAccount, sendCrate, sendSubCrate } from "../apis"
 
 interface Entity {
   id: string
@@ -22,76 +17,94 @@ interface Entity {
 interface AssignmentFormProps {
   fromEntity: Entity | null
   toEntity: Entity | null
-  assignmentType: "manufacturer-to-distributor" | "distributor-to-retailer"
+  assignmentType: "crate" | "subCrate" // Updated type
+  crateCode?: string // Optional for main crate
+  parentCrateCode?: string // Optional for sub-crate
+  subCrateCode?: string // Optional for sub-crate
 }
 
-export function AssignmentForm({ fromEntity, toEntity, assignmentType }: AssignmentFormProps) {
-  const [assignmentData, setAssignmentData] = useState({
-    productName: "",
-    batchId: "",
-    quantity: "",
-    notes: "",
-  })
-  const [isSubmitting, setIsSubmitting] = useState(false)
+export function AssignmentForm({
+  fromEntity,
+  toEntity,
+  assignmentType,
+  crateCode,
+  parentCrateCode,
+  subCrateCode,
+}: AssignmentFormProps) {
+  const [isSending, setIsSending] = useState(false)
   const { toast } = useToast()
 
-  const handleInputChange = (field: string, value: string) => {
-    setAssignmentData((prev) => ({
-      ...prev,
-      [field]: value,
-    }))
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-
+  const handleSendCrate = async () => {
     if (!fromEntity || !toEntity) {
       toast({
         title: "Error",
-        description: `Please select a ${assignmentType.includes("distributor") ? "retailer" : "distributor"} first`,
+        description: "Please ensure both sender and receiver are selected.",
         variant: "destructive",
       })
       return
     }
 
-    setIsSubmitting(true)
-
+    setIsSending(true)
     try {
-      // Simulate blockchain transaction
-      // await new Promise((resolve) => setTimeout(resolve, 2000))
-      const receipt = await sendCrate("3UKOX", toEntity.walletAddress)
+      // Get current account (assuming the current user is the sender)
+      const account = await getAccount()
 
+      let receipt
+      if (assignmentType === "subCrate") {
+        if (!subCrateCode) {
+          toast({
+            title: "Error",
+            description: "Please enter both parent and sub-crate codes for sub-crate assignment.",
+            variant: "destructive",
+          })
+          return
+        }
+        receipt = await sendSubCrate(subCrateCode, toEntity.walletAddress)
+      } else {
+        // assignmentType === "crate"
+        if (!crateCode) {
+          toast({
+            title: "Error",
+            description: "Please enter a crate code.",
+            variant: "destructive",
+          })
+          return
+        }
+        receipt = await sendCrate(crateCode, toEntity.walletAddress)
+      }
+
+      console.log("Send transaction successful:", receipt)
       toast({
-        title: "Assignment Successful",
-        description: `Product assigned from ${fromEntity.name} to ${toEntity.name}`,
+        title: `${assignmentType === "subCrate" ? "SubCrate" : "Crate"} Sent`,
+        description: `${assignmentType === "subCrate" ? "SubCrate" : "Crate"} successfully sent to ${toEntity.name}.`,
       })
-
-      // Reset form
-      setAssignmentData({
-        productName: "",
-        batchId: "",
-        quantity: "",
-        notes: "",
-      })
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Error sending crate:", error)
       toast({
         title: "Error",
-        description: "Failed to assign product. Please try again.",
+        description: `Failed to send ${assignmentType === "subCrate" ? "sub-crate" : "crate"}: ${error.message}`,
         variant: "destructive",
       })
     } finally {
-      setIsSubmitting(false)
+      setIsSending(false)
     }
   }
 
+  // Determine if the send button should be disabled
+  const isSendButtonDisabled =
+    isSending ||
+    !fromEntity ||
+    !toEntity ||
+    (assignmentType === "subCrate" ? !subCrateCode : !crateCode)
+
   const getTitle = () => {
-    return assignmentType === "manufacturer-to-distributor" ? "Assign to Distributor" : "Forward to Retailer"
+    return assignmentType === "subCrate" ? "Send SubCrate" : "Send Crate"
   }
 
   const getDescription = () => {
-    return assignmentType === "manufacturer-to-distributor"
-      ? "Assign products to the selected distributor"
-      : "Forward products to the selected retailer"
+    return assignmentType === "subCrate"
+      ? "Confirm and send sub-crate to the selected retailer."
+      : "Confirm and send crate to the selected retailer."
   }
 
   return (
@@ -104,79 +117,42 @@ export function AssignmentForm({ fromEntity, toEntity, assignmentType }: Assignm
         <CardDescription className="text-sm sm:text-base">{getDescription()}</CardDescription>
       </CardHeader>
       <CardContent className="px-4 sm:px-6">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* <div>
-            <Label htmlFor="productName" className="text-sm sm:text-base">
-              Product Name
-            </Label>
-            <Input
-              id="productName"
-              value={assignmentData.productName}
-              onChange={(e) => handleInputChange("productName", e.target.value)}
-              placeholder="Enter product name"
-              required
-              className="text-sm sm:text-base"
-            />
-          </div> */}
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* <div>
-              <Label htmlFor="batchId" className="text-sm sm:text-base">
-                Batch ID
-              </Label>
-              <Input
-                id="batchId"
-                value={assignmentData.batchId}
-                onChange={(e) => handleInputChange("batchId", e.target.value)}
-                placeholder="Enter batch ID"
-                required
-                className="text-sm sm:text-base"
-              />
-            </div> */}
-            {/* <div>
-              <Label htmlFor="quantity" className="text-sm sm:text-base">
-                Quantity
-              </Label>
-              <Input
-                id="quantity"
-                type="number"
-                value={assignmentData.quantity}
-                onChange={(e) => handleInputChange("quantity", e.target.value)}
-                placeholder="Enter quantity"
-                required
-                className="text-sm sm:text-base"
-              />
-            </div> */}
-          </div>
-
-          {/* <div>
-            <Label htmlFor="notes" className="text-sm sm:text-base">
-              Notes (Optional)
-            </Label>
-            <Textarea
-              id="notes"
-              value={assignmentData.notes}
-              onChange={(e) => handleInputChange("notes", e.target.value)}
-              placeholder="Enter any additional notes"
-              rows={3}
-              className="text-sm sm:text-base"
-            />
-          </div> */}
+        <div className="space-y-4">
+          {fromEntity && toEntity ? (
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-2">
+              <p className="text-sm font-medium text-blue-900">
+                From: <span className="font-normal">{fromEntity.name}</span>
+              </p>
+              <p className="text-sm font-medium text-blue-900">
+                To: <span className="font-normal">{toEntity.name}</span>
+              </p>
+              {assignmentType === "subCrate" ? (
+                <>
+                  <p className="text-sm font-medium text-blue-900">
+                    Parent Crate Code: <span className="font-normal font-mono break-all">{parentCrateCode}</span>
+                  </p>
+                  <p className="text-sm font-medium text-blue-900">
+                    SubCrate Code: <span className="font-normal font-mono break-all">{subCrateCode}</span>
+                  </p>
+                </>
+              ) : (
+                <p className="text-sm font-medium text-blue-900">
+                  Crate Code: <span className="font-normal font-mono break-all">{crateCode}</span>
+                </p>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500">Please select a retailer and enter a crate/sub-crate code.</p>
+          )}
 
           <Button
-            type="submit"
-            className="w-full text-sm sm:text-base py-2 sm:py-3"
-            disabled={isSubmitting || !fromEntity || !toEntity}
+            onClick={handleSendCrate}
+            disabled={isSendButtonDisabled}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-sm sm:text-base py-2 sm:py-3"
           >
-            {isSubmitting ? "Assigning..." : `Assign to ${toEntity?.name || "Selected Entity"}`}
+            {isSending ? "Sending..." : `Send ${assignmentType === "subCrate" ? "SubCrate" : "Crate"}`}
           </Button>
-
-          {(!fromEntity || !toEntity) && (
-            <p className="text-xs sm:text-sm text-gray-500 text-center">
-              Please select a {assignmentType.includes("distributor") ? "retailer" : "distributor"} to enable assignment
-            </p>
-          )}
-        </form>
+        </div>
       </CardContent>
     </Card>
   )
