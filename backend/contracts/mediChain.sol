@@ -111,7 +111,7 @@ contract MedicineCrateTracking {
         require(crates[parentCrateCode].isExists, "crate doesn't exist");
         require(crates[parentCrateCode].currentWalletAddress == msg.sender, "only parent crate holders can create sub crates");
         require(!crates[parentCrateCode].subCrates[subCrateID].isExists, "the subcrate already exists");
-        crates[parentCrateCode].isSubCrateExists = false;
+        crates[parentCrateCode].isSubCrateExists = true;
 
         // SubCrate memory newSubCrate = SubCrate
         SubCrate storage newSubCrate = crates[parentCrateCode].subCrates[subCrateID];
@@ -173,7 +173,7 @@ contract MedicineCrateTracking {
         SubCrate storage subCrate = crate.subCrates[subCrateCode];
         require(subCrate.subCrateCurrentHolderWalletAddress == msg.sender, "you dont currently hold the subCrate you are trying to send");
 
-        crate.inTransit = true;
+        // crate.inTransit = true;
         subCrate.nextSubCrateReceiverWalletAddress = receiverWalletAddress;
         crate.pastWalletAddress.push(crate.currentWalletAddress);
     }
