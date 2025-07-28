@@ -344,6 +344,7 @@ export async function getCrateInfo(parentCrateCode){
     const Tx = await contract.methods.retrieveCrateInfo(
       parentCrateCode
     ).call({ from: account });
+    return Tx
   }catch(e){
     console.error("error getting crate info");
     throw new Error(`failed to get crate info ${error.message}`);
