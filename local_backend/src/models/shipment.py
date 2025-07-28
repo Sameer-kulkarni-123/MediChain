@@ -42,15 +42,17 @@ class LocationModel(BaseModel):
     id: PyObjectId
 
 class ShipmentModel(BaseModel):
+    shipmentid:str
     productName: str
     qty: conint(ge=0)
-    unitIds: Optional[List[PyObjectId]]
+    unitIds: Optional[List[PyObjectId]]  # Which product units are inside
+    parentShipmentId: Optional[PyObjectId]  # For sub-crates created by distributors
     inTransit: bool = False
     status: Literal['sealed','opened']
-    location: Optional[LocationModel]
+    location: Optional[LocationModel]  # Current holder (manufacturer/distributor/retailer)
     createdAt: Optional[datetime]
     updatedAt: Optional[datetime]
-    
+
 
 class ProductInDB(ShipmentModel):
     id: PyObjectId = Field(default_factory=PyObjectId, alias='_id')

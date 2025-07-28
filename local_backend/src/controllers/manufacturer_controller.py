@@ -66,4 +66,6 @@ async def update_manufacturer(manufacturer_id: str, update_data: ManufacturerUpd
 
 
 
+
+
      

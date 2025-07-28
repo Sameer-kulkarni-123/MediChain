@@ -63,5 +63,54 @@ async def update_distributor(distributor_id: str, update_data: DistributorUpdate
     return {"detail": "Distributor updated successfully"}
 
 
+async def get_all_inventory(distributor_id: str):
+    distributor = await collection.find_one({"distributorId": distributor_id})
+    if not distributor:
+        raise HTTPException(status_code=404, detail="Distributor not found")
+    
+    return distributor.get("inventory", [])
 
-     
+
+async def get_inventory_item(distributor_id: str, product_name: str):
+    distributor = await collection.find_one({"distributorId": distributor_id})
+    if not distributor:
+        raise HTTPException(status_code=404, detail="Distributor not found")
+    
+    inventory = distributor.get("inventory", [])
+    item = next((i for i in inventory if i["productName"].lower() == product_name.lower()), None)
+    
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found in inventory")
+    
+    return item
+
+async def update_inventory(distributor_id: str, inventory_data: list[dict]):
+    """
+    inventory_data = [{"productName": "Paracetamol", "qty": 50, "reorderLevel": 5}, ...]
+    """
+    distributor = await collection.find_one({"distributorId": distributor_id})
+    if not distributor:
+        raise HTTPException(status_code=404, detail="Distributor not found")
+
+    # Update the entire inventory
+    result = await collection.update_one(
+        {"distributorId": distributor_id},
+        {"$set": {"inventory": inventory_data}}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Inventory not updated")
+
+    return {"detail": "Inventory updated successfully"}
+
+
+async def update_inventory_item(distributor_id: str, product_name: str, qty: int):
+    result = await collection.update_one(
+        {"distributorId": distributor_id, "inventory.productName": product_name},
+        {"$set": {"inventory.$.qty": qty}}
+    )
+
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Item not found or quantity not updated")
+
+    return {"detail": f"Quantity for {product_name} updated"}

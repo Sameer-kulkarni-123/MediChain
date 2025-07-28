@@ -24,3 +24,18 @@ async def delete_distributor(distributor_id: str):
 async def update_manufacturer(distributor_id: str, update_data: DistributorUpdateModel):
     return await controller.update_manufacturer(distributor_id, update_data)
 
+@router.get("/{distributor_id}/inventory")
+async def get_all_inventory(distributor_id: str):
+    return await controller.get_all_inventory(distributor_id)
+
+@router.get("/{distributor_id}/inventory/{product_name}")
+async def get_inventory_item(distributor_id: str, product_name: str):
+    return await controller.get_inventory_item(distributor_id, product_name)
+
+@router.patch("/{distributor_id}/inventory")
+async def update_inventory(distributor_id: str, inventory_data: list[dict]):
+    return await controller.update_inventory(distributor_id, inventory_data)
+
+@router.patch("/{distributor_id}/inventory/{product_name}")
+async def update_inventory_item(distributor_id: str, product_name: str, qty: int):
+    return await controller.update_inventory_item(distributor_id, product_name, qty)
