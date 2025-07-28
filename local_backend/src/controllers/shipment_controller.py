@@ -2,26 +2,38 @@ from fastapi import HTTPException
 from models.shipment import ShipmentModel, ProductInDB
 from config.db import db
 from datetime import datetime
-from bson import ObjectId
+import random
 
 collection = db.get_collection("shipments")
 products_collection = db.get_collection("products")
 
-# Create a new shipment (manufacturer packs crate)
+
+# Helper: Generate unique shipmentId
+async def generate_shipment_id():
+    while True:
+        suffix = random.randint(1000, 9999)
+        shipment_id = f"ship_{suffix}"
+        exists = await collection.find_one({"shipmentId": shipment_id})
+        if not exists:
+            return shipment_id
+
+
+# Create a new shipment
 async def create_shipment(shipment: ShipmentModel):
     shipment_dict = shipment.model_dump(exclude_unset=True)
+    shipment_dict["shipmentId"] = await generate_shipment_id()
     shipment_dict["createdAt"] = datetime.utcnow()
     shipment_dict["updatedAt"] = datetime.utcnow()
 
     result = await collection.insert_one(shipment_dict)
 
-    # Update all product units' batch and location
+    # Update product units
     if shipment.unitIds:
         await products_collection.update_many(
-            {"_id": {"$in": shipment.unitIds}},
+            {"productId": {"$in": shipment.unitIds}},
             {
                 "$set": {
-                    "batchId": result.inserted_id,
+                    "batchId": shipment_dict["shipmentId"],
                     "location": shipment.location,
                     "inTransit": shipment.inTransit
                 }
@@ -38,23 +50,18 @@ async def all_shipments():
     return [ProductInDB(**doc) for doc in docs]
 
 
-# Get one shipment by ID
+# Get one shipment by shipmentId
 async def one_shipment(shipment_id: str):
-    if not ObjectId.is_valid(shipment_id):
-        raise HTTPException(status_code=400, detail="Invalid shipment ID")
-    doc = await collection.find_one({"_id": ObjectId(shipment_id)})
+    doc = await collection.find_one({"shipmentId": shipment_id})
     if not doc:
         raise HTTPException(status_code=404, detail="Shipment not found")
     return ProductInDB(**doc)
 
 
-# Forward a shipment (mark in transit, update location)
+# Forward a shipment (mark in transit)
 async def forward_shipment(shipment_id: str, location: dict):
-    if not ObjectId.is_valid(shipment_id):
-        raise HTTPException(status_code=400, detail="Invalid shipment ID")
-
     result = await collection.update_one(
-        {"_id": ObjectId(shipment_id)},
+        {"shipmentId": shipment_id},
         {
             "$set": {
                 "inTransit": True,
@@ -70,18 +77,15 @@ async def forward_shipment(shipment_id: str, location: dict):
     return {"detail": "Shipment forwarded"}
 
 
-# Receive a shipment (mark inTransit=false, update product locations)
+# Receive a shipment (mark inTransit=false)
 async def receive_shipment(shipment_id: str, location: dict):
-    if not ObjectId.is_valid(shipment_id):
-        raise HTTPException(status_code=400, detail="Invalid shipment ID")
-
-    shipment = await collection.find_one({"_id": ObjectId(shipment_id)})
+    shipment = await collection.find_one({"shipmentId": shipment_id})
     if not shipment:
         raise HTTPException(status_code=404, detail="Shipment not found")
 
     # Update shipment
     await collection.update_one(
-        {"_id": ObjectId(shipment_id)},
+        {"shipmentId": shipment_id},
         {
             "$set": {
                 "inTransit": False,
@@ -94,7 +98,7 @@ async def receive_shipment(shipment_id: str, location: dict):
     # Update product locations
     if shipment.get("unitIds"):
         await products_collection.update_many(
-            {"_id": {"$in": shipment["unitIds"]}},
+            {"productId": {"$in": shipment["unitIds"]}},
             {
                 "$set": {
                     "location": location,
@@ -106,34 +110,32 @@ async def receive_shipment(shipment_id: str, location: dict):
     return {"detail": "Shipment received and products updated"}
 
 
-# Split a shipment into sub-shipments (distributor)
+# Split a shipment into sub-shipments
 async def split_shipment(shipment_id: str, sub_shipments: list[ShipmentModel]):
-    if not ObjectId.is_valid(shipment_id):
-        raise HTTPException(status_code=400, detail="Invalid parent shipment ID")
-
-    parent = await collection.find_one({"_id": ObjectId(shipment_id)})
+    parent = await collection.find_one({"shipmentId": shipment_id})
     if not parent:
         raise HTTPException(status_code=404, detail="Parent shipment not found")
 
-    # Mark parent shipment as opened
+    # Mark parent as opened
     await collection.update_one(
-        {"_id": ObjectId(shipment_id)},
+        {"shipmentId": shipment_id},
         {"$set": {"status": "opened", "updatedAt": datetime.utcnow()}}
     )
 
     created_shipments = []
     for sub in sub_shipments:
         sub_data = sub.model_dump(exclude_unset=True)
-        sub_data["parentShipmentId"] = ObjectId(shipment_id)
+        sub_data["parentShipmentId"] = shipment_id
+        sub_data["shipmentId"] = await generate_shipment_id()
         sub_data["createdAt"] = datetime.utcnow()
         sub_data["updatedAt"] = datetime.utcnow()
         result = await collection.insert_one(sub_data)
 
-        # Update product units to point to new sub-shipment
+        # Update product units
         if sub.unitIds:
             await products_collection.update_many(
-                {"_id": {"$in": sub.unitIds}},
-                {"$set": {"batchId": result.inserted_id}}
+                {"productId": {"$in": sub.unitIds}},
+                {"$set": {"batchId": sub_data["shipmentId"]}}
             )
 
         created_shipments.append(await collection.find_one({"_id": result.inserted_id}))

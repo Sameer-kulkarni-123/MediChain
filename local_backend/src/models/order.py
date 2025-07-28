@@ -60,7 +60,7 @@ class LineItemsModel (BaseModel):
 
 class OrderModel(BaseModel):
     id: PyObjectId = Field(alias="_id", default=None)
-    orderid: str 
+    orderId: str 
     retailerId: str
     lineItems: LineItemsModel
     status: Literal['created','in-transit','completed','cancelled']

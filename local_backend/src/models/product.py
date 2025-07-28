@@ -41,6 +41,7 @@ class LocationModel(BaseModel):
 
 class ProductModel(BaseModel):
     id: PyObjectId = Field(alias="_id", default=None)
+    productId: str
     productName: str
     atcCode: Optional[str]
     coldChain: bool = False

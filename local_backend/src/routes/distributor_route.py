@@ -32,9 +32,9 @@ async def get_all_inventory(distributor_id: str):
 async def get_inventory_item(distributor_id: str, product_name: str):
     return await controller.get_inventory_item(distributor_id, product_name)
 
-@router.patch("/{distributor_id}/inventory")
-async def update_inventory(distributor_id: str, inventory_data: list[dict]):
-    return await controller.update_inventory(distributor_id, inventory_data)
+@router.patch("/{distributor_id}/inventory/bulk")
+async def bulk_update_inventory(distributor_id: str, updates: list[dict]):
+    return await controller.bulk_update_inventory(distributor_id, updates)
 
 @router.patch("/{distributor_id}/inventory/{product_name}")
 async def update_inventory_item(distributor_id: str, product_name: str, qty: int):

@@ -42,7 +42,7 @@ class LocationModel(BaseModel):
     id: PyObjectId
 
 class ShipmentModel(BaseModel):
-    shipmentid:str
+    shipmentId:str
     productName: str
     qty: conint(ge=0)
     unitIds: Optional[List[PyObjectId]]  # Which product units are inside

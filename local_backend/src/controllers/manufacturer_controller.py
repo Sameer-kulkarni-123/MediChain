@@ -42,8 +42,6 @@ async def one_manufacturers(manufacturer_id: str):
     return doc
 
     
-    
-
 async def delete_manufacturer(manufacturer_id: str):
     result = await collection.delete_one({"manufacturerId": manufacturer_id})
     if result.deleted_count == 0:
