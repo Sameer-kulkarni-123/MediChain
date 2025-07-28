@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Query
-from typing import List, Dict
+from typing import List, Dict, Any
 from models.connection import ConnectionModel, ProductInDB, ConnectionUpdateModel
 from controllers import connection_controller as controller
 
