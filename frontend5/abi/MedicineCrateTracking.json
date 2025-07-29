@@ -7,30 +7,11 @@
           "internalType": "string",
           "name": "bottleCode",
           "type": "string"
-        }
-      ],
-      "name": "BottleReported",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": false,
-          "internalType": "string",
-          "name": "bottleCode",
-          "type": "string"
         },
         {
           "indexed": false,
           "internalType": "bool",
-          "name": "firstScan",
-          "type": "bool"
-        },
-        {
-          "indexed": false,
-          "internalType": "bool",
-          "name": "suspicious",
+          "name": "success",
           "type": "bool"
         }
       ],
@@ -38,127 +19,10 @@
       "type": "event"
     },
     {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": false,
-          "internalType": "string",
-          "name": "crateCode",
-          "type": "string"
-        },
-        {
-          "indexed": false,
-          "internalType": "address",
-          "name": "retailer",
-          "type": "address"
-        }
-      ],
-      "name": "CertificationsActivated",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": false,
-          "internalType": "string",
-          "name": "crateCode",
-          "type": "string"
-        },
-        {
-          "indexed": false,
-          "internalType": "address",
-          "name": "from",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "address",
-          "name": "to",
-          "type": "address"
-        }
-      ],
-      "name": "CrateReceived",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": false,
-          "internalType": "string",
-          "name": "crateCode",
-          "type": "string"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "bottleCount",
-          "type": "uint256"
-        }
-      ],
-      "name": "CrateRegistered",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": false,
-          "internalType": "string",
-          "name": "crateCode",
-          "type": "string"
-        },
-        {
-          "indexed": false,
-          "internalType": "address",
-          "name": "from",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "address",
-          "name": "to",
-          "type": "address"
-        }
-      ],
-      "name": "CrateSent",
-      "type": "event"
-    },
-    {
       "inputs": [
         {
           "internalType": "string",
-          "name": "",
-          "type": "string"
-        }
-      ],
-      "name": "bottleScans",
-      "outputs": [
-        {
-          "internalType": "bool",
-          "name": "scanned",
-          "type": "bool"
-        },
-        {
-          "internalType": "uint256",
-          "name": "scanTimestamp",
-          "type": "uint256"
-        },
-        {
-          "internalType": "bool",
-          "name": "reported",
-          "type": "bool"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "string",
-          "name": "crateCode",
+          "name": "parentCrateCode",
           "type": "string"
         }
       ],
@@ -171,7 +35,7 @@
       "inputs": [
         {
           "internalType": "string",
-          "name": "crateCode",
+          "name": "parentCrateCode",
           "type": "string"
         }
       ],
@@ -184,16 +48,16 @@
       "inputs": [
         {
           "internalType": "string",
-          "name": "crateCode",
+          "name": "parentCrateCode",
           "type": "string"
         },
         {
           "internalType": "address",
-          "name": "to",
+          "name": "receiverWalletAddress",
           "type": "address"
         }
       ],
-      "name": "crateSent",
+      "name": "crateSend",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -215,12 +79,12 @@
         },
         {
           "internalType": "string",
-          "name": "batchId",
+          "name": "batchID",
           "type": "string"
         },
         {
           "internalType": "string",
-          "name": "medicineId",
+          "name": "productID",
           "type": "string"
         },
         {
@@ -229,19 +93,9 @@
           "type": "string"
         },
         {
-          "internalType": "string",
-          "name": "manufacturerPhysicalAddress",
-          "type": "string"
-        },
-        {
           "internalType": "address",
           "name": "manufacturerWalletAddress",
           "type": "address"
-        },
-        {
-          "internalType": "string",
-          "name": "currentPhysicalAddress",
-          "type": "string"
         },
         {
           "internalType": "address",
@@ -259,27 +113,131 @@
           "type": "uint256"
         },
         {
+          "internalType": "address",
+          "name": "nextCrateReceiverWalletAddress",
+          "type": "address"
+        },
+        {
           "internalType": "bool",
           "name": "inTransit",
           "type": "bool"
         },
         {
-          "internalType": "address",
-          "name": "nextHolderWalletAddress",
-          "type": "address"
-        },
-        {
           "internalType": "bool",
-          "name": "exists",
+          "name": "isExists",
           "type": "bool"
         },
         {
           "internalType": "bool",
-          "name": "isFinalDestination",
+          "name": "isCrateFinalDestination",
+          "type": "bool"
+        },
+        {
+          "internalType": "bool",
+          "name": "isSubCrateExists",
           "type": "bool"
         }
       ],
       "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "parentCrateCode",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "subCrateID",
+          "type": "string"
+        },
+        {
+          "internalType": "string[]",
+          "name": "bottlesIDs",
+          "type": "string[]"
+        }
+      ],
+      "name": "createSubCrate",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "crateCode",
+          "type": "string"
+        }
+      ],
+      "name": "debugIsExists",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "parentCrateCode",
+          "type": "string"
+        }
+      ],
+      "name": "getAllBottlesOfCrate",
+      "outputs": [
+        {
+          "internalType": "string[]",
+          "name": "",
+          "type": "string[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "bottleCode",
+          "type": "string"
+        }
+      ],
+      "name": "parseCrateFromBottle",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "crateCode",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "subCrateCode",
+          "type": "string"
+        }
+      ],
+      "name": "parseCrateFromSubCrate",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "pure",
       "type": "function"
     },
     {
@@ -291,27 +249,17 @@
         },
         {
           "internalType": "string",
-          "name": "batchId",
+          "name": "batchID",
           "type": "string"
         },
         {
           "internalType": "string",
-          "name": "medicineId",
+          "name": "productID",
           "type": "string"
         },
         {
           "internalType": "string",
           "name": "medicineName",
-          "type": "string"
-        },
-        {
-          "internalType": "address",
-          "name": "manufacturerWalletAddress",
-          "type": "address"
-        },
-        {
-          "internalType": "string",
-          "name": "manufacturerPhysicalAddress",
           "type": "string"
         },
         {
@@ -326,7 +274,7 @@
         },
         {
           "internalType": "string[]",
-          "name": "bottleCodes",
+          "name": "bottleIds",
           "type": "string[]"
         }
       ],
@@ -339,11 +287,67 @@
       "inputs": [
         {
           "internalType": "string",
+          "name": "parentCrateCode",
+          "type": "string"
+        }
+      ],
+      "name": "retrieveCrateInfo",
+      "outputs": [
+        {
+          "internalType": "string[]",
+          "name": "",
+          "type": "string[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
           "name": "bottleCode",
           "type": "string"
         }
       ],
       "name": "scanBottle",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "subCrateCode",
+          "type": "string"
+        }
+      ],
+      "name": "subCrateRetailerReceived",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "subCrateCode",
+          "type": "string"
+        },
+        {
+          "internalType": "address",
+          "name": "receiverWalletAddress",
+          "type": "address"
+        }
+      ],
+      "name": "subCrateSend",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
