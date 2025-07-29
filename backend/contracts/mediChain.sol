@@ -205,15 +205,16 @@ contract MedicineCrateTracking {
         string memory parentCrateCode = parseCrateFromSubCrate(subCrateCode);
         Crate storage crate = crates[parentCrateCode];
         require(crate.isExists, "crate doesn't exist");
-        require(crate.inTransit, "Crate is not in transit");
+        // require(crate.inTransit, "Crate is not in transit");
         SubCrate storage subCrate = crate.subCrates[subCrateCode];
         require(subCrate.isExists, "subCrate doesn't exist");
         require(subCrate.nextSubCrateReceiverWalletAddress == msg.sender, "not the allocated receiver for the sub crate");
-
+    
         crate.currentWalletAddress = msg.sender; // to get full backtrack info, M & D addr from pastWalletAddress + currentWalletAddress(from crate)
         crate.inTransit = false;
         subCrate.isSubCrateFinalDestination = true; 
         crate.nextCrateReceiverWalletAddress = address(0);
+        subCrate.nextSubCrateReceiverWalletAddress = address(0);
     }
 
     event BottleScanned(string bottleCode, bool success);
