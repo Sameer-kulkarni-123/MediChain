@@ -79,6 +79,8 @@ export async function registerCrate(crateCode, batchID, productID, medicineName,
       
   */
   try {
+    const { web3 } = getWeb3AndContract();
+    console.log("Block number:", await web3.eth.getBlockNumber());
     console.log("Registering crate with parameters:", {
       crateCode,
       batchID,
@@ -241,6 +243,12 @@ export async function retailerReceivedCrate(parentCrateCode) {
       string crateCode : The code of crate to be received by the retailer only  
   */
   try {
+    // console.log("PROVIDER NETWORK : ", await provider.getNetwork())
+    const { web3 } = getWeb3AndContract();
+    const chainId = await web3.eth.getChainId();
+    console.log("Connected chain ID:", chainId);
+    const networkId = await web3.eth.net.getId();
+    console.log("Network ID:", networkId);
     console.log("calling the retailerReceivedCrate api")
     const { contract } = getWeb3AndContract();
     const account = await getAccount();
@@ -296,7 +304,7 @@ export async function scanBottle(bottleCode){
     const account = await getAccount();
     const Tx = await contract.methods.scanBottle(
       bottleCode
-    ).send({ from: account });
+    ).call({ from: account });
     
     const event = Tx.events.BottleScanned;
     if (event) {

@@ -214,7 +214,7 @@
       "outputs": [
         {
           "internalType": "string",
-          "name": "crateCode",
+          "name": "",
           "type": "string"
         }
       ],
@@ -319,6 +319,25 @@
         }
       ],
       "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "bottleCode",
+          "type": "string"
+        }
+      ],
+      "name": "scanBottleReadOnly",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
       "type": "function"
     },
     {
