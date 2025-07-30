@@ -1,0 +1,20 @@
+{
+  "name": "user_frontend",
+  "type": "module",
+  "version": "1.0.0",
+  "main": "apis.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "dotenv": "^17.2.1",
+    "ethers": "^6.15.0",
+    "express": "^5.1.0",
+    "web3": "^4.16.0"
+  }
+}

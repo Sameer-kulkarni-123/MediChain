@@ -247,6 +247,7 @@ export default function ManufacturerPortal() {
       )
       console.log("Crate details submitted to blockchain:", receipt)
       console.log("Generated codes stored in system:", fullCrateCodes)
+      
 
       toast({
         title: "Success",

@@ -10,7 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Store, ArrowLeft, Shield, CheckCircle, Package, Truck, Factory } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
-import { retailerReceivedCrate, scanBottle, getCrateInfo, getAccount } from "../../apis"
+import { retailerReceivedCrate, scanBottle, getCrateInfo, getAccount,retailerReceivedSubCrate } from "../../apis"
 
 export default function RetailerPortal() {
   const [crateCode, setCrateCode] = useState("")
@@ -107,8 +107,20 @@ export default function RetailerPortal() {
 
     try {
       // Mark crate as received by retailer (final destination)
-      await retailerReceivedCrate(crateCode)
+      if (crateCode.length === 5) {
+        await retailerReceivedCrate(crateCode)
 
+      } else if (crateCode.length === 11) {
+        await retailerReceivedSubCrate(crateCode)
+      }
+      else{
+        toast({
+          title: "Error",
+          description: "Invalid crate code format. Please enter a valid code.",
+          variant: "destructive",
+        })
+        return
+      }
       toast({
         title: "Delivery Confirmed",
         description: "Final delivery status updated on blockchain",

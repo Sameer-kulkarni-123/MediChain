@@ -10,11 +10,12 @@ import {
   scanBottle,
   debugIsExists,
   getAllBottlesOfCrate
-} from "../apis"
+} from "../../apis"
 
 function App() {
   const [crateData, setCrateData] = useState({
     crateCode: "",
+    batchID : "",
     productID: "",
     medicineName: "",
     cidDocument: "",
@@ -54,6 +55,7 @@ function App() {
       <section>
         <h3>Register Crate</h3>
         <input name="crateCode" placeholder="Crate Code" onChange={(e) => handleChange(e, setCrateData)} />
+        <input name="batchID" placeholder="BatchID" onChange={(e) => handleChange(e, setCrateData)} />
         <input name="productID" placeholder="Product ID" onChange={(e) => handleChange(e, setCrateData)} />
         <input name="medicineName" placeholder="Medicine Name" onChange={(e) => handleChange(e, setCrateData)} />
         <input name="cidDocument" placeholder="CID Document" onChange={(e) => handleChange(e, setCrateData)} />
@@ -62,6 +64,7 @@ function App() {
         <button onClick={() => {
           console.log("calling registerCrate")
           console.log("crate code", crateData.crateCode)
+          console.log("batchID", crateData.batchID)
           console.log("product id", crateData.productID)
           console.log("medicineName", crateData.medicineName)
           console.log("cidDocument", crateData.cidDocument)
@@ -70,6 +73,7 @@ function App() {
 
         registerCrate(
           crateData.crateCode,
+          crateData.batchID,
           crateData.productID,
           crateData.medicineName,
           crateData.cidDocument,
