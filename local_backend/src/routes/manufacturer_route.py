@@ -13,15 +13,15 @@ async def add_manufacturer(manufacturer: ManufacturerModel):
 async def all_manufacturers():
     return await controller.all_manufacturers()
 
-@router.get("/{manufacturer_id}", response_model=ProductInDB)
-async def one_manufacturers(manufacturer_id):
-    return await controller.one_manufacturers(manufacturer_id)
+@router.get("/{manufacturer_walletAddress}", response_model=ProductInDB)
+async def one_manufacturers(manufacturer_walletAddress):
+    return await controller.one_manufacturers(manufacturer_walletAddress)
 
-@router.delete("/{manufacturer_id}")
-async def delete_manufacturer(manufacturer_id: str):
-    return await controller.delete_manufacturer(manufacturer_id)
+@router.delete("/{manufacturer_walletAddress}")
+async def delete_manufacturer(manufacturer_walletAddress: str):
+    return await controller.delete_manufacturer(manufacturer_walletAddress)
 
-@router.patch("/{manufacturer_id}")
-async def update_manufacturer(manufacturer_id: str, update_data: ManufacturerUpdateModel):
-    return await controller.update_manufacturer(manufacturer_id, update_data)
+@router.patch("/{manufacturer_walletAddress}")
+async def update_manufacturer(manufacturer_walletAddress: str, update_data: ManufacturerUpdateModel):
+    return await controller.update_manufacturer(manufacturer_walletAddress, update_data)
 

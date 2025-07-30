@@ -37,7 +37,7 @@ class PyObjectId(ObjectId):
 
 class LocationModel(BaseModel):
     type: Literal['manufacturer', 'distributor', 'retailer']
-    id: PyObjectId
+    walletAddress: str
 
 class ProductModel(BaseModel):
     id: PyObjectId = Field(alias="_id", default=None)

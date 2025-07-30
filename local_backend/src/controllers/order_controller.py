@@ -3,6 +3,8 @@ from models.order import ProductInDB, OrderModel, PathModel
 from config.db import db
 from datetime import datetime
 from bson import ObjectId
+import random
+import string
 
 collection = db.get_collection("orders")
 
@@ -81,30 +83,38 @@ async def update_allocation(order_id: str, fulfilled: bool):
 
 
 # Get all orders for a specific retailer
-async def orders_by_retailer(retailer_id: str):
-    cursor = collection.find({"retailerId": retailer_id})
+async def orders_by_retailer(retailer_walletAddress: str):
+    cursor = collection.find({"retailerWalletAddress": retailer_walletAddress})
     orders = await cursor.to_list(length=None)
 
     if not orders:
-        raise HTTPException(status_code=404, detail=f"No orders found for retailer {retailer_id}")
+        raise HTTPException(
+            status_code=404, 
+            detail=f"No orders found for retailer {retailer_walletAddress}"
+        )
 
     return [ProductInDB(**order) for order in orders]
 
 
 
-async def pending_orders_by_retailer(retailer_id: str):
+# Get all pending orders for a specific retailer
+async def pending_orders_by_retailer(retailer_walletAddress: str):
     docs = await collection.find({
-        "retailerId": retailer_id,
+        "retailerWalletAddress": retailer_walletAddress,
         "lineItems.allocations.fulfilled": False
     }).to_list(length=None)
 
     if not docs:
-        raise HTTPException(status_code=404, detail=f"No pending orders for retailer {retailer_id}")
+        raise HTTPException(
+            status_code=404, 
+            detail=f"No pending orders for retailer {retailer_walletAddress}"
+        )
 
     return [ProductInDB(**doc) for doc in docs]
 
 
 
+# Update path for allocations with fromWalletAddress / toWalletAddress
 async def add_path_to_order(order_id: str, allocation_index: int, path_data: list[dict]):
     order = await collection.find_one({"orderId": order_id})
     if not order:
@@ -115,6 +125,7 @@ async def add_path_to_order(order_id: str, allocation_index: int, path_data: lis
     except (IndexError, KeyError, TypeError):
         raise HTTPException(status_code=400, detail="Invalid allocation index")
 
+    # Validate and convert path data
     new_path = [PathModel(**p).dict() for p in path_data]
     allocation["path"] = new_path
     allocation["currentStage"] = 0
@@ -123,7 +134,12 @@ async def add_path_to_order(order_id: str, allocation_index: int, path_data: lis
     order["updatedAt"] = datetime.utcnow()
     result = await collection.update_one(
         {"orderId": order_id},
-        {"$set": {"lineItems.allocations": order["lineItems"]["allocations"], "updatedAt": order["updatedAt"]}}
+        {
+            "$set": {
+                "lineItems.allocations": order["lineItems"]["allocations"],
+                "updatedAt": order["updatedAt"]
+            }
+        }
     )
 
     if result.modified_count == 0:

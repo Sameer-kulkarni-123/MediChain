@@ -1,5 +1,6 @@
 from typing import List, Optional, Union, Literal, Any
 from pydantic import BaseModel, Field, conint, conlist, constr, GetCoreSchemaHandler, EmailStr
+from datetime import datetime
 from bson import ObjectId
 from pydantic_core import core_schema
 from pydantic.json_schema import JsonSchemaValue
@@ -46,14 +47,17 @@ class ContactsModel(BaseModel):
 
 class InventoryModel(BaseModel):
     productName: str
-    qty: conint(ge=0)
+    productIds: List[str]
+    qtyRemaining: conint(ge=0)
+    qtyAdded: conint(ge=0)
+    lastStockAddedDate: datetime
     reorderLevel: Optional[conint(ge=0)] = None
 
 
 
 class RetailerModel(BaseModel):
     id: PyObjectId = Field(alias="_id", default=None)
-    retailerId: str
+    retailerId: Optional[str] = None
     name: str
     address: Optional[str] = None
     walletAddress: str
