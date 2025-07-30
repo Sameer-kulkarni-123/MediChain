@@ -13,7 +13,7 @@ import { SearchableDropdown } from "@/components/searchable-dropdown"
 import { ConnectionPath } from "@/components/connection-path"
 import supplyChainData from "@/data/supplyChainData.json"
 import { useToast } from "@/hooks/use-toast"
-import { receiveCrate, getAccount, createSubCrate,getAllBottlesOfCrate} from "../../apis"
+import { receiveCrate, getAccount, createSubCrate,getAllBottlesOfCrate, getCrateInfo} from "../../apis"
 import { MultiSelectDropdown } from "@/components/multi-select-dropdown"
 import { AssignmentForm } from "@/components/assignment-form" // Ensure this is imported
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select" // Import Select components
@@ -52,15 +52,94 @@ export default function DistributorPortal() {
     setAssignedManufacturer(supplyChainData.manufacturers[0])
   }, [])
 
-  // Mock crate data (for display purposes)
-  const crateDetails = {
-    crateCode: "3UKOX",
-    medicineName: "Paracetamol 500mg",
-    batchId: "B001",
-    manufacturerId: "MFG001",
-    bottleCount: 100,
-    currentStatus: "At Distributor",
+const [crateDetails, setCrateDetails] = useState({
+  crateCode: "",
+  medicineName: "",
+  batchId: "",
+  bottleCount: 0,
+  currentStatus: "Loading...",
+})
+const [crateCodeForDetails, setCrateCodeForDetails] = useState("")
+const [isLoadingCrateDetails, setIsLoadingCrateDetails] = useState(false)
+
+// Improved function to fetch crate details
+const handleGetCrateDetails = async () => {
+  if (!crateCodeForDetails.trim()) {
+    toast({
+      title: "Error",
+      description: "Please enter a valid Crate Code first.",
+      variant: "destructive",
+    });
+    return;
   }
+
+  setIsLoadingCrateDetails(true);
+  
+  // Reset current status to loading
+  setCrateDetails(prev => ({
+    ...prev,
+    currentStatus: "Loading..."
+  }));
+
+  try {
+    const crateInfo = await getCrateInfo(crateCodeForDetails.trim());
+    console.log("Crate Info:", crateInfo);
+    
+    // Debug log to see the actual structure
+    console.log("Raw crateInfo structure:", crateInfo);
+    console.log("Type of crateInfo:", typeof crateInfo);
+    
+    // Handle different possible return formats from blockchain
+    let crateData;
+    if (Array.isArray(crateInfo)) {
+      crateData = crateInfo;
+    } else if (crateInfo !== null && crateInfo !== undefined && typeof crateInfo === 'object') {
+      // Convert object values to array (common with Web3 returns)
+      crateData = Object.values(crateInfo);
+    } else {
+      throw new Error("Unexpected crate info format received from blockchain");
+    }
+    
+    // Validate that we have the expected number of elements
+    if (crateData.length < 4) {
+      throw new Error("Incomplete crate information received");
+    }
+    
+    setCrateDetails({
+      crateCode: crateData[0]?.toString() || "",
+      medicineName: crateData[1]?.toString() || "",
+      batchId: crateData[2]?.toString() || "", 
+      bottleCount: parseInt(crateData[3]?.toString() || "0", 10),
+      currentStatus: "Active", // You might want to get this from another contract method
+    });
+
+    toast({
+      title: "Success",
+      description: `Successfully fetched details for crate ${crateCodeForDetails}`,
+    });
+  } catch (error) {
+    console.error("Error fetching crate details:", error);
+    
+    // Reset crate details on error
+    setCrateDetails({
+      crateCode: "",
+      medicineName: "",
+      batchId: "",
+      bottleCount: 0,
+      currentStatus: "Error",
+    });
+    
+    toast({
+      title: "Error",
+      description: `Failed to fetch crate details: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+      variant: "destructive",
+    });
+  } finally {
+    setIsLoadingCrateDetails(false);
+  }
+};
 
   // Simulate fetching bottle IDs based on parentCrateCode
   // useEffect(() => {
@@ -89,7 +168,6 @@ export default function DistributorPortal() {
       for (let i = 0; i < 5; i++) {
         result += characters.charAt(Math.floor(Math.random() * characters.length))
       }
-
       result = parentCrateCodeForSubCrate + "-" + result
       setSubCrateId(result)
     } else {
@@ -296,57 +374,112 @@ const handleGetCrateInfo = async () => {
           </Card>
 
           {/* Crate Details */}
-          <Card>
-            <CardHeader className="px-4 sm:px-6">
-              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                <Package className="h-5 w-5" />
-                Crate Details
-              </CardTitle>
-              <CardDescription className="text-sm sm:text-base">
-                Read-only information from the blockchain
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4 px-4 sm:px-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-xs sm:text-sm font-medium text-gray-600">Crate Code</Label>
-                  <p className="font-mono text-xs sm:text-sm bg-gray-50 p-2 rounded break-all">
-                    {crateDetails.crateCode}
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-xs sm:text-sm font-medium text-gray-600">Medicine Name</Label>
-                  <p className="text-xs sm:text-sm bg-gray-50 p-2 rounded">{crateDetails.medicineName}</p>
-                </div>
-              </div>
+  <Card className="w-full">
+  <CardHeader className="px-4 sm:px-6">
+    <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+      <Package className="h-5 w-5" />
+      Crate Details
+    </CardTitle>
+    <CardDescription className="text-sm sm:text-base">
+      Fetch and view crate information from the blockchain
+    </CardDescription>
+  </CardHeader>
+  <CardContent className="space-y-4 px-4 sm:px-6">
+    <div>
+      <Label htmlFor="crateCodeForDetails" className="text-sm sm:text-base">
+        Crate Code
+      </Label>
+      <Input
+        id="crateCodeForDetails"
+        value={crateCodeForDetails}
+        onChange={(e) => setCrateCodeForDetails(e.target.value)}
+        placeholder="Enter crate code to fetch details"
+        className="text-sm sm:text-base"
+        disabled={isLoadingCrateDetails}
+      />
+    </div>
+    
+    <Button
+      onClick={handleGetCrateDetails}
+      className="w-full bg-blue-600 hover:bg-blue-700 text-sm sm:text-base py-2 sm:py-3"
+      disabled={!crateCodeForDetails.trim() || isLoadingCrateDetails}
+    >
+      {isLoadingCrateDetails ? (
+        <>
+          <span className="animate-spin mr-2">⏳</span>
+          Fetching Details...
+        </>
+      ) : (
+        "Get Crate Details"
+      )}
+    </Button>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-xs sm:text-sm font-medium text-gray-600">Batch ID</Label>
-                  <p className="text-xs sm:text-sm bg-gray-50 p-2 rounded">{crateDetails.batchId}</p>
-                </div>
-                <div>
-                  <Label className="text-xs sm:text-sm font-medium text-gray-600">Manufacturer ID</Label>
-                  <p className="text-xs sm:text-sm bg-gray-50 p-2 rounded">{crateDetails.manufacturerId}</p>
-                </div>
-              </div>
+    {/* Show loading state */}
+    {isLoadingCrateDetails && (
+      <div className="text-center py-4">
+        <p className="text-sm text-gray-600">Fetching crate information from blockchain...</p>
+      </div>
+    )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+    {/* Show crate details only if we have valid data */}
+    {crateDetails.crateCode && !isLoadingCrateDetails && (
+      <>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <Label className="text-xs sm:text-sm font-medium text-gray-600">Crate Code</Label>
+            <p className="font-mono text-xs sm:text-sm bg-gray-50 p-2 rounded break-all">
+              {crateDetails.crateCode}
+            </p>
+          </div>
+          <div>
+            <Label className="text-xs sm:text-sm font-medium text-gray-600">Medicine Name</Label>
+            <p className="text-xs sm:text-sm bg-gray-50 p-2 rounded">
+              {crateDetails.medicineName || "N/A"}
+            </p>
+          </div>
+        </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-xs sm:text-sm font-medium text-gray-600">Bottle Count</Label>
-                  <p className="text-xs sm:text-sm bg-gray-50 p-2 rounded">{crateDetails.bottleCount}</p>
-                </div>
-                <div>
-                  <Label className="text-xs sm:text-sm font-medium text-gray-600">Current Status </Label>
-                  <Badge variant="outline" className="text-green-600 border-green-600 text-xs sm:text-sm">
-                    {crateDetails.currentStatus}
-                  </Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <Label className="text-xs sm:text-sm font-medium text-gray-600">Batch ID</Label>
+            <p className="text-xs sm:text-sm bg-gray-50 p-2 rounded">
+              {crateDetails.batchId || "N/A"}
+            </p>
+          </div>
+          <div>
+            <Label className="text-xs sm:text-sm font-medium text-gray-600">Bottle Count</Label>
+            <p className="text-xs sm:text-sm bg-gray-50 p-2 rounded">{crateDetails.bottleCount}</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <Label className="text-xs sm:text-sm font-medium text-gray-600">Current Status</Label>
+            <Badge 
+              variant="outline" 
+              className={`text-xs sm:text-sm ${
+                crateDetails.currentStatus === "Error" 
+                  ? "text-red-600 border-red-600" 
+                  : "text-green-600 border-green-600"
+              }`}
+            >
+              {crateDetails.currentStatus}
+            </Badge>
+          </div>
+        </div>
+      </>
+    )}
+
+    {/* Show message when no crate is loaded and not loading */}
+    {!crateDetails.crateCode && !isLoadingCrateDetails && (
+      <div className="text-center py-8 text-gray-500">
+        <Package className="h-12 w-12 mx-auto mb-2 opacity-50" />
+        <p className="text-sm">Enter a crate code above to fetch details</p>
+      </div>
+    )}
+  </CardContent>
+</Card>
+
 
           {/* New: Create SubCrate Card */}
           <Card>
