@@ -37,9 +37,9 @@ class PyObjectId(ObjectId):
 
 
 class ConnectionModel(BaseModel):
-    fromID: str
+    fromWalletAddress: str
     fromType: Literal['manufacturer', 'distributor', 'retailer']
-    toID: str
+    toWalletAddress: str
     toType: Literal['manufacturer', 'distributor', 'retailer']
     distanceKm: Optional[float]
     transitTimeDays: Optional[conint(ge=0)]
@@ -47,9 +47,9 @@ class ConnectionModel(BaseModel):
     active: Optional[bool]
 
 class ConnectionUpdateModel(BaseModel):
-    fromID: Optional[str]
+    fromWalletAddress: Optional[str]
     fromType: Optional[Literal['manufacturer', 'distributor', 'retailer']]
-    toID: Optional[str]
+    toWalletAddress: Optional[str]
     toType: Optional[Literal['manufacturer', 'distributor', 'retailer']]
     distanceKm: Optional[float]
     transitTimeDays: Optional[conint(ge=0)]

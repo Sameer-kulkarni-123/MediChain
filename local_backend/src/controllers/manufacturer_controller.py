@@ -10,6 +10,9 @@ collection = db.get_collection("manufacturers")
 
 
 async def add_manufacturer(manufacturer: ManufacturerModel):
+
+    if await collection.find_one({"walletAddress": manufacturer.walletAddress}):
+        raise HTTPException(status_code=400, detail="WalletAddress already exists")
    
     # Generate a unique manufacturerId
     suffix = random.randint(1000, 9999)
@@ -35,25 +38,25 @@ async def all_manufacturers():
     return manufacturers
 
 
-async def one_manufacturers(manufacturer_id: str):
-    doc = await collection.find_one({"manufacturerId": manufacturer_id})
+async def one_manufacturers(manufacturer_walletAddress: str):
+    doc = await collection.find_one({"walletAddress": manufacturer_walletAddress})
     if not doc:
         raise HTTPException(status_code=404, detail="Manufacturer not found")
     return doc
 
     
-async def delete_manufacturer(manufacturer_id: str):
-    result = await collection.delete_one({"manufacturerId": manufacturer_id})
+async def delete_manufacturer(manufacturer_walletAddress: str):
+    result = await collection.delete_one({"walletAddress": manufacturer_walletAddress})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Manufacturer not found")
     return {"detail": "Manufacturer deleted"}
 
 
-async def update_manufacturer(manufacturer_id: str, update_data: ManufacturerUpdateModel):
+async def update_manufacturer(manufacturer_walletAddress: str, update_data: ManufacturerUpdateModel):
     update_dict = {k: v for k, v in update_data.dict(exclude_unset=True).items()}
 
     result = await collection.update_one(
-        {"manufacturerId": manufacturer_id},
+        {"walletAddress": manufacturer_walletAddress},
         {"$set": update_dict}
     )
     

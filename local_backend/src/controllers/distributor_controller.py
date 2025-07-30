@@ -6,10 +6,12 @@ from bson import ObjectId
 import random
 
 
-collection = db.get_collection("distributor")
+collection = db.get_collection("distributors")
 
 async def add_distributor(distributor: DistributorModel):
 
+    if await collection.find_one({"walletAddress": distributor.walletAddress}):
+        raise HTTPException(status_code=400, detail="WalletAddress already exists")
     # Generate a unique distributorId
     suffix = random.randint(1000, 9999)
     distributor_id = f"dist_{suffix}"
@@ -34,45 +36,47 @@ async def all_distributors():
     return distributors
 
 
-async def one_distributor(distributor_id: str):
-    doc = await collection.find_one({"distributorId": distributor_id})
+async def one_distributor(distributor_walletAddress: str):
+    doc = await collection.find_one({"walletAddress": distributor_walletAddress})
     if not doc:
         raise HTTPException(status_code=404, detail="Distributor not found")
-    return doc
+    return ProductInDB(**doc)
 
     
 
-async def delete_distributor(distributor_id: str):
-    result = await collection.delete_one({"distributorId": distributor_id})
+async def delete_distributor(distributor_walletAddress: str):
+    result = await collection.delete_one({"walletAddress": distributor_walletAddress})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Distributor not found")
     return {"detail": "Distributor deleted"}
 
 
-async def update_distributor(distributor_id: str, update_data: DistributorUpdateModel):
+async def update_distributor(distributor_walletAddress: str, update_data: DistributorUpdateModel):
     update_dict = {k: v for k, v in update_data.dict(exclude_unset=True).items()}
 
     result = await collection.update_one(
-        {"distributorId": distributor_id},
+        {"walletAddress": distributor_walletAddress},
         {"$set": update_dict}
     )
     
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Distributor not found")
+
     if result.modified_count == 0:
-        raise HTTPException(status_code=404, detail="Distributor not found or nothing changed")
-    
+        return {"detail": "No changes were made"} 
+
     return {"detail": "Distributor updated successfully"}
 
-
-async def get_all_inventory(distributor_id: str):
-    distributor = await collection.find_one({"distributorId": distributor_id})
+async def get_all_inventory(distributor_walletAddress: str):
+    distributor = await collection.find_one({"walletAddress": distributor_walletAddress})
     if not distributor:
         raise HTTPException(status_code=404, detail="Distributor not found")
     
     return distributor.get("inventory", [])
 
 
-async def get_inventory_item(distributor_id: str, product_name: str):
-    distributor = await collection.find_one({"distributorId": distributor_id})
+async def get_inventory_item(distributor_walletAddress: str, product_name: str):
+    distributor = await collection.find_one({"walletAddress": distributor_walletAddress})
     if not distributor:
         raise HTTPException(status_code=404, detail="Distributor not found")
     
@@ -84,67 +88,56 @@ async def get_inventory_item(distributor_id: str, product_name: str):
     
     return item
 
-async def bulk_update_inventory(entity_id: str, updates: list[dict], entity_type: str = "retailer"):
+async def bulk_update_inventory(distributor_walletAddress: str, updates: list[dict]):
     """
-    Bulk update inventory:
-      - Increment qty if > 0
-      - Add product if it doesn't exist
-      - Delete product if qty=0 or 'delete'=True
-
-    updates = [
-        {"productName": "Paracetamol", "qty": 10},
-        {"productName": "Ibuprofen", "delete": True},
-        {"productName": "Aspirin", "qty": 0}   # will be deleted
-    ]
+    Bulk update distributor inventory with productIds support.
     """
-    field_name = "retailerId" if entity_type == "retailer" else "distributorId"
-
-    entity = await collection.find_one({field_name: entity_id})
+    entity = await collection.find_one({"walletAddress": distributor_walletAddress})
     if not entity:
-        raise HTTPException(status_code=404, detail=f"{entity_type.capitalize()} not found")
+        raise HTTPException(status_code=404, detail="Distributor not found")
 
     current_inventory = entity.get("inventory", [])
-
-    # Build new inventory list
     updated_inventory = []
+
     for product in current_inventory:
         name = product["productName"]
-
-        # Check if this product has an update
-        update_item = next((u for u in updates if u["productName"] == name), None)
+        update_item = next((u for u in updates if u["productName"].lower() == name.lower()), None)
 
         if update_item:
-            # Handle delete cases
+            # Handle delete case
             if update_item.get("delete") or update_item.get("qty", product["qty"]) == 0:
-                continue  # skip product (delete)
-            
-            # Update qty (increment or replace)
+                continue
+
+            # Update quantity (increment if qty > 0)
             qty = update_item.get("qty", 0)
             product["qty"] = product["qty"] + qty if qty > 0 else product["qty"]
 
-            # Update reorder level if provided
+            # Merge productIds
+            if "productIds" in update_item:
+                product["productIds"] = list(set(product.get("productIds", []) + update_item["productIds"]))
+
+            # Update reorderLevel if present
             if "reorderLevel" in update_item:
                 product["reorderLevel"] = update_item["reorderLevel"]
 
             updated_inventory.append(product)
         else:
-            # No updates, keep the product
             updated_inventory.append(product)
 
-    # Handle new products that aren't in current inventory
+    # Add new products
     for update_item in updates:
         name = update_item["productName"]
-        if not any(p["productName"] == name for p in updated_inventory):
+        if not any(p["productName"].lower() == name.lower() for p in updated_inventory):
             if not update_item.get("delete") and update_item.get("qty", 0) > 0:
                 updated_inventory.append({
                     "productName": name,
                     "qty": update_item["qty"],
+                    "productIds": update_item.get("productIds", []),
                     "reorderLevel": update_item.get("reorderLevel", 0)
                 })
 
-    # Save updated inventory
     result = await collection.update_one(
-        {field_name: entity_id},
+        {"walletAddress": distributor_walletAddress },
         {"$set": {"inventory": updated_inventory}}
     )
 
@@ -154,47 +147,50 @@ async def bulk_update_inventory(entity_id: str, updates: list[dict], entity_type
     return {"detail": "Inventory updated successfully"}
 
 
-async def update_inventory_item(distributor_id: str, product_name: str, qty: int):
-    distributor = await collection.find_one({"distributorId": distributor_id})
-    if not distributor:
+async def update_inventory_item(distributor_walletAddress: str, product_name: str, qty: int, product_ids: list[str] = None, reorder_level: int = None):
+    """
+    Update or add a single inventory item with productIds support.
+    """
+    entity = await collection.find_one({"walletAddress": distributor_walletAddress})
+    if not entity:
         raise HTTPException(status_code=404, detail="Distributor not found")
 
-    inventory = distributor.get("inventory", [])
+    inventory = entity.get("inventory", [])
     updated = False
 
     for item in inventory:
         if item["productName"].lower() == product_name.lower():
             if qty <= 0:
-                # Delete product if qty is 0
-                inventory.remove(item)
+                inventory.remove(item)  # delete product
             else:
-                # Update existing product quantity
                 item["qty"] = qty
+                if reorder_level is not None:
+                    item["reorderLevel"] = reorder_level
+
+                if product_ids:
+                    item["productIds"] = list(set(item.get("productIds", []) + product_ids))
             updated = True
             break
 
-    # If product not found and qty > 0, add it
     if not updated and qty > 0:
         inventory.append({
             "productName": product_name,
             "qty": qty,
-            "reorderLevel": 0  # default if you want
+            "productIds": product_ids or [],
+            "reorderLevel": reorder_level or 0
         })
 
-    # Update inventory in DB
     result = await collection.update_one(
-        {"distributorId": distributor_id},
+        {"walletAddress": distributor_walletAddress},
         {"$set": {"inventory": inventory}}
     )
 
     if result.modified_count == 0:
         raise HTTPException(status_code=400, detail="Failed to update inventory")
 
-    # Response messages
     if qty <= 0:
-        return {"detail": f"Product '{product_name}' deleted from inventory"}
+        return {"detail": f"Product '{product_name}' deleted successfully"}
     elif updated:
         return {"detail": f"Product '{product_name}' updated successfully"}
     else:
         return {"detail": f"Product '{product_name}' added successfully"}
-

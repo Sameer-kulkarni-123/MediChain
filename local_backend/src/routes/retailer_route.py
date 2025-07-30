@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 from typing import List
 from models.retailer import ProductInDB, RetailerModel, RetailerUpdateModel
 from controllers import retailer_controller as controller
@@ -6,6 +6,7 @@ from controllers import retailer_controller as controller
 router = APIRouter()
 
 # ---- Retailer CRUD ----
+
 @router.post("/", response_model=ProductInDB)
 async def add_retailer(retailer: RetailerModel):
     return await controller.add_retailer(retailer)
@@ -14,42 +15,40 @@ async def add_retailer(retailer: RetailerModel):
 async def all_retailers():
     return await controller.all_retailers()
 
-@router.get("/{retailer_id}", response_model=ProductInDB)
-async def one_retailers(retailer_id: str):
-    return await controller.one_retailers(retailer_id)
+@router.get("/{retailer_walletAddress}", response_model=ProductInDB)
+async def one_retailer(retailer_walletAddress: str):
+    return await controller.one_retailers(retailer_walletAddress)
 
-@router.delete("/{retailer_id}")
-async def delete_retailer(retailer_id: str):
-    return await controller.delete_retailer(retailer_id)
+@router.delete("/{retailer_walletAddress}")
+async def delete_retailer(retailer_walletAddress: str):
+    return await controller.delete_retailer(retailer_walletAddress)
 
-@router.patch("/{retailer_id}")
-async def update_retailer(retailer_id: str, update_data: RetailerUpdateModel):
-    return await controller.update_retailer(retailer_id, update_data)
-
+@router.patch("/{retailer_walletAddress}")
+async def update_retailer(retailer_walletAddress: str, update_data: RetailerUpdateModel):
+    return await controller.update_retailer(retailer_walletAddress, update_data)
 
 # ---- Inventory Management ----
 
-# View full inventory for a retailer
-@router.get("/{retailer_id}/inventory")
-async def get_inventory(retailer_id: str):
-    return await controller.get_inventory(retailer_id)
+@router.get("/{retailer_walletAddress}/inventory")
+async def get_inventory(retailer_walletAddress: str):
+    return await controller.get_inventory(retailer_walletAddress)
 
-# View a single product in inventory
-@router.get("/{retailer_id}/inventory/{product_name}")
-async def get_inventory_item(retailer_id: str, product_name: str):
-    return await controller.get_inventory_item(retailer_id, product_name)
+@router.get("/{retailer_walletAddress}/inventory/{product_name}")
+async def get_inventory_item(retailer_walletAddress: str, product_name: str):
+    return await controller.get_inventory_item(retailer_walletAddress, product_name)
 
-# Bulk update inventory (add/update/delete multiple items)
-@router.patch("/{retailer_id}/inventory/bulk")
-async def bulk_update_inventory(retailer_id: str, updates: List[dict]):
-    return await controller.bulk_update_inventory(retailer_id, updates)
+@router.patch("/{retailer_walletAddress}/inventory/bulk")
+async def bulk_update_inventory(retailer_walletAddress: str, updates: List[dict]):
+    return await controller.bulk_update_inventory(retailer_walletAddress, updates)
 
-# Add/Update/Delete a single product in inventory (qty 0 deletes it)
-@router.patch("/{retailer_id}/inventory/{product_name}")
+@router.patch("/{retailer_walletAddress}/inventory/{product_name}")
 async def update_inventory_item(
-    retailer_id: str,
+    retailer_walletAddress: str,
     product_name: str,
     qty: int,
-    reorder_level: int = None
+    reorder_level: int = None,
+    product_ids: List[str] = Query(default=None)
 ):
-    return await controller.update_inventory_item(retailer_id, product_name, qty, reorder_level)
+    return await controller.update_inventory_item(
+        retailer_walletAddress, product_name, qty, reorder_level, product_ids
+    )

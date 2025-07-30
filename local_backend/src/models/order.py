@@ -1,3 +1,4 @@
+from locale import strcoll
 from pickletools import pybool
 from typing import List, Optional,  Literal, Any
 from pydantic import BaseModel, Field, conint,  GetCoreSchemaHandler
@@ -39,16 +40,16 @@ class PyObjectId(ObjectId):
 
 class PathModel(BaseModel):
     fromType:Literal ['manufacturer', 'distributor']
-    fromId: PyObjectId
+    fromWalletAddress: str
     toType: Literal['distributor', 'retailer']
-    toId: PyObjectId
+    toWalletAddress: str
     etaDays: float
     scannedAt: Optional[datetime]
 
 class AllocationsModel(BaseModel):
     qty: conint(ge=0)
-    batchId: Optional[PyObjectId]
-    productUnitIds: Optional[List[PyObjectId]]
+    batchId: Optional[str]
+    productUnitIds: Optional[List[str]]
     currentStage: Optional[conint(ge=0)]
     fulfilled: bool = False
     path: PathModel
@@ -61,7 +62,7 @@ class LineItemsModel (BaseModel):
 class OrderModel(BaseModel):
     id: PyObjectId = Field(alias="_id", default=None)
     orderId: str 
-    retailerId: str
+    retailerWalletAddress: str
     lineItems: LineItemsModel
     status: Literal['created','in-transit','completed','cancelled']
     createdAt: Optional[datetime]

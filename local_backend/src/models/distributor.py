@@ -57,13 +57,14 @@ class LeadTimesModel(BaseModel):
 
 class InventoryModel(BaseModel):
     productName: str
+    productIds: List[str]
     qty: conint(ge=0)
     reorderLevel: Optional[conint(ge=0)] = None
 
 
 class DistributorModel(BaseModel):
     id: PyObjectId = Field(alias="_id", default=None)
-    distributorId: str
+    distributorId: Optional[str] = None
     name: str
     address: Optional[str] = None
     walletAddress: str

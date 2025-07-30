@@ -38,8 +38,8 @@ async def get_product_by_id(product_id: str):
 
 
 # Get products by location
-async def get_products_by_location(entity_id: str, entity_type: str):
-    query = {"location.id": entity_id, "location.type": entity_type}
+async def get_products_by_location(entity_walletAddress: str, entity_type: str):
+    query = {"location.walletAddress": entity_walletAddress, "location.type": entity_type}
     cursor = collection.find(query)
     products = await cursor.to_list(length=None)
     return [ProductInDB(**p) for p in products]

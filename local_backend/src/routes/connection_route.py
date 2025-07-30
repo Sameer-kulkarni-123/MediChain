@@ -9,25 +9,25 @@ router = APIRouter()
 async def add_connection(connection: ConnectionModel):
     return await controller.add_connection(connection)
 
-@router.get("/from/{from_id}", response_model=List[ProductInDB])
-async def get_connection_from_id(from_id: str, to_type: str = Query(None)):
-    return await controller.get_connection_from_id(from_id, to_type)
+@router.get("/from/{from_walletAddress}", response_model=List[ProductInDB])
+async def get_connection_from_id(from_walletAddress: str, to_type: str = Query(None)):
+    return await controller.get_connection_from_id(from_walletAddress, to_type)
 
-@router.get("/to/{to_id}", response_model=List[ProductInDB])
-async def get_connection_to_id(to_id: str, from_type: str = Query(None)):
-    return await controller.get_connection_to_id(to_id, from_type)
+@router.get("/to/{to_walletAddress}", response_model=List[ProductInDB])
+async def get_connection_to_id(to_walletAddress: str, from_type: str = Query(None)):
+    return await controller.get_connection_to_id(to_walletAddress, from_type)
 
-@router.get("/all/{entity_id}", response_model=List[ProductInDB])
-async def get_connections_for_entity(entity_id: str):
-    return await controller.get_connections_for_entity(entity_id)
+@router.get("/all/{entity_walletAddress}", response_model=List[ProductInDB])
+async def get_connections_for_entity(entity_walletAddress: str):
+    return await controller.get_connections_for_entity(entity_walletAddress)
 
-@router.delete("/{from_id}/{to_id}")
-async def delete_connection(from_id: str, to_id: str):
-    return await controller.delete_connection(from_id, to_id)
+@router.delete("/{from_walletAddress}/{to_walletAddress}")
+async def delete_connection(from_walletAddress: str, to_walletAddress: str):
+    return await controller.delete_connection(from_walletAddress, to_walletAddress)
 
-@router.patch("/{from_id}/{to_id}")
-async def update_connection(from_id: str, to_id: str, update_data: ConnectionUpdateModel):
-    return await controller.update_connection(from_id, to_id, update_data)
+@router.patch("/{from_walletAddress}/{to_walletAddress}")
+async def update_connection(from_walletAddress: str, to_walletAddress: str, update_data: ConnectionUpdateModel):
+    return await controller.update_connection(from_walletAddress, to_walletAddress, update_data)
 
 
 @router.get("/all", response_model=List[ProductInDB])
@@ -45,10 +45,9 @@ async def get_all_connections(
 @router.get("/graph", response_model=Dict[str, List[Dict[str, Any]]])
 async def get_graph():
     """
-    Get a graph representation of all connections.
-    Returns adjacency list format:
+    Returns adjacency list:
     {
-        "fromID1": [{"to": "toID1", "weight": cost}, {"to": "toID2", "weight": cost}],
+        "walletAddress1": [{"to": "walletAddress2", "weight": cost}, ...],
         ...
     }
     """
