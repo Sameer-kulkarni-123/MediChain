@@ -2,3 +2,5 @@ frontend5/.next/
 test/testApi/.vite
 test/testApi/node_modules/
 test/testApi/.vite
+test/autoTests/node_modules
+user_frontend/node_modules

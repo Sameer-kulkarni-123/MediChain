@@ -218,6 +218,74 @@ contract MedicineCrateTracking {
 
     event BottleScanned(string bottleCode, bool success);
 
+    function scanBottleReadOnly(string memory bottleCode) public view returns(bool){
+        string memory crateCode = parseCrateFromBottle(bottleCode);
+        Crate storage crate = crates[crateCode];
+        require(crate.isExists, "crate doesn't exists");
+
+
+        if (crate.isSubCrateExists) {
+            bool flag = false;
+            string memory subCrateConsists;
+            for(uint i = 0; i < crate.subCratesList.length; i++){
+               if(crate.subCrates[crate.subCratesList[i]].bottles[bottleCode].isExists){
+                flag = true;
+                subCrateConsists = crate.subCratesList[i];
+                break;
+               } 
+            }
+            if (!flag){
+                bool isValid = false;
+                // emit BottleScanned(bottleCode, isValid);
+                return isValid;
+            }
+            
+            if(crate.subCrates[subCrateConsists].isSubCrateFinalDestination){
+                if(crate.subCrates[subCrateConsists].bottles[bottleCode].scanned){
+                    bool isValid = false;
+                    // emit BottleScanned(bottleCode, isValid);
+                    return isValid;
+                }
+                else{
+                    // crate.subCrates[subCrateConsists].bottles[bottleCode].scanned = true;
+                    
+                    bool isValid = true;
+                    // emit BottleScanned(bottleCode, isValid);
+                    return isValid;
+                    
+                }
+            }
+            else{
+                bool isValid = false;
+                // emit BottleScanned(bottleCode, isValid);
+                return isValid;
+            }
+
+
+        }
+        else{
+            Bottle storage bottle = crate.bottles[bottleCode];
+            if(bottle.isExists){
+                if(bottle.scanned){
+                    bool isValid = false;
+                    // emit BottleScanned(bottleCode, isValid);
+                    return isValid;
+                }
+                else{
+                    bool isValid = true;
+                    // bottle.scanned = true;
+                    // emit BottleScanned(bottleCode, isValid);
+                    return isValid;
+                }
+            }
+            else{
+                bool isValid = false;
+                // emit BottleScanned(bottleCode, isValid);
+                return isValid;
+            }
+        }
+    }
+
     function scanBottle(string memory bottleCode) public returns(bool){
         string memory crateCode = parseCrateFromBottle(bottleCode);
         Crate storage crate = crates[crateCode];
@@ -288,7 +356,7 @@ contract MedicineCrateTracking {
     }
 
 
-    function parseCrateFromBottle(string memory bottleCode) public pure returns (string memory crateCode){
+    function parseCrateFromBottle(string memory bottleCode) public pure returns (string memory){
         bytes memory bottleBytes = bytes(bottleCode);
 
         require(bottleBytes.length == 11, "Bottle code not of the right size");
