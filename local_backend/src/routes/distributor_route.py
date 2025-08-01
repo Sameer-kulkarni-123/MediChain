@@ -34,8 +34,30 @@ async def get_inventory_item(distributor_walletAddress: str, product_name: str):
 
 @router.patch("/{distributor_walletAddress}/inventory/bulk")
 async def bulk_update_inventory(distributor_walletAddress: str, updates: list[dict]):
+    """
+    Bulk update inventory with add/remove action support.
+    Each update item: { productName, qty, productIds, reorderLevel, action }
+    """
     return await controller.bulk_update_inventory(distributor_walletAddress, updates)
 
+
 @router.patch("/{distributor_walletAddress}/inventory/{product_name}")
-async def update_inventory_item(distributor_walletAddress: str, product_name: str, qty: int, product_ids: list[str],reorder_level: int = None):
-    return await controller.update_inventory_item(distributor_walletAddress, product_name, qty, product_ids, reorder_level)
+async def update_inventory_item(
+    distributor_walletAddress: str,
+    product_name: str,
+    qty: int,
+    product_ids: list[str] = None,
+    reorder_level: int = None,
+    action: str = "add"
+):
+    """
+    Update a single inventory item with add/remove action support.
+    """
+    return await controller.update_inventory_item(
+        distributor_walletAddress,
+        product_name,
+        qty,
+        product_ids,
+        reorder_level,
+        action
+    )

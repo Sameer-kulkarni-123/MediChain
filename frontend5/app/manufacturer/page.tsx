@@ -158,7 +158,7 @@ export default function ManufacturerPortal() {
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to confirm distributor selection. Please try again.",
+        description: `${error}`,
         variant: "destructive",
       })
     } finally {
