@@ -125,6 +125,7 @@ export async function registerCrate(crateCode, batchID, productID, medicineName,
     return Tx;
   } catch (error) {
     console.error("Error registering crate:", error);
+    console.error("Require Error Reason : ", error.message)
     
     // Provide more specific error messages
     if (error.message.includes("User denied")) {
@@ -154,6 +155,11 @@ export async function createSubCrate(parentCrateCode, subCrateID, bottlesIDs){
   try{
     const { contract } = getWeb3AndContract();
     const account = await getAccount();
+    const TxReadOnly =  await contract.methods.createSubCrate(
+      parentCrateCode, 
+      subCrateID, 
+      bottlesIDs
+    ).call({ from: account })
     const Tx =  await contract.methods.createSubCrate(
       parentCrateCode, 
       subCrateID, 
@@ -163,7 +169,7 @@ export async function createSubCrate(parentCrateCode, subCrateID, bottlesIDs){
     return Tx;
   }catch(e){
     console.error("Error creating a sub crate", e)
-    throw new Error(`Failed to create a sub crate: ${e.message}`)
+    throw new Error(`${e.data.message}`)
   }
 }
 
@@ -180,15 +186,33 @@ export async function sendCrate(parentCrateCode, receiverWalletAddress) {
   try {
     const { contract } = getWeb3AndContract();
     const account = await getAccount();
+    const TxReadOnly =  await contract.methods.crateSend(
+      parentCrateCode,
+      receiverWalletAddress
+    ).call({ from: account });
     const Tx =  await contract.methods.crateSend(
       parentCrateCode,
       receiverWalletAddress
     ).send({ from: account });
     console.log("successfully sent the crate", Tx)
-    return Tx;
+    return TxReadOnly;
   } catch (error) {
-    console.error("Error sending crate:", error);
-    throw new Error(`Failed to send crate: ${error.message}`);
+    // console.error("Error sending crate:", error);
+    // console.error("Error sending crate error.message:", error.message);
+    
+    console.error("Full Error:", error.data.message);
+
+    const revertData = error?.data?.originalError?.data;
+
+    // if (revertData) {
+    //     const reasonHex = revertData.slice(138); // Skip method ID and padding
+    //     const reason = Web3.utils.hexToUtf8("0x" + reasonHex);
+    //     console.error("Revert Reason:", reason);
+    // } else {
+    //     console.error("Revert reason not available");
+    // }
+    throw new Error(`${error.data.message}`);
+    // return error.data.message
   }
 }
 
@@ -203,6 +227,10 @@ export async function sendSubCrate(subCrateCode, receiverWalletAddress){
   try{
     const { contract } = getWeb3AndContract();
     const account = await getAccount();
+    const TxReadOnly = await contract.methods.subCrateSend(
+      subCrateCode,
+      receiverWalletAddress
+    ).call({ from: account })
     const Tx = await contract.methods.subCrateSend(
       subCrateCode,
       receiverWalletAddress
@@ -211,7 +239,7 @@ export async function sendSubCrate(subCrateCode, receiverWalletAddress){
     return Tx;
   }catch (error) {
     console.error("Error sending sub crate:", error);
-    throw new Error(`Failed to send sub crate: ${error.message}`);
+    throw new Error(`${error.data.message}`);
   }
 }
 
@@ -225,13 +253,16 @@ export async function receiveCrate(crateCode) {
   try {
     const { contract } = getWeb3AndContract();
     const account = await getAccount();
+    const TxReadOnly = await contract.methods.crateReceived(
+      crateCode
+    ).call({ from: account });
     const Tx = await contract.methods.crateReceived(
       crateCode
     ).send({ from: account });
     console.log("successfully received crate", Tx , "by receiver : ", account)
   } catch (error) {
     console.error("Error receiving crate:", error);
-    throw new Error(`Failed to receive crate: ${error.message}`);
+    throw new Error(`${error.data.message}`);
   }
 }
 
@@ -252,6 +283,9 @@ export async function retailerReceivedCrate(parentCrateCode) {
     console.log("calling the retailerReceivedCrate api")
     const { contract } = getWeb3AndContract();
     const account = await getAccount();
+    const TxReadOnly =  await contract.methods.crateRetailerReceived(
+      parentCrateCode
+    ).call({ from: account });
     const Tx =  await contract.methods.crateRetailerReceived(
       parentCrateCode
     ).send({ from: account });
@@ -259,7 +293,7 @@ export async function retailerReceivedCrate(parentCrateCode) {
     return Tx
   } catch (error) {
     console.error("Error marking crate as received by retailer:", error);
-    throw new Error(`Failed to mark crate as received: ${error.message}`);
+    throw new Error(`${error.data.message}`);
   }
 }
 
@@ -274,6 +308,9 @@ export async function retailerReceivedSubCrate(subCrateCode){
   try{
     const { contract } = getWeb3AndContract();
     const account = await getAccount();
+    const TxReadOnly = await contract.methods.subCrateRetailerReceived(
+      subCrateCode
+    ).call({ from: account }) 
     const Tx = await contract.methods.subCrateRetailerReceived(
       subCrateCode
     ).send({ from: account }) 
@@ -281,11 +318,63 @@ export async function retailerReceivedSubCrate(subCrateCode){
     return Tx;
   }catch(error){
     console.error("Error marking crate as received by retailer:", error);
-    throw new Error(`Failed to mark crate as received: ${error.message}`);
+    throw new Error(`${error.data.message}`);
   }
 
 }
 
+
+//Blockchain Read only functions:
+
+export async function getCrateInfo(parentCrateCode){
+  /* 
+    retrives the info about the crate
+    
+    params:
+      string parentCrateCode : crate code of the crate you want to get the info of
+
+    returns :
+      string[] retArr:
+        retArr[0] : crateCode
+        retArr[1] : medicineName
+        retArr[2] : batchID
+        retArr[3] : bottleCount
+
+  */
+  try{
+    const { contract } = getWeb3AndContract();
+    const account = await getAccount();
+    const Tx = await contract.methods.retrieveCrateInfo(
+      parentCrateCode
+    ).call({ from: account });
+    return Tx
+  }catch(error){
+    console.error("error getting crate info");
+    throw new Error(`failed to get crate info ${error.data.message}`);
+  }
+    
+
+}
+
+export async function getAllBottlesOfCrate(parentCrateCode){
+  try{
+    console.log("getting all bottles of crate code: ", parentCrateCode);
+    const { contract } = getWeb3AndContract();
+    const account = await getAccount();
+    const Tx = await contract.methods.getAllBottlesOfCrate(
+      parentCrateCode
+    ).call({ from: account });
+    console.log("successfully retrived all bottleIds");
+    return Tx; 
+  }catch(error){
+    console.error("error retriving the bottleIds");
+    throw new Error(`failed to retrive the bottleIds ${error.data.message}`);
+  }
+
+
+}
+
+//not used in supply chain frontend
 export async function scanBottle(bottleCode){
   /* 
     8. Scan bottle to check if valid or not
@@ -320,65 +409,15 @@ export async function scanBottle(bottleCode){
   }
 }
 
+//can be added later
+export async function getAllBottlesOfSubCrate(){
 
-//Blockchain Read only functions:
+}
 
 export async function getAllCrates(){
 
 }
 
 export async function getAllSubCratesOfCrate(parentCrateCode){
-
-}
-
-export async function getCrateInfo(parentCrateCode){
-  /* 
-    retrives the info about the crate
-    
-    params:
-      string parentCrateCode : crate code of the crate you want to get the info of
-
-    returns :
-      string[] retArr:
-        retArr[0] : crateCode
-        retArr[1] : medicineName
-        retArr[2] : batchID
-        retArr[3] : bottleCount
-
-  */
-  try{
-    const { contract } = getWeb3AndContract();
-    const account = await getAccount();
-    const Tx = await contract.methods.retrieveCrateInfo(
-      parentCrateCode
-    ).call({ from: account });
-    return Tx
-  }catch(e){
-    console.error("error getting crate info");
-    throw new Error(`failed to get crate info ${error.message}`);
-  }
-    
-
-}
-
-export async function getAllBottlesOfCrate(parentCrateCode){
-  try{
-    console.log("getting all bottles of crate code: ", parentCrateCode);
-    const { contract } = getWeb3AndContract();
-    const account = await getAccount();
-    const Tx = await contract.methods.getAllBottlesOfCrate(
-      parentCrateCode
-    ).call({ from: account });
-    console.log("successfully retrived all bottleIds");
-    return Tx; 
-  }catch(error){
-    console.error("error retriving the bottleIds");
-    throw new Error(`failed to retrive the bottleIds ${error.message}`);
-  }
-
-
-}
-
-export async function getAllBottlesOfSubCrate(){
 
 }
