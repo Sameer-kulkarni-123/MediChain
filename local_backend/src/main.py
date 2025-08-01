@@ -6,7 +6,7 @@ from routes.order_route import router as order_router
 from routes.product_route import router as product_router
 from routes.retailer_route import router as retailer_router
 from routes.shipment_route import router as shipment_router
-
+from routes.certificate_route import router as certificate_router
 
 import uvicorn
 
@@ -19,6 +19,7 @@ app.include_router(order_router, prefix="/orders")
 app.include_router(product_router, prefix="/products")
 app.include_router(retailer_router, prefix="/retailers")
 app.include_router(shipment_router, prefix="/shipments")
+app.include_router(certificate_router, prefix="/certificates")
 
 
 
