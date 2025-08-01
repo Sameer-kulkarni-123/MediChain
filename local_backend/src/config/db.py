@@ -10,5 +10,5 @@ MONGO_URI = os.getenv("MONGO_URI")
 MONGO_DB = os.getenv("MONGO_DB")
 
 
-client = AsyncIOMotorClient(MONGO_URI, tls=True, tlsAllowInvalidCertificates=False)
+client = AsyncIOMotorClient(MONGO_URI) #tls=True, tlsAllowInvalidCertificates=False
 db = client[MONGO_DB]
