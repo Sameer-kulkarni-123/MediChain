@@ -30,12 +30,16 @@ async def update_retailer(retailer_walletAddress: str, update_data: RetailerUpda
 # ---- Inventory Management ----
 
 @router.get("/{retailer_walletAddress}/inventory")
-async def get_inventory(retailer_walletAddress: str):
-    return await controller.get_inventory(retailer_walletAddress)
+async def get_retailer_inventory(retailer_walletAddress: str):
+    return await controller.get_retailer_inventory(retailer_walletAddress)
+
+@router.get("/inventory/{product_name}")
+async def get_individual_product_inventory(product_name: str):
+    return await controller.get_individual_product_inventory(product_name)
 
 @router.get("/{retailer_walletAddress}/inventory/{product_name}")
-async def get_inventory_item(retailer_walletAddress: str, product_name: str):
-    return await controller.get_inventory_item(retailer_walletAddress, product_name)
+async def get_retailer_inventory_item(retailer_walletAddress: str, product_name: str):
+    return await controller.get_retailer_inventory_item(retailer_walletAddress, product_name)
 
 @router.patch("/{retailer_walletAddress}/inventory/bulk")
 async def bulk_update_inventory(retailer_walletAddress: str, updates: List[dict]):
@@ -47,8 +51,9 @@ async def update_inventory_item(
     product_name: str,
     qty: int,
     reorder_level: int = None,
-    product_ids: List[str] = Query(default=None)
+    product_ids: List[str] = Query(default=None),
+    action: str = "add"
 ):
     return await controller.update_inventory_item(
-        retailer_walletAddress, product_name, qty, reorder_level, product_ids
+        retailer_walletAddress, product_name, qty, reorder_level, product_ids, action
     )
