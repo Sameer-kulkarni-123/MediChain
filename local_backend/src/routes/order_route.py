@@ -57,3 +57,38 @@ async def add_path(order_id: str, allocation_index: int, path_data: list[dict]):
     ]
     """
     return await controller.add_path_to_order(order_id, allocation_index, path_data)
+
+
+@router.get("/distributor/{distributor_walletAddress}", response_model=list[ProductInDB])
+async def get_orders_by_distributor(distributor_walletAddress: str):
+    return await controller.orders_by_distributor(distributor_walletAddress)
+
+
+@router.get("/pending/distributor/{distributor_walletAddress}", response_model=list[ProductInDB])
+async def get_pending_orders_by_distributor(distributor_walletAddress: str):
+    return await controller.pending_orders_by_distributor(distributor_walletAddress)
+
+
+@router.get("/new/distributor/{distributor_walletAddress}", response_model=list[ProductInDB])
+async def get_new_orders_by_distributor(distributor_walletAddress: str):
+    return await controller.new_orders_by_distributor(distributor_walletAddress)
+
+
+
+# Update allocations & status based on product IDs
+@router.patch("/allocations/fulfilled")
+async def update_allocations_fulfilled(product_ids: list[str]):
+    """
+    Update allocations fulfillment and order status based on product IDs.
+    """
+    return await controller.update_allocations_fulfilled_by_products(product_ids)
+
+
+# Update order status
+@router.patch("/status/by-products")
+async def set_order_status_by_products(product_ids: list[str], status: str):
+    """
+    Update order status using product IDs (provided by user).
+    """
+    return await controller.update_order_status_by_products(product_ids, status)
+
