@@ -190,27 +190,36 @@ export const getInventoryItem = (walletAddress, productName) =>
  * 
  * @param {string} walletAddress - Distributor wallet address.
  * @param {Array<Object>} updates - List of product updates:
- *   [{ productName, qty, productIds, reorderLevel, delete }]
+ *   [{ productName, qty, productIds, reorderLevel, action: "add"|"remove" }]
  * @returns {Promise} Axios response.
  */
 export const bulkUpdateInventory = (walletAddress, updates) =>
   axios.patch(`${DISTRIBUTORS_BASE}/${walletAddress}/inventory/bulk`, updates);
 
 /**
- * Update or add a single inventory item.
+ * Update or add/remove a single inventory item.
  * 
  * @param {string} walletAddress - Distributor wallet address.
  * @param {string} productName - Product name.
- * @param {number} qty - Quantity (0 deletes the item).
- * @param {string[]} productIds - Optional product IDs to merge.
+ * @param {number} qty - Quantity.
+ * @param {string[]} productIds - Product IDs to add/remove.
  * @param {number|null} reorderLevel - Optional reorder level.
+ * @param {"add"|"remove"} action - Action type.
  * @returns {Promise} Axios response.
  */
-export const updateInventoryItem = (walletAddress, productName, qty, productIds = [], reorderLevel = null) =>
+export const updateInventoryItem = (
+  walletAddress,
+  productName,
+  qty,
+  productIds = [],
+  reorderLevel = null,
+  action = "add"
+) =>
   axios.patch(`${DISTRIBUTORS_BASE}/${walletAddress}/inventory/${productName}`, {
     qty,
     product_ids: productIds,
     reorder_level: reorderLevel,
+    action
   });
 
 
@@ -402,6 +411,54 @@ export const createOrder = (data) =>
       `${ORDERS_BASE}/${orderId}/allocations/${allocationIndex}/path`,
       pathData
     );
+  
+  /**
+ * Get all orders for a specific distributor.
+ *
+ * @param {string} distributorWalletAddress
+ * @returns {Promise}
+ */
+export const getOrdersByDistributor = (distributorWalletAddress) =>
+  axios.get(`${ORDERS_BASE}/distributor/${distributorWalletAddress}`);
+
+/**
+ * Get all pending orders for a specific distributor.
+ *
+ * @param {string} distributorWalletAddress
+ * @returns {Promise}
+ */
+export const getPendingOrdersByDistributor = (distributorWalletAddress) =>
+  axios.get(`${ORDERS_BASE}/pending/distributor/${distributorWalletAddress}`);
+
+/**
+ * Get new (created) orders for a specific distributor.
+ *
+ * @param {string} distributorWalletAddress
+ * @returns {Promise}
+ */
+export const getNewOrdersByDistributor = (distributorWalletAddress) =>
+  axios.get(`${ORDERS_BASE}/new/distributor/${distributorWalletAddress}`);
+
+/**
+ * Update allocations fulfilled status using product IDs.
+ *
+ * @param {Array<string>} productIds - List of product IDs to check and update.
+ * @returns {Promise}
+ */
+export const updateAllocationsFulfilledByProducts = (productIds) =>
+  axios.patch(`${ORDERS_BASE}/allocations/fulfilled`, productIds);
+
+/**
+ * Update order status using product IDs.
+ *
+ * @param {Array<string>} productIds - List of product IDs.
+ * @param {string} status - New status ("created", "in-transit", "completed", "cancelled").
+ * @returns {Promise}
+ */
+export const updateOrderStatusByProducts = (productIds, status) =>
+  axios.patch(`${ORDERS_BASE}/status/by-products`, null, {
+    params: { product_ids: productIds, status },
+  });
 
 
 /* ==============================
@@ -551,29 +608,32 @@ export const getRetailerInventory = (walletAddress) =>
  */
 export const getRetailerInventoryItem = (walletAddress, productName) =>
   axios.get(`${RETAILERS_BASE}/${walletAddress}/inventory/${productName}`);
-
 /**
- * Bulk update retailer inventory.
+ * Bulk update retailer inventory with add/remove actions.
+ * 
  * @param {string} walletAddress
- * @param {Array} updates - array of objects
+ * @param {Array} updates - [{ productName, qty, productIds, reorderLevel, action }]
  */
 export const bulkUpdateRetailerInventory = (walletAddress, updates) =>
   axios.patch(`${RETAILERS_BASE}/${walletAddress}/inventory/bulk`, updates);
 
 /**
- * Update or delete one inventory item.
+ * Update one inventory item (add or remove).
+ * 
  * @param {string} walletAddress
  * @param {string} productName
  * @param {number} qty
- * @param {number} reorderLevel (optional)
- * @param {Array<string>} productIds (optional)
+ * @param {number|null} reorderLevel
+ * @param {Array<string>} productIds
+ * @param {"add"|"remove"} action
  */
 export const updateRetailerInventoryItem = (
   walletAddress,
   productName,
   qty,
   reorderLevel = null,
-  productIds = []
+  productIds = [],
+  action = "add"
 ) =>
   axios.patch(
     `${RETAILERS_BASE}/${walletAddress}/inventory/${productName}`,
@@ -583,6 +643,7 @@ export const updateRetailerInventoryItem = (
         qty,
         reorder_level: reorderLevel,
         product_ids: productIds,
+        action
       },
     }
   );
