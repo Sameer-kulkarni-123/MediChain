@@ -203,3 +203,20 @@ async def update_inventory_item(
         return {"detail": f"Product '{product_name}' updated successfully"}
     else:
         return {"detail": f"Product '{product_name}' added successfully"}
+
+##new codess
+async def get_retailer_inventory(wallet_address: str, product_name: str):
+    retailer = await collection.find_one({"walletAddress": wallet_address})
+    if not retailer:
+        return []
+    return [
+        item for item in retailer.get("inventory", [])
+        if item["productName"].lower() == product_name.lower()
+    ]
+
+async def get_individual_product_inventory(product_id: str):
+    async for retailer in collection.find():
+        for item in retailer.get("inventory", []):
+            if product_id in item.get("productIds", []):
+                return item
+    return None
