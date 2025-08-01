@@ -87,7 +87,7 @@ export default function RetailerPortal() {
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to verify crate. Please try again.",
+        description: `${error}`,
         variant: "destructive",
       })
     } finally {
@@ -128,7 +128,7 @@ export default function RetailerPortal() {
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to confirm delivery. Please try again.",
+        description: `${error}`,
         variant: "destructive",
       })
     }
