@@ -27,7 +27,7 @@ import {
   getCrateInfo,
   getAccount,
   retailerReceivedSubCrate,
-  activateCertifications,
+  // activateCertifications,
 } from "../../apis"
 import { createOrder } from "../../api_local"
 
@@ -346,22 +346,22 @@ export default function RetailerPortal() {
     }
   }
 
-  const handleActivateCert = async () => {
-    try {
-      await activateCertifications(crateCode)
-      setIsCertActivated(true)
-      toast({
-        title: "Certifications Activated",
-        description: "Retailer successfully activated crate certifications",
-      })
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to activate certifications",
-        variant: "destructive",
-      })
-    }
-  }
+  // const handleActivateCert = async () => {
+  //   try {
+  //     await activateCertifications(crateCode)
+  //     setIsCertActivated(true)
+  //     toast({
+  //       title: "Certifications Activated",
+  //       description: "Retailer successfully activated crate certifications",
+  //     })
+  //   } catch (error) {
+  //     toast({
+  //       title: "Error",
+  //       description: "Failed to activate certifications",
+  //       variant: "destructive",
+  //     })
+  //   }
+  // }
 
   const handlePlaceOrder = async () => {
     if (!medicineName.trim()) {
@@ -553,7 +553,7 @@ export default function RetailerPortal() {
               >
                 Confirm Final Delivery
               </Button>
-              {isVerified && deliveryAcknowledged && (
+              {/* {isVerified && deliveryAcknowledged && (
                 <Button
                   onClick={handleActivateCert}
                   disabled={isCertActivated}
@@ -561,7 +561,7 @@ export default function RetailerPortal() {
                 >
                   {isCertActivated ? "✅ Certifications Activated" : "Activate Certifications"}
                 </Button>
-              )}
+              )} */}
 
               {isVerified && <p className="text-sm text-gray-500">Please verify crate authenticity first</p>}
             </CardContent>
