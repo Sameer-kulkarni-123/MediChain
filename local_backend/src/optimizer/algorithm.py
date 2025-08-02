@@ -3,7 +3,6 @@ from controllers.distributor_controller import all_distributors
 from controllers.connection_controller import get_all_connections
 from controllers.product_controller import get_products_by_name
 from optimizer.utils import build_weighted_graph, shortest_path
-from controllers.manufacturer_controller import all_manufacturers
 
 async def get_all_inventories(product_name):
     inventories = {}
@@ -18,14 +17,6 @@ async def get_all_inventories(product_name):
         if items:
             inventories[wallet] = items
     return inventories
-
-async def get_weights_product(product_name):
-    products = await get_products_by_name(product_name)
-    for product in products:
-        product_weight = product.unitWeight
-    
-    return product_weight
-
 
 async def suggest_wait_strategy(graph, inventories, product_name, target_wallet, cold_storage=False):
     if cold_storage:
@@ -56,25 +47,38 @@ async def optimize_supply_path(product_name, required_qty, target_wallet, is_col
             }
         }
 
-    # Build source nodes with cold storage logic, SKIP the target_wallet itself!
+    # Build source nodes, skip target_wallet
     source_nodes = []
     for wallet, items in inventories.items():
         if wallet == target_wallet:
-            continue  # Do not consider the target's own stock as a source
-        available_items = [item for item in items if not getattr(item, 'inTransit', False)]
-        # Cold storage check
-        if is_cold_storage and not getattr(items[0], 'supportsColdStorage', False):
-            continue
-        total_available = sum(getattr(item, 'qtyRemaining', 1) for item in available_items)
+            continue  # Skip the target's own stock
+        
         product_ids = []
-        for item in available_items:
-            product_ids.extend(getattr(item, 'productIds', []))
+        total_available = 0
+
+        # Loop through inventory items
+        for item in items:
+            if getattr(item, 'productIds', []):
+                valid_product_ids = []
+                for pid in item.productIds:
+                    product = await get_product_by_id(pid)
+                    if product and not getattr(product, 'inTransit', False):
+                        valid_product_ids.append(pid)
+
+                if valid_product_ids:
+                    product_ids.extend(valid_product_ids)
+                    total_available += len(valid_product_ids)
+
+            else:
+                # If there are no productIds, fall back to qty
+                if not getattr(item, 'inTransit', False):
+                    total_available += getattr(item, 'qty', getattr(item, 'qtyRemaining', 1))
+
         if total_available > 0:
             source_nodes.append({
                 "wallet": wallet,
                 "available_qty": total_available,
                 "product_ids": product_ids,
-                "supportsColdStorage": getattr(items[0], 'supportsColdStorage', False),
             })
 
     

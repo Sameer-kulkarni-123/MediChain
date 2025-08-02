@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, GetCoreSchemaHandler
+from pydantic import BaseModel, Field, GetCoreSchemaHandler, conint
 from typing import Optional, Union, Literal, Any
 from bson import ObjectId
 from datetime import datetime
@@ -36,7 +36,7 @@ class PyObjectId(ObjectId):
         return handler(core_schema.str_schema())
 
 class LocationModel(BaseModel):
-    type: Literal['manufacturer', 'distributor', 'retailer']
+    type: Literal['manufacturer', 'distributor', 'retailer', 'customer']
     walletAddress: str
 
 class ProductModel(BaseModel):
@@ -46,10 +46,11 @@ class ProductModel(BaseModel):
     atcCode: Optional[str]
     coldChain: bool = False
     unitWeight: Optional[Union[float, str]]
-    batchId: Optional[PyObjectId]
+    batchId: Optional[str] = None
     createdAt: Optional[datetime] = None
     inTransit: bool = False
     location: Optional[LocationModel]
+    shelf_life: Optional[conint(ge=0)]
 
 class ProductInDB(ProductModel):
     id: PyObjectId = Field(default_factory=PyObjectId, alias='_id')
