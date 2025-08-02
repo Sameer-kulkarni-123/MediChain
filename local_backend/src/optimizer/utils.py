@@ -1,4 +1,4 @@
-def build_weighted_graph(connections):
+def build_weighted_graph(connections,product_weight, required_qty):
     """
     connections: list of dicts, each with 'fromWalletAddress', 'toWalletAddress', 'costPerUnit', 'transitTimeDays'
     Returns: dict {node: [(neighbor, cost, time), ...]}
@@ -8,7 +8,7 @@ def build_weighted_graph(connections):
     for conn in connections:
         src = conn['fromWalletAddress']
         dst = conn['toWalletAddress']
-        cost = conn.get('costPerUnit', 1)
+        cost = conn.get('costPerUnit', 1)* product_weight* required_qty
         time = conn.get('transitTimeDays', 1)
         graph.setdefault(src, []).append((dst, cost, time))
         # If bidirectional, uncomment the next line:

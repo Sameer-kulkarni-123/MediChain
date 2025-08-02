@@ -1,7 +1,11 @@
 from controllers.retailer_controller import all_retailers
 from controllers.distributor_controller import all_distributors
 from controllers.connection_controller import get_all_connections
+from controllers.product_controller import get_products_by_name
 from optimizer.utils import build_weighted_graph, shortest_path
+from controllers.manufacturer_controller import all_manufacturers
+from controllers.product_controller import get_product_by_id
+
 
 async def get_all_inventories(product_name):
     inventories = {}
@@ -17,6 +21,18 @@ async def get_all_inventories(product_name):
             inventories[wallet] = items
     return inventories
 
+async def get_weights_product(product_name):
+    products = await get_products_by_name(product_name)
+    
+    if not products:
+        # Decide what to do if the product is not found
+        # Either return a default value or raise an error
+        return 1  # default weight
+    
+    # If you expect a single product match:
+    return products[0].unitWeight
+
+
 async def suggest_wait_strategy(graph, inventories, product_name, target_wallet, cold_storage=False):
     if cold_storage:
         return {
@@ -31,9 +47,10 @@ async def suggest_wait_strategy(graph, inventories, product_name, target_wallet,
     }
 
 async def optimize_supply_path(product_name, required_qty, target_wallet, is_cold_storage=False):
+    product_weight = await get_weights_product(product_name)
     connections = await get_all_connections()
     connections = [conn.dict() if hasattr(conn, "dict") else conn for conn in connections]
-    graph = build_weighted_graph(connections)
+    graph = build_weighted_graph(connections, product_weight,required_qty )
     inventories = await get_all_inventories(product_name)
 
     # CASE: Product not found at all
@@ -45,33 +62,72 @@ async def optimize_supply_path(product_name, required_qty, target_wallet, is_col
             }
         }
 
-    # Build source nodes with cold storage logic, SKIP the target_wallet itself!
+    # Build source nodes, skip target_wallet
     source_nodes = []
     for wallet, items in inventories.items():
         if wallet == target_wallet:
-            continue  # Do not consider the target's own stock as a source
-        available_items = [item for item in items if not getattr(item, 'inTransit', False)]
-        # Cold storage check
-        if is_cold_storage and not getattr(items[0], 'supportsColdStorage', False):
-            continue
-        total_available = sum(getattr(item, 'qtyRemaining', 1) for item in available_items)
+            continue  # Skip the target's own stock
+        
         product_ids = []
-        for item in available_items:
-            product_ids.extend(getattr(item, 'productIds', []))
+        total_available = 0
+
+        # Loop through inventory items
+        for item in items:
+            if getattr(item, 'productIds', []):
+                valid_product_ids = []
+                for pid in item.productIds:
+                    product = await get_product_by_id(pid)
+                    if product and not getattr(product, 'inTransit', False):
+                        valid_product_ids.append(pid)
+
+                if valid_product_ids:
+                    product_ids.extend(valid_product_ids)
+                    total_available += len(valid_product_ids)
+
+            else:
+                # If there are no productIds, fall back to qty
+                if not getattr(item, 'inTransit', False):
+                    total_available += getattr(item, 'qty', getattr(item, 'qtyRemaining', 1))
+
         if total_available > 0:
             source_nodes.append({
                 "wallet": wallet,
                 "available_qty": total_available,
                 "product_ids": product_ids,
-                "supportsColdStorage": getattr(items[0], 'supportsColdStorage', False),
             })
 
+    
     # CASE: No available stock (with/without cold storage)
     if not source_nodes:
+        # Step 7: Check manufacturers who can produce the product
+        manufacturers = await all_manufacturers()
+        available_manufacturers = [
+            m for m in manufacturers if product_name in (m.productsProduced or [])
+        ]
+        if available_manufacturers:
+            manufacturer_info = [
+                {
+                    "manufacturer": m.name,
+                    "wallet": m.walletAddress,
+                    "production_time_days": next(
+                        (pt.days for pt in m.productionTimes if pt.productName == product_name),
+                        "Unknown"
+                    )
+                }
+                for m in available_manufacturers
+            ]
+            return {
+                "status": "partial",
+                "wait_recommendation": {
+                    "message": f"No stock found, but manufacturers are available to produce '{product_name}'.",
+                    "producers": manufacturer_info
+                }
+            }
+
         msg = (
             "Product requires cold storage, but no suitable nodes support cold storage at this time."
             if is_cold_storage else
-            f"Product '{product_name}' is currently out of stock across the network."
+            f"Product '{product_name}' is currently out of stock across the network and not produced by any manufacturer."
         )
         return {
             "status": "partial",
@@ -79,6 +135,7 @@ async def optimize_supply_path(product_name, required_qty, target_wallet, is_col
                 "message": msg
             }
         }
+
 
     # Try to fulfill from a single node if possible (prefer fewer hops, more available)
     single_node_candidates = []
