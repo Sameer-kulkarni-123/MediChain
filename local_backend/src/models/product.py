@@ -36,7 +36,7 @@ class PyObjectId(ObjectId):
         return handler(core_schema.str_schema())
 
 class LocationModel(BaseModel):
-    type: Literal['manufacturer', 'distributor', 'retailer']
+    type: Literal['manufacturer', 'distributor', 'retailer', 'customer']
     walletAddress: str
 
 class ProductModel(BaseModel):
@@ -46,7 +46,7 @@ class ProductModel(BaseModel):
     atcCode: Optional[str]
     coldChain: bool = False
     unitWeight: Optional[Union[float, str]]
-    batchId: Optional[PyObjectId]
+    batchId: Optional[str] = None
     createdAt: Optional[datetime] = None
     inTransit: bool = False
     location: Optional[LocationModel]
