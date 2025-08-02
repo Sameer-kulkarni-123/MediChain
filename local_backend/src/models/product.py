@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, GetCoreSchemaHandler
+from pydantic import BaseModel, Field, GetCoreSchemaHandler, conint
 from typing import Optional, Union, Literal, Any
 from bson import ObjectId
 from datetime import datetime
@@ -50,6 +50,7 @@ class ProductModel(BaseModel):
     createdAt: Optional[datetime] = None
     inTransit: bool = False
     location: Optional[LocationModel]
+    shelf_life: Optional[conint(ge=0)]
 
 class ProductInDB(ProductModel):
     id: PyObjectId = Field(default_factory=PyObjectId, alias='_id')
