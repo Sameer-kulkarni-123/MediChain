@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Body
 from typing import List
 from models.retailer import ProductInDB, RetailerModel, RetailerUpdateModel, UpdateInventoryRequest, BulkUpdateItem
 from controllers import retailer_controller as controller

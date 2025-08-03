@@ -4,6 +4,8 @@ from config.db import db
 from datetime import datetime
 from bson import ObjectId
 import random
+from typing import Optional, List
+
 
 
 collection = db.get_collection("retailers")
@@ -143,13 +145,15 @@ async def update_inventory_item(
     retailer_walletAddress: str,
     product_name: str,
     qty: int,
-    reorder_level: int = None,
-    product_ids: list[str] = None,
+    reorder_level: Optional[int] = None,
+    product_ids: Optional[List[str]] = None,
     action: str = "add"
 ):
     """
     Update or remove a single inventory item.
     """
+    product_ids = product_ids or []
+
     retailer = await collection.find_one({"walletAddress": retailer_walletAddress})
     if not retailer:
         raise HTTPException(status_code=404, detail="Retailer not found")
@@ -160,10 +164,12 @@ async def update_inventory_item(
     for item in inventory:
         if item["productName"].lower() == product_name.lower():
             if action == "remove":
+                if qty > item["qtyRemaining"]:
+                    raise HTTPException(status_code=400, detail="Cannot remove more than available quantity")
                 new_qty = item["qtyRemaining"] - qty
                 if product_ids:
                     item["productIds"] = [pid for pid in item.get("productIds", []) if pid not in product_ids]
-            else:
+            else:  # action == "add"
                 new_qty = item["qtyRemaining"] + qty
                 if product_ids:
                     item["productIds"] = list(set(item.get("productIds", []) + product_ids))
@@ -175,20 +181,19 @@ async def update_inventory_item(
                 item["qtyAdded"] = qty if action == "add" else 0
                 if action == "add":
                     item["lastStockAddedDate"] = datetime.utcnow()
-
                 if reorder_level is not None:
                     item["reorderLevel"] = reorder_level
 
             updated = True
             break
 
-    # Add if doesn't exist and action is add
+    # If not found and action is add, append new entry
     if not updated and action == "add" and qty > 0:
         inventory.append({
             "productName": product_name,
             "qtyRemaining": qty,
             "qtyAdded": qty,
-            "productIds": product_ids or [],
+            "productIds": product_ids,
             "lastStockAddedDate": datetime.utcnow(),
             "reorderLevel": reorder_level or 0
         })
@@ -197,12 +202,6 @@ async def update_inventory_item(
         {"walletAddress": retailer_walletAddress},
         {"$set": {"inventory": inventory}}
     )
-
-    if result.modified_count == 0:
-        raise HTTPException(status_code=400, detail="Failed to update inventory")
-
-    return {"detail": f"Product '{product_name}' {'removed' if action == 'remove' else 'updated'} successfully"}
-
 
 
 async def get_retailer_inventory_item(wallet_address: str, product_name: str):

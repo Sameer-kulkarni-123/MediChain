@@ -61,6 +61,12 @@ class InventoryModel(BaseModel):
     qty: conint(ge=0)
     reorderLevel: Optional[conint(ge=0)] = None
 
+class InventoryUpdateRequest(BaseModel):
+    qty: conint(gt=0)
+    product_ids: Optional[List[str]] = None
+    reorder_level: Optional[int] = None
+    action: Literal["add", "remove"] = "add"
+
 
 class DistributorModel(BaseModel):
     id: PyObjectId = Field(alias="_id", default=None)

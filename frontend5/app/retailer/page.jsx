@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -27,9 +27,12 @@ import {
   getCrateInfo,
   getAccount,
   retailerReceivedSubCrate,
-  activateCertifications,
+  getAllBottlesOfSubCrate,
+  getSubCrateInfo,
+  // activateCertifications,
 } from "../../apis"
-import { createOrder } from "../../api_local"
+import { createOrder, getRetailerInventory, updateInventoryItem, updateProductLocation, updateRetailerInventoryItem } from "../../api_local"
+import { map } from "zod"
 
 export default function RetailerPortal() {
   const [crateCode, setCrateCode] = useState("")
@@ -40,6 +43,21 @@ export default function RetailerPortal() {
   const [medicineName, setMedicineName] = useState("")
   const [quantity, setQuantity] = useState("")
   const [isPlacingOrder, setIsPlacingOrder] = useState(false)
+  const [trigger, settrigger] = useState(false);
+  const [ connectedAccount, setconnectedAccount ] = useState("")
+  const [retrievedInventory, setretrievedInventory] = useState();
+
+  // useEffect(() => {
+  //   const cAccount = getAccount()
+  //   setconnectedAccount(cAccount)
+  
+  //   return () => {
+  //   }
+  // }, [])
+  
+
+
+  
 
   // Original inventory data
   const originalInventory = [
@@ -185,7 +203,7 @@ export default function RetailerPortal() {
     },
   ]
 
-  const [inventory, setInventory] = useState(originalInventory)
+  const [inventory, setInventory] = useState([])
   const [isUpdatingInventory, setIsUpdatingInventory] = useState(false)
 
   // Filter and sort states
@@ -194,36 +212,57 @@ export default function RetailerPortal() {
 
   const { toast } = useToast()
 
+    useEffect(() => {
+    const retrieveInventory = async () => {
+      const cAccount = await getAccount()
+      console.log("cAccount : ", cAccount)
+      const rInventory = await getRetailerInventory(cAccount)
+      console.log("this is the rInventory : ", rInventory.data)
+
+      const inventoryWithSoldQuantity = rInventory.data.map(item => ({
+          ...item,
+          soldQuantity: ""
+        }))
+
+
+      setInventory(inventoryWithSoldQuantity)
+    }
+    retrieveInventory()
+    return () => {
+      // second
+    }
+  }, [trigger])
+
   // Filtered and sorted inventory
-  const filteredAndSortedInventory = useMemo(() => {
-    let filtered = [...inventory]
+  // const filteredAndSortedInventory = useMemo(() => {
+  //   let filtered = [...inventory]
 
-    // Apply filters - search in both medicine name and product ID
-    if (searchTerm.trim()) {
-      const searchLower = searchTerm.toLowerCase()
-      filtered = filtered.filter(
-        (item) =>
-          item.medicineName.toLowerCase().includes(searchLower) || item.productId.toLowerCase().includes(searchLower),
-      )
-    }
+  //   // Apply filters - search in both medicine name and product ID
+  //   if (searchTerm.trim()) {
+  //     const searchLower = searchTerm.toLowerCase()
+  //     filtered = filtered.filter(
+  //       (item) =>
+  //         item.medicineName.toLowerCase().includes(searchLower) || item.productId.toLowerCase().includes(searchLower),
+  //     )
+  //   }
 
-    // Apply sorting
-    switch (sortBy) {
-      case "quantity-low":
-        filtered.sort((a, b) => a.quantityInStock - b.quantityInStock)
-        break
-      case "quantity-high":
-        filtered.sort((a, b) => b.quantityInStock - a.quantityInStock)
-        break
-      case "original":
-      default:
-        // Sort by original order (by id)
-        filtered.sort((a, b) => a.id - b.id)
-        break
-    }
+  //   // Apply sorting
+  //   switch (sortBy) {
+  //     case "quantity-low":
+  //       filtered.sort((a, b) => a.quantityInStock - b.quantityInStock)
+  //       break
+  //     case "quantity-high":
+  //       filtered.sort((a, b) => b.quantityInStock - a.quantityInStock)
+  //       break
+  //     case "original":
+  //     default:
+  //       // Sort by original order (by id)
+  //       filtered.sort((a, b) => a.id - b.id)
+  //       break
+  //   }
 
-    return filtered
-  }, [inventory, searchTerm, sortBy])
+  //   return filtered
+  // }, [inventory, searchTerm, sortBy])
 
   // Reset filters and sorting
   const resetFiltersAndSort = () => {
@@ -323,8 +362,63 @@ export default function RetailerPortal() {
       // Mark crate as received by retailer (final destination)
       if (crateCode.length === 5) {
         await retailerReceivedCrate(crateCode)
+
+        const bottleIds = await getAllBottlesOfCrate(crateCode) 
+        const crateInfo = await getCrateInfo(crateCode) 
+        const connectedAccount = await getAccount()
+
+        const location = { 
+          "type" : "retailer",
+          "walletAddress" : connectedAccount
+        }
+
+
+        bottleIds.map( async (bottleId) => {
+          await updateProductLocation(bottleId, location, false)
+        })
+
+        // console.log("crateInfo", crateInfo)
+        // console.log("crateInfo.medicineName inside try", crateInfo[1])
+
+        // await updateProductLocation("P001", location, true)
+        await updateRetailerInventoryItem(
+          connectedAccount,
+          crateInfo[1],
+          bottleIds.length,
+          null,
+          bottleIds,
+          "add",
+        )
+
+
+
       } else if (crateCode.length === 11) {
         await retailerReceivedSubCrate(crateCode)
+
+        const bottleIds = await getAllBottlesOfSubCrate(crateCode)
+        const subCrateInfo = await getSubCrateInfo(crateCode)
+        const connectedAccount = await getAccount()
+
+        const location = { 
+          "type" : "retailer",
+          "walletAddress" : connectedAccount
+        }
+        bottleIds.map( async (bottleId) => {
+          await updateProductLocation(bottleId, location, false)
+        })
+
+        await updateRetailerInventoryItem(
+          connectedAccount,
+          subCrateInfo[1],
+          bottleIds.length,
+          null,
+          bottleIds,
+          "add",
+        )
+
+        settrigger(!trigger)
+
+        
       } else {
         toast({
           title: "Error",
@@ -346,22 +440,22 @@ export default function RetailerPortal() {
     }
   }
 
-  const handleActivateCert = async () => {
-    try {
-      await activateCertifications(crateCode)
-      setIsCertActivated(true)
-      toast({
-        title: "Certifications Activated",
-        description: "Retailer successfully activated crate certifications",
-      })
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to activate certifications",
-        variant: "destructive",
-      })
-    }
-  }
+  // const handleActivateCert = async () => {
+  //   try {
+  //     await activateCertifications(crateCode)
+  //     setIsCertActivated(true)
+  //     toast({
+  //       title: "Certifications Activated",
+  //       description: "Retailer successfully activated crate certifications",
+  //     })
+  //   } catch (error) {
+  //     toast({
+  //       title: "Error",
+  //       description: "Failed to activate certifications",
+  //       variant: "destructive",
+  //     })
+  //   }
+  // }
 
   const handlePlaceOrder = async () => {
     if (!medicineName.trim()) {
@@ -425,7 +519,7 @@ export default function RetailerPortal() {
     }
   }
 
-  const handleUpdateInventory = async (itemId, soldQuantity) => {
+  const handleUpdateInventory = async (itemMedicineName, soldQuantity) => {
     if (!soldQuantity || Number.parseInt(soldQuantity) <= 0) {
       toast({
         title: "Error",
@@ -435,7 +529,7 @@ export default function RetailerPortal() {
       return
     }
 
-    const item = inventory.find((inv) => inv.id === itemId)
+    const item = inventory.find((inv) => inv.medicineName === itemMedicineName)
     if (!item) {
       toast({
         title: "Error",
@@ -446,10 +540,10 @@ export default function RetailerPortal() {
     }
 
     const soldQty = Number.parseInt(soldQuantity)
-    if (soldQty > item.quantityInStock) {
+    if (soldQty > item.qtyRemaining) {
       toast({
         title: "Error",
-        description: `Cannot sell ${soldQty} units. Only ${item.quantityInStock} units available in stock.`,
+        description: `Cannot sell ${soldQty} units. Only ${item.qtyRemaining} units available in stock.`,
         variant: "destructive",
       })
       return
@@ -458,17 +552,23 @@ export default function RetailerPortal() {
     setIsUpdatingInventory(true)
     try {
       const account = await getAccount()
-      const newQuantity = item.quantityInStock - soldQty
+      const newQuantity = item.qtyRemaining - soldQty
 
       // Here you would call the actual API to update inventory
       // For now, we'll simulate the update locally
       // await updateRetailerInventoryItem(account, item.medicineName, newQuantity)
 
       // Update local state
-      setInventory((prev) =>
-        prev.map((inv) => (inv.id === itemId ? { ...inv, quantityInStock: newQuantity, soldQuantity: "" } : inv)),
-      )
+      // setInventory((prev) =>
+      //   prev.map((inv) => (inv.MedicineName === itemMedicineName ? { ...inv, quantityInStock: newQuantity, soldQuantity: "" } : inv)),
+      // )
+      //=========================
+      //call the actual db api here
+      //=========================
 
+      
+
+      settrigger(!trigger)
       toast({
         title: "Sale Recorded Successfully",
         description: `${soldQty} units of ${item.medicineName} sold. New stock: ${newQuantity} units`,
@@ -485,8 +585,10 @@ export default function RetailerPortal() {
     }
   }
 
-  const handleSoldQuantityChange = (itemId, value) => {
-    setInventory((prev) => prev.map((inv) => (inv.id === itemId ? { ...inv, soldQuantity: value } : inv)))
+  const handleSoldQuantityChange = (itemMedicineName, value) => {
+    setInventory((prev) => prev.map((inv) => (inv.medicineName === itemMedicineName ? { ...inv, soldQuantity: value } : inv)))
+    // call the actual update db api here
+    settrigger(!trigger)
   }
 
   return (
@@ -553,7 +655,7 @@ export default function RetailerPortal() {
               >
                 Confirm Final Delivery
               </Button>
-              {isVerified && deliveryAcknowledged && (
+              {/* {isVerified && deliveryAcknowledged && (
                 <Button
                   onClick={handleActivateCert}
                   disabled={isCertActivated}
@@ -561,7 +663,7 @@ export default function RetailerPortal() {
                 >
                   {isCertActivated ? "✅ Certifications Activated" : "Activate Certifications"}
                 </Button>
-              )}
+              )} */}
 
               {isVerified && <p className="text-sm text-gray-500">Please verify crate authenticity first</p>}
             </CardContent>
@@ -631,10 +733,10 @@ export default function RetailerPortal() {
           </CardHeader>
           <CardContent>
             {/* Filter and Sort Controls */}
-            <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4"> */}
                 {/* Search Input */}
-                <div className="md:col-span-2">
+                {/* <div className="md:col-span-2">
                   <Label htmlFor="search" className="text-sm font-medium mb-2 block">
                     Search
                   </Label>
@@ -648,10 +750,10 @@ export default function RetailerPortal() {
                       className="pl-10"
                     />
                   </div>
-                </div>
+                </div> */}
 
                 {/* Sort By */}
-                <div>
+                {/* <div>
                   <Label className="text-sm font-medium mb-2 block">Sort By</Label>
                   <Select value={sortBy} onValueChange={setSortBy}>
                     <SelectTrigger>
@@ -664,10 +766,10 @@ export default function RetailerPortal() {
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
+              </div> */}
 
               {/* Control Buttons */}
-              <div className="flex flex-wrap gap-2 mt-4">
+              {/* <div className="flex flex-wrap gap-2 mt-4">
                 <Button
                   onClick={resetFiltersAndSort}
                   variant="outline"
@@ -676,10 +778,10 @@ export default function RetailerPortal() {
                 >
                   <RotateCcw className="h-4 w-4" />
                   Reset All
-                </Button>
+                </Button> */}
 
                 {/* Active Filters Display */}
-                <div className="flex flex-wrap gap-2 items-center">
+                {/* <div className="flex flex-wrap gap-2 items-center">
                   {searchTerm && (
                     <Badge variant="secondary" className="flex items-center gap-1">
                       Search: "{searchTerm}"
@@ -695,13 +797,13 @@ export default function RetailerPortal() {
                     </Badge>
                   )}
                 </div>
-              </div>
+              </div> */}
 
               {/* Results Count */}
-              <div className="mt-2 text-sm text-gray-600">
+              {/* <div className="mt-2 text-sm text-gray-600">
                 Showing {filteredAndSortedInventory.length} of {inventory.length} items
               </div>
-            </div>
+            </div> */}
 
             <div className="overflow-x-auto">
               <div className="max-h-96 overflow-y-auto border rounded-lg">
@@ -710,46 +812,44 @@ export default function RetailerPortal() {
                     <tr className="border-b">
                       <th className="text-left p-3 font-medium text-gray-900">Sl. No.</th>
                       <th className="text-left p-3 font-medium text-gray-900">Medicine Name</th>
-                      <th className="text-left p-3 font-medium text-gray-900">Product ID</th>
+                      {/* <th className="text-left p-3 font-medium text-gray-900">Product ID</th> */}
                       <th className="text-left p-3 font-medium text-gray-900">Quantity in Stock</th>
                       <th className="text-left p-3 font-medium text-gray-900">Units Sold</th>
                       <th className="text-left p-3 font-medium text-gray-900">Action</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredAndSortedInventory.map((item, index) => (
+                    {inventory.map((item, index) => (
                       <tr key={item.id} className="border-b hover:bg-gray-50">
                         <td className="p-3 text-gray-700">{index + 1}</td>
-                        <td className="p-3 text-gray-900 font-medium">{item.medicineName}</td>
-                        <td className="p-3 text-gray-700 font-mono text-sm">{item.productId}</td>
+                        <td className="p-3 text-gray-900 font-medium">{item.productName}</td>
+                        {/* <td className="p-3 text-gray-700 font-mono text-sm">{item.productId}</td> */}
                         <td className="p-3">
                           <Badge
                             variant="outline"
                             className={`${
-                              item.quantityInStock < 50
+                              item.qtyRemaining < item.reorderLevel
                                 ? "text-red-600 border-red-600"
-                                : item.quantityInStock < 100
-                                  ? "text-orange-600 border-orange-600"
                                   : "text-green-600 border-green-600"
                             }`}
                           >
-                            {item.quantityInStock} units
+                            {item.qtyRemaining} units
                           </Badge>
                         </td>
                         <td className="p-3">
                           <Input
                             type="number"
                             min="1"
-                            max={item.quantityInStock}
+                            max={item.qtyRemaining}
                             value={item.soldQuantity}
-                            onChange={(e) => handleSoldQuantityChange(item.id, e.target.value)}
+                            onChange={(e) => handleSoldQuantityChange(item.medicineName, e.target.value)}
                             placeholder="Units sold"
                             className="w-32"
                           />
                         </td>
                         <td className="p-3">
                           <Button
-                            onClick={() => handleUpdateInventory(item.id, item.soldQuantity)}
+                            onClick={() => handleUpdateInventory(item.medicineName, item.soldQuantity)}
                             disabled={
                               isUpdatingInventory ||
                               !item.soldQuantity ||
@@ -769,7 +869,7 @@ export default function RetailerPortal() {
               </div>
             </div>
 
-            {filteredAndSortedInventory.length === 0 && (
+            {inventory.length === 0 && (
               <div className="text-center py-8 text-gray-500">
                 <Package className="h-12 w-12 mx-auto mb-2 opacity-50" />
                 <p>No inventory items found matching your criteria</p>

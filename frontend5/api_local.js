@@ -477,6 +477,7 @@ export const updateOrderStatusByProducts = (productIds, status) =>
  *   unitWeight?: number|string,
  *   batchId?: string,
  *   location?: { type: "manufacturer"|"distributor"|"retailer", walletAddress: string }
+ *   shelf_life?: number
  * }
  * @returns {Promise}
  */

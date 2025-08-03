@@ -356,6 +356,36 @@ export async function getCrateInfo(parentCrateCode){
 
 }
 
+export async function getSubCrateInfo(subCrateCode){
+  /* 
+    retrives the info about the subCrate
+    
+    params:
+      string subCrateCode : subcrate code of the subcrate you want to get the info of
+
+    returns :
+      string[] retArr:
+        retArr[0] : subCrateCode
+        retArr[1] : medicineName
+        retArr[2] : batchID
+        retArr[3] : bottleCount
+
+  */
+  try{
+    const { contract } = getWeb3AndContract();
+    const account = await getAccount();
+    const Tx = await contract.methods.retrieveSubCrateInfo(
+      subCrateCode
+    ).call({ from: account });
+    return Tx
+  }catch(error){
+    console.error("error getting subcrate info");
+    throw new Error(`failed to get subcrate info ${error.data.message}`);
+  }
+    
+
+}
+
 export async function getAllBottlesOfCrate(parentCrateCode){
   try{
     console.log("getting all bottles of crate code: ", parentCrateCode);
@@ -410,7 +440,20 @@ export async function scanBottle(bottleCode){
 }
 
 //can be added later
-export async function getAllBottlesOfSubCrate(){
+export async function getAllBottlesOfSubCrate(subCrateCode){
+  try{
+    const { contract } = getWeb3AndContract();
+    const account = await getAccount();
+    const Tx = await contract.methods.getAllBottlesOfSubCrate(
+      subCrateCode
+    ).call({ from: account });
+    
+    console.log("retrieved all the bottles from subCrate", Tx)
+    return Tx; // 
+  }catch(error){
+    console.error("error retrieving all the bottles from a subCrate");
+    throw new Error(`failed retrieve all the bottles from a subCrate ${error.message}`);
+  }
 
 }
 
