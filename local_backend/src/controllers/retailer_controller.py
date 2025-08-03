@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-from models.retailer import ProductInDB, RetailerModel, RetailerUpdateModel
+from models.retailer import ProductInDB, RetailerModel, RetailerUpdateModel, BulkUpdateItem
 from config.db import db
 from datetime import datetime
 from bson import ObjectId
