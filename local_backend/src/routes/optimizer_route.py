@@ -7,7 +7,7 @@ router = APIRouter()
 
 @router.get("/test-optimize")
 async def test_optimize(
-    product_name: str = Query("Paracetamol 500mg"),  # exact name from your data
+    product_name: str = Query("paracetamol"),  # exact name from your data
     required_qty: int = Query(10),                   # choose a test quantity
     target_wallet: str = Query("0xR1"),              # valid wallet from your retailers
     is_cold_storage: bool = Query(False)             # test with normal first
