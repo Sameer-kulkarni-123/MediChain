@@ -15,6 +15,7 @@ import { ConnectionPath } from "@/components/connection-path"
 import supplyChainData from "@/data/supplyChainData.json"
 import { useToast } from "@/hooks/use-toast"
 import { registerCrate, getAccount, sendCrate } from "../../apis"
+import { createProduct } from "@/api_local" 
 
 interface CreatedCrate {
   crateCode: string
@@ -165,7 +166,7 @@ export default function ManufacturerPortal() {
       setIsSubmitting(false)
     }
   }
-
+ 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -221,6 +222,7 @@ export default function ManufacturerPortal() {
         timestamp: new Date().toLocaleString(),
       }
 
+      
       // Update state (stored but not displayed)
       setCreatedCrates((prev) => [...prev, newCrate])
       setUsedCodes(newUsedCodes)
