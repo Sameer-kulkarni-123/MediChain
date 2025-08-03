@@ -14,7 +14,8 @@ import { SearchableDropdown } from "@/components/searchable-dropdown"
 import { ConnectionPath } from "@/components/connection-path"
 import supplyChainData from "@/data/supplyChainData.json"
 import { useToast } from "@/hooks/use-toast"
-import { registerCrate, getAccount, sendCrate } from "../../apis"
+import { registerCrate, getAccount, sendCrate, getAllBottlesOfCrate } from "../../apis"
+import { createProduct, getConnectionsFrom,getDistributor, updateProductLocation  } from "@/api_local" 
 
 interface CreatedCrate {
   crateCode: string
@@ -36,16 +37,34 @@ export default function ManufacturerPortal() {
   const [createdCrates, setCreatedCrates] = useState<CreatedCrate[]>([])
   const [usedCodes, setUsedCodes] = useState<Set<string>>(new Set())
   const [formData, setFormData] = useState({
-    crateCode: "",
-    batchId: "",
-    productId: "",
-    medicineName: "",
-    cidDocuments: "",
-    bottleCount: "",
-  })
+  crateCode: "",
+  batchId: "",
+  productId: "",
+  medicineName: "",
+  atcCode: "",
+  coldChain: false,
+  unitWeight: "",
+  bottleCount: "",
+  cidDocuments: "",
+  shelf_life: "",
+});
+
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { toast } = useToast()
   const [manualCrateCodeForAssignment, setManualCrateCodeForAssignment] = useState("")
+  const [connectedDistributors, setConnectedDistributors] = useState<any[]>([]);
+
+  interface ConnectionModel {
+  fromWalletAddress: string;
+  fromType: 'manufacturer' | 'distributor' | 'retailer';
+  toWalletAddress: string;
+  toType: 'manufacturer' | 'distributor' | 'retailer';
+  distanceKm?: number;
+  transitTimeDays?: number;
+  costPerUnit?: number;
+  active?: boolean;
+}
+
 
   useEffect(() => {
     // Simulate getting current manufacturer from wallet/auth
@@ -53,6 +72,42 @@ export default function ManufacturerPortal() {
     setCurrentManufacturer(supplyChainData.manufacturers[0])
   }, [])
 
+  //useeffect to get the connected distributors
+  useEffect(() => {
+  const fetchConnections = async () => {
+    try {
+      if (!currentManufacturer?.walletAddress) return;
+
+      // Fetch connections of type 'distributor'
+      const { data: connections } = await getConnectionsFrom(
+        currentManufacturer.walletAddress.toLowerCase(),
+        "distributor"
+      );
+
+      // For each connection, fetch distributor details
+      const distributorDetails = await Promise.all(
+        connections.map(async (conn: ConnectionModel) => {
+          const { data: distributor } = await getDistributor(conn.toWalletAddress);
+          return {
+            name: distributor.name,
+            walletAddress: distributor.walletAddress,
+            distanceKm: conn.distanceKm || "N/A",
+            transitTimeDays: conn.transitTimeDays || "N/A",
+          };
+        })
+      );
+      console.log(distributorDetails)
+      setConnectedDistributors(distributorDetails);
+    } catch (error) {
+      console.error("Error fetching connected distributors:", error);
+    }
+  };
+
+  fetchConnections();
+}, [currentManufacturer]);
+
+
+  
   // Generate random 10-character crate code (XXXXX-XXXXX format)
   const generateFullCrateCode = (): string => {
     const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -122,7 +177,7 @@ export default function ManufacturerPortal() {
     })
   }
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: string, value: string | boolean) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
@@ -147,6 +202,20 @@ export default function ManufacturerPortal() {
       const receipt = await sendCrate(crateCode, toAddress)
       console.log(receipt)
 
+      const bottleIds = await getAllBottlesOfCrate(crateCode) as string[]
+
+      const connectedAccount = await getAccount()
+      const location = {
+        "type" : "manufacturer",
+        "walletAddress" : connectedAccount
+      }
+
+      bottleIds.map(async (bottleId) => {
+        await updateProductLocation(bottleId, location, true)
+      })
+
+
+
       toast({
         title: "Distributor Confirmed",
         description: `${selectedDistributor.name} has been confirmed as your distribution partner`,
@@ -165,7 +234,7 @@ export default function ManufacturerPortal() {
       setIsSubmitting(false)
     }
   }
-
+ 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -206,11 +275,36 @@ export default function ManufacturerPortal() {
       // Generate bottle codes using the first 5 characters of the crate code + unique suffixes
       const bottleCodes = generateBottleCodesWithCratePrefix(crateCode, bottleCount)
       const fullCrateCodes = bottleCodes
+      console.log(bottleCodes)
 
       // Add all codes to used codes
       const newUsedCodes = new Set(usedCodes) //have to use backend
       newUsedCodes.add(crateCode)
       bottleCodes.forEach((code) => newUsedCodes.add(code))
+
+      // Create product entries for each bottle code
+      await Promise.all(
+      bottleCodes.map((code) =>
+        createProduct({
+          productId: code,
+          productName: formData.medicineName,
+          atcCode: formData.atcCode,
+          coldChain: formData.coldChain,
+          unitWeight: parseFloat(formData.unitWeight),
+          batchId: formData.batchId,
+          createdAt: new Date().toISOString(),
+          inTransit: false,
+          location: {
+            type: "manufacturer",
+            walletAddress: currentManufacturer?.walletAddress || "",
+          },
+          shelf_life: Number(formData.shelf_life) || 0,
+        })
+      )
+    );
+
+
+      
 
       // Create crate object
       const newCrate: CreatedCrate = {
@@ -221,6 +315,7 @@ export default function ManufacturerPortal() {
         timestamp: new Date().toLocaleString(),
       }
 
+      
       // Update state (stored but not displayed)
       setCreatedCrates((prev) => [...prev, newCrate])
       setUsedCodes(newUsedCodes)
@@ -256,13 +351,19 @@ export default function ManufacturerPortal() {
 
       // Reset form
       setFormData({
-        crateCode: "",
-        batchId: "",
-        productId: "",
-        medicineName: "",
-        cidDocuments: "",
-        bottleCount: "",
+          crateCode: "",
+          batchId: "",
+          productId: "",
+          medicineName: "",
+          atcCode: "",
+          coldChain: false,
+          unitWeight: "",
+          bottleCount: "",
+          cidDocuments: "",
+          shelf_life: "",
       })
+      
+
     } catch (error) {
       console.error("Blockchain submission error:", error)
       toast({
@@ -430,6 +531,63 @@ export default function ManufacturerPortal() {
                   )}
                 </div>
 
+                {/* atcCode */}
+                <div>
+                  <Label htmlFor="atcCode" className="text-sm sm:text-base">
+                    ATC Code
+                  </Label>
+                  <Input
+                    id="atcCode"
+                    value={formData.atcCode || ""}
+                    onChange={(e) => handleInputChange("atcCode", e.target.value)}
+                    placeholder="Enter ATC code (e.g., N02BE01)"
+                    className="text-sm sm:text-base"
+                  />
+                </div>
+
+                {/* Cold Chain (toggle switch) */}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="coldChain"
+                    checked={formData.coldChain || false}
+                    onChange={(e) => handleInputChange("coldChain", e.target.checked)}
+                    className="w-4 h-4"
+                  />
+                  <Label htmlFor="coldChain" className="text-sm sm:text-base">
+                    Requires Cold Chain Storage
+                  </Label>
+                </div>
+
+                {/* Unit Weight */}
+                <div>
+                  <Label htmlFor="unitWeight" className="text-sm sm:text-base">
+                    Unit Weight
+                  </Label>
+                  <Input
+                    id="unitWeight"
+                    value={formData.unitWeight || ""}
+                    onChange={(e) => handleInputChange("unitWeight", e.target.value)}
+                    placeholder="Enter weight (e.g., 500mg)"
+                    className="text-sm sm:text-base"
+                  />
+                </div>
+
+                {/* shelf life */}
+                <div>
+                  <Label htmlFor="shelf_life" className="text-sm sm:text-base">
+                    Shelf Life (in days)
+                  </Label>
+                  <Input
+                    id="shelf_life"
+                    type="number"
+                    value={formData.shelf_life || ""}
+                    onChange={(e) => handleInputChange("shelf_life", e.target.value)}
+                    placeholder="Enter shelf life duration"
+                    className="text-sm sm:text-base"
+                  />
+                </div>
+
                 <div>
                   <Label htmlFor="cidDocuments" className="text-sm sm:text-base">
                     CID Documents
@@ -478,7 +636,12 @@ export default function ManufacturerPortal() {
                 className="text-sm sm:text-base"
               />
               <SearchableDropdown
-                options={supplyChainData.distributors}
+                options={connectedDistributors.map((d, index) => ({
+                  id: index.toString(),
+                  name: `${d.name} (Dist: ${d.distanceKm} km, ${d.transitTimeDays} days)`,
+                  walletAddress: d.walletAddress,
+                  location: `${d.distanceKm} km | ${d.transitTimeDays} days`,
+                }))}
                 value={selectedDistributor}
                 onSelect={setSelectedDistributor}
                 placeholder="Search and select a distributor..."
@@ -491,12 +654,6 @@ export default function ManufacturerPortal() {
                   <div className="space-y-1 text-xs sm:text-sm text-green-800">
                     <p>
                       <span className="font-medium">Name:</span> {selectedDistributor.name}
-                    </p>
-                    <p>
-                      <span className="font-medium">Coverage:</span> {selectedDistributor.coverage}
-                    </p>
-                    <p>
-                      <span className="font-medium">Capacity:</span> {selectedDistributor.capacity}
                     </p>
                     <p>
                       <span className="font-medium">Location:</span> {selectedDistributor.location}

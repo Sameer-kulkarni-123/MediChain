@@ -477,6 +477,7 @@ export const updateOrderStatusByProducts = (productIds, status) =>
  *   unitWeight?: number|string,
  *   batchId?: string,
  *   location?: { type: "manufacturer"|"distributor"|"retailer", walletAddress: string }
+ *   shelf_life?: number
  * }
  * @returns {Promise}
  */
@@ -637,13 +638,10 @@ export const updateRetailerInventoryItem = (
 ) =>
   axios.patch(
     `${RETAILERS_BASE}/${walletAddress}/inventory/${productName}`,
-    null,
     {
-      params: {
-        qty,
-        reorder_level: reorderLevel,
-        product_ids: productIds,
-        action
-      },
+      qty,
+      reorderLevel,
+      productIds,
+      action
     }
   );

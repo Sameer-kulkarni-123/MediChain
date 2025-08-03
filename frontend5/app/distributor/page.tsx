@@ -13,10 +13,11 @@ import { SearchableDropdown } from "@/components/searchable-dropdown"
 import { ConnectionPath } from "@/components/connection-path"
 import supplyChainData from "@/data/supplyChainData.json"
 import { useToast } from "@/hooks/use-toast"
-import { receiveCrate, getAccount, createSubCrate,getAllBottlesOfCrate, getCrateInfo} from "../../apis"
+import { getAllBottlesOfSubCrate,receiveCrate, getAccount, createSubCrate,getAllBottlesOfCrate, getCrateInfo, getAllSubCratesOfCrate} from "../../apis"
 import { MultiSelectDropdown } from "@/components/multi-select-dropdown"
 import { AssignmentForm } from "@/components/assignment-form" // Ensure this is imported
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select" // Import Select components
+import { getConnectionsFrom, getRetailerByWallet, updateInventoryItem, updateProductLocation } from "@/api_local"
 
 export default function DistributorPortal() {
   const [selectedCrate, setSelectedCrate] = useState("MC-1704123456-7890")
@@ -38,13 +39,15 @@ export default function DistributorPortal() {
   const [selectedBottleIds, setSelectedBottleIds] = useState<string[]>([])
   const [subCrateId, setSubCrateId] = useState("")
   const [isCreatingSubCrate, setIsCreatingSubCrate] = useState(false)
+  // const [connectedAccount, setConnectedAccount] = useState(await getAccount())
 
   // New states for sending Crate/SubCrate
   const [assignmentType, setAssignmentType] = useState<"crate" | "subCrate">("crate")
   const [crateCodeForSend, setCrateCodeForSend] = useState("") // For main crate
   const [parentCrateCodeForSend, setParentCrateCodeForSend] = useState("") // For sub-crate
   const [subCrateCodeForSend, setSubCrateCodeForSend] = useState("") // For sub-crate
-
+  const [connectedRetailer, setConnectedRetailer] = useState<any[]>([]);
+  //for placeholders only remove later, code has to change in assignment-form to remove this
   useEffect(() => {
     // Simulate getting current distributor from wallet/auth
     setCurrentDistributor(supplyChainData.distributors[0])
@@ -160,6 +163,52 @@ const handleGetCrateDetails = async () => {
   //   }
   // }, [parentCrateCodeForSubCrate])
 
+    interface ConnectionModel {
+      fromWalletAddress: string;
+      fromType: 'manufacturer' | 'distributor' | 'retailer';
+      toWalletAddress: string;
+      toType: 'manufacturer' | 'distributor' | 'retailer';
+      distanceKm?: number;
+      transitTimeDays?: number;
+      costPerUnit?: number;
+      active?: boolean;
+    }
+
+    //useeffect to get the connected distributors
+    useEffect(() => {
+    const fetchConnections = async () => {
+      try {
+        if (!currentDistributor?.walletAddress) return;
+  
+        // Fetch connections of type 'distributor'
+        const { data: connections } = await getConnectionsFrom(
+          currentDistributor.walletAddress.toLowerCase(),
+          "retailer"
+        );
+  
+        // For each connection, fetch distributor details
+        const retailerDetails = await Promise.all(
+          connections.map(async (conn: ConnectionModel) => {
+            const { data: retailer } = await getRetailerByWallet(conn.toWalletAddress);
+            
+            return {
+              name: retailer.name,
+              walletAddress: retailer.walletAddress,
+              distanceKm: conn.distanceKm || "N/A",
+              transitTimeDays: conn.transitTimeDays || "N/A",
+            };
+          })
+        );
+        console.log(retailerDetails)
+        setConnectedRetailer(retailerDetails);
+      } catch (error) {
+        console.error("Error fetching connected distributors:", error);
+      }
+    };
+  
+    fetchConnections();
+  }, [currentDistributor]);
+
   // Generate SubCrate ID when bottles are selected
   useEffect(() => {
     if (selectedBottleIds.length > 0) {
@@ -221,13 +270,44 @@ const handleGetCrateInfo = async () => {
     e.preventDefault()
     setIsSubmitting(true)
 
-    try {
-      // Get current account
-      // const account = await getAccount()
+    // const connectedAccount = await getAccount()
+    // const location = { 
+    //     "type" : "distributor",
+    //     "walletAddress" : connectedAccount
+    //   }
+    // await updateProductLocation("P001", location, false)
 
-      // Simulate receiving crate from manufacturer (in real app, this would be triggered by manufacturer)
-      // For demo purposes, we'll simulate the receive action
+    try {
       await receiveCrate(receiveCrateCodeForAssignment)
+
+
+      const bottleIds = await getAllBottlesOfCrate(receiveCrateCodeForAssignment) as string[]
+      const crateInfo = await getCrateInfo(receiveCrateCodeForAssignment) as string[]
+      const connectedAccount = await getAccount()
+
+      const location = { 
+        "type" : "distributor",
+        "walletAddress" : connectedAccount
+      }
+
+
+      bottleIds.map( async (bottleId) => {
+        await updateProductLocation(bottleId, location, false)
+      })
+
+      // console.log("crateInfo", crateInfo)
+      // console.log("crateInfo.medicineName inside try", crateInfo[1])
+
+      // await updateProductLocation("P001", location, true)
+      await updateInventoryItem(
+        connectedAccount,
+        crateInfo[1],
+        bottleIds.length,
+        bottleIds,
+        null,
+        "add",
+        )
+      
 
       toast({
         title: "Success",
@@ -345,7 +425,7 @@ const handleGetCrateInfo = async () => {
             <CardHeader className="px-4 sm:px-6">
               <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                 <MapPin className="h-5 w-5" />
-                Update Distribution Details
+                Receive Crate
               </CardTitle>
               <CardDescription className="text-sm sm:text-base">Add shipping and storage information</CardDescription>
             </CardHeader>
@@ -367,7 +447,7 @@ const handleGetCrateInfo = async () => {
                   className="w-full bg-green-600 hover:bg-green-700 text-sm sm:text-base py-2 sm:py-3"
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? "Updating Blockchain..." : "Update Distribution Details"}
+                  {isSubmitting ? "Updating on Blockchain..." : "Receive Crate"}
                 </Button>
               </form>
             </CardContent>
@@ -609,7 +689,12 @@ const handleGetCrateInfo = async () => {
               )}
 
               <SearchableDropdown
-                options={supplyChainData.retailers}
+                options={connectedRetailer.map((d, index) => ({
+                  id: index.toString(),
+                  name: `${d.name} (Dist: ${d.distanceKm} km, ${d.transitTimeDays} days)`,
+                  walletAddress: d.walletAddress,
+                  location: `${d.distanceKm} km | ${d.transitTimeDays} days`,
+                }))}
                 value={selectedRetailer}
                 onSelect={setSelectedRetailer}
                 placeholder="Search and select a retailer..."
@@ -643,7 +728,7 @@ const handleGetCrateInfo = async () => {
 
           {/* Product Assignment Form */}
           <AssignmentForm
-            fromEntity={currentDistributor}
+            fromEntity={currentDistributor} //not in use, have to change code in assginmet-form to remove
             toEntity={selectedRetailer}
             assignmentType={assignmentType}
             crateCode={crateCodeForSend}

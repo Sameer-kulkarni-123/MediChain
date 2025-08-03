@@ -1,5 +1,5 @@
-from fastapi import APIRouter
-from models.distributor import ProductInDB, DistributorModel, DistributorUpdateModel
+from fastapi import APIRouter, Body
+from models.distributor import ProductInDB, DistributorModel, DistributorUpdateModel, InventoryUpdateRequest
 from controllers import distributor_controller as controller
 
 router = APIRouter()
@@ -45,19 +45,13 @@ async def bulk_update_inventory(distributor_walletAddress: str, updates: list[di
 async def update_inventory_item(
     distributor_walletAddress: str,
     product_name: str,
-    qty: int,
-    product_ids: list[str] = None,
-    reorder_level: int = None,
-    action: str = "add"
+    update: InventoryUpdateRequest = Body(...)
 ):
-    """
-    Update a single inventory item with add/remove action support.
-    """
     return await controller.update_inventory_item(
         distributor_walletAddress,
         product_name,
-        qty,
-        product_ids,
-        reorder_level,
-        action
+        update.qty,
+        update.product_ids,
+        update.reorder_level,
+        update.action
     )

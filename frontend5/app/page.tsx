@@ -7,7 +7,16 @@ import { Badge } from "@/components/ui/badge"
 import { Shield, Truck, Store, Factory, Users, Network } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
-import supplyChainData from "@/data/supplyChainData.json"
+
+import {
+  getManufacturer,
+  getDistributor,
+  getRetailerByWallet,
+  getAllManufacturers,
+  getAllDistributors,
+  getAllRetailers,
+  getAllConnections,
+} from "@/api_local" // ✅ Updated import
 
 declare global {
   interface Window {
@@ -20,68 +29,143 @@ export default function HomePage() {
   const [isConnecting, setIsConnecting] = useState(false)
   const [userRole, setUserRole] = useState<string | null>(null)
   const [userEntity, setUserEntity] = useState<any>(null)
+  const [counts, setCounts] = useState({
+    manufacturers: 0,
+    distributors: 0,
+    retailers: 0,
+    totalEntities: 0,
+    totalConnections: 0,
+  })
+
   const { toast } = useToast()
   const router = useRouter()
 
   const connectWallet = async () => {
-    if (!window.ethereum) {
-      toast({
-        title: "MetaMask Not Found",
-        description: "Please install MetaMask to continue",
-        variant: "destructive",
-      })
-      return
-    }
-
-    setIsConnecting(true)
-    try {
-      const accounts = await window.ethereum.request({
-        method: "eth_requestAccounts",
-      })
-
-      if (accounts.length > 0) {
-        const connectedAccount = accounts[0].toLowerCase()
-        setAccount(connectedAccount)
-
-        // Find user role based on wallet address
-        const allEntities = [
-          ...supplyChainData.manufacturers,
-          ...supplyChainData.distributors,
-          ...supplyChainData.retailers,
-        ]
-
-        const foundEntity = allEntities.find((entity) => entity.walletAddress.toLowerCase() === connectedAccount)
-
-        if (foundEntity) {
-          setUserRole(foundEntity.category)
-          setUserEntity(foundEntity)
-
-          toast({
-            title: "Wallet Connected",
-            description: `Connected as ${foundEntity.category}: ${foundEntity.name}`,
-          })
-
-          // Route based on user role
-          router.push(`/${foundEntity.category}`)
-        } else {
-          toast({
-            title: "Access Denied",
-            description: "Your wallet address is not registered in the supply chain network",
-            variant: "destructive",
-          })
-        }
-      }
-    } catch (error) {
-      toast({
-        title: "Connection Failed",
-        description: "Failed to connect wallet. Please try again.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsConnecting(false)
-    }
+  if (!window.ethereum) {
+    toast({
+      title: "MetaMask Not Found",
+      description: "Please install MetaMask to continue",
+      variant: "destructive",
+    });
+    return;
   }
 
+  setIsConnecting(true);
+  try {
+    const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+    if (!accounts.length) return;
+
+    const connectedAccount = accounts[0].toLowerCase();
+    setAccount(connectedAccount);
+
+    let foundEntity = null;
+    let role = "";
+
+    // ✅ 1. Check Manufacturers
+    try {
+      const res = await getAllManufacturers();
+      const match = res.data.find(
+        (entity: any) => entity.walletAddress.toLowerCase() === connectedAccount
+      );
+      if (match) {
+        foundEntity = match;
+        role = "manufacturer";
+      }
+    } catch (err) {
+      console.log("Manufacturers fetch failed:", err);
+    }
+
+    // ✅ 2. Check Distributors
+    if (!foundEntity) {
+      try {
+        const res = await getAllDistributors();
+        const match = res.data.find(
+          (entity: any) => entity.walletAddress.toLowerCase() === connectedAccount
+        );
+        if (match) {
+          foundEntity = match;
+          role = "distributor";
+        }
+      } catch (err) {
+        console.log("Distributors fetch failed:", err);
+      }
+    }
+
+    // ✅ 3. Check Retailers
+    if (!foundEntity) {
+      try {
+        const res = await getAllRetailers();
+        const match = res.data.find(
+          (entity: any) => entity.walletAddress.toLowerCase() === connectedAccount
+        );
+        if (match) {
+          foundEntity = match;
+          role = "retailer";
+        }
+      } catch (err) {
+        console.log("Retailers fetch failed:", err);
+      }
+    }
+
+    // ✅ Final result
+    if (foundEntity) {
+      setUserRole(role);
+      setUserEntity(foundEntity);
+      toast({
+        title: "Wallet Connected",
+        description: `Connected as ${role}: ${foundEntity.name}`,
+      });
+      router.push(`/${role}`);
+    } else {
+      toast({
+        title: "Access Denied",
+        description: "Your wallet address is not registered in the supply chain network",
+        variant: "destructive",
+      });
+    }
+  } catch (error) {
+    toast({
+      title: "Connection Failed",
+      description: "Failed to connect wallet. Please try again.",
+      variant: "destructive",
+    });
+  } finally {
+    setIsConnecting(false);
+  }
+};
+
+  // ✅ Fetch dynamic counts
+  useEffect(() => {
+    const fetchCounts = async () => {
+      try {
+        const [mans, dists, rets, conns] = await Promise.all([
+          getAllManufacturers(),
+          getAllDistributors(),
+          getAllRetailers(),
+          getAllConnections(),
+        ])
+
+        const manufacturersCount = mans?.data?.length || 0
+        const distributorsCount = dists?.data?.length || 0
+        const retailersCount = rets?.data?.length || 0
+        const connectionsCount = conns?.data?.length || 0
+
+        setCounts({
+          manufacturers: manufacturersCount,
+          distributors: distributorsCount,
+          retailers: retailersCount,
+          totalEntities: manufacturersCount + distributorsCount + retailersCount,
+          totalConnections: connectionsCount,
+        })
+      } catch (error) {
+        console.error("Error fetching counts:", error)
+      }
+    }
+
+    fetchCounts()
+  }, [])
+
+  // ✅ Wallet account change listener
   useEffect(() => {
     if (window.ethereum) {
       window.ethereum.on("accountsChanged", (accounts: string[]) => {
@@ -90,25 +174,7 @@ export default function HomePage() {
           setUserRole(null)
           setUserEntity(null)
         } else {
-          // Re-check user role when account changes
-          const newAccount = accounts[0].toLowerCase()
-          setAccount(newAccount)
-
-          const allEntities = [
-            ...supplyChainData.manufacturers,
-            ...supplyChainData.distributors,
-            ...supplyChainData.retailers,
-          ]
-
-          const foundEntity = allEntities.find((entity) => entity.walletAddress.toLowerCase() === newAccount)
-
-          if (foundEntity) {
-            setUserRole(foundEntity.category)
-            setUserEntity(foundEntity)
-          } else {
-            setUserRole(null)
-            setUserEntity(null)
-          }
+          setAccount(accounts[0].toLowerCase())
         }
       })
     }
@@ -239,7 +305,7 @@ export default function HomePage() {
           <Card className="text-center">
             <CardContent className="pt-4 sm:pt-6 px-3 sm:px-6">
               <Factory className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 mx-auto mb-2" />
-              <div className="text-xl sm:text-2xl font-bold text-blue-600">{supplyChainData.manufacturers.length}</div>
+              <div className="text-xl sm:text-2xl font-bold text-blue-600">{counts.manufacturers}</div>
               <div className="text-xs sm:text-sm text-gray-600">Manufacturers</div>
             </CardContent>
           </Card>
@@ -247,7 +313,7 @@ export default function HomePage() {
           <Card className="text-center">
             <CardContent className="pt-4 sm:pt-6 px-3 sm:px-6">
               <Truck className="h-6 w-6 sm:h-8 sm:w-8 text-green-600 mx-auto mb-2" />
-              <div className="text-xl sm:text-2xl font-bold text-green-600">{supplyChainData.distributors.length}</div>
+              <div className="text-xl sm:text-2xl font-bold text-green-600">{counts.distributors}</div>
               <div className="text-xs sm:text-sm text-gray-600">Distributors</div>
             </CardContent>
           </Card>
@@ -255,7 +321,7 @@ export default function HomePage() {
           <Card className="text-center">
             <CardContent className="pt-4 sm:pt-6 px-3 sm:px-6">
               <Store className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600 mx-auto mb-2" />
-              <div className="text-xl sm:text-2xl font-bold text-purple-600">{supplyChainData.retailers.length}</div>
+              <div className="text-xl sm:text-2xl font-bold text-purple-600">{counts.retailers}</div>
               <div className="text-xs sm:text-sm text-gray-600">Retailers</div>
             </CardContent>
           </Card>
@@ -263,15 +329,12 @@ export default function HomePage() {
           <Card className="text-center">
             <CardContent className="pt-4 sm:pt-6 px-3 sm:px-6">
               <Network className="h-6 w-6 sm:h-8 sm:w-8 text-orange-600 mx-auto mb-2" />
-              <div className="text-xl sm:text-2xl font-bold text-orange-600">
-                {supplyChainData.manufacturers.length +
-                  supplyChainData.distributors.length +
-                  supplyChainData.retailers.length}
-              </div>
+              <div className="text-xl sm:text-2xl font-bold text-orange-600">{counts.totalEntities}</div>
               <div className="text-xs sm:text-sm text-gray-600">Total Network</div>
             </CardContent>
           </Card>
         </div>
+
 
         {/* Features Section */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 mb-12 sm:mb-16">
