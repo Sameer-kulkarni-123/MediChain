@@ -637,13 +637,10 @@ export const updateRetailerInventoryItem = (
 ) =>
   axios.patch(
     `${RETAILERS_BASE}/${walletAddress}/inventory/${productName}`,
-    null,
     {
-      params: {
-        qty,
-        reorder_level: reorderLevel,
-        product_ids: productIds,
-        action
-      },
+      qty,
+      reorderLevel,
+      productIds,
+      action
     }
   );

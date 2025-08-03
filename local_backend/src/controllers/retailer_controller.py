@@ -69,10 +69,7 @@ async def update_retailer(retailer_walletAddress: str, update_data: RetailerUpda
     return {"detail": "Retailer updated successfully"}
 
 
-async def bulk_update_inventory(retailer_walletAddress: str, updates: list[dict]):
-    """
-    Bulk update retailer inventory with add/remove action and productIds support.
-    """
+async def bulk_update_inventory(retailer_walletAddress: str, updates: list[BulkUpdateItem]):
     retailer = await collection.find_one({"walletAddress": retailer_walletAddress})
     if not retailer:
         raise HTTPException(status_code=404, detail="Retailer not found")
@@ -82,57 +79,55 @@ async def bulk_update_inventory(retailer_walletAddress: str, updates: list[dict]
 
     for product in current_inventory:
         name = product["productName"].lower()
-        update_item = next((u for u in updates if u["productName"].lower() == name), None)
+        update_item = next((u for u in updates if u.productName.lower() == name), None)
 
         if update_item:
-            action = update_item.get("action", "add")  # add/remove
-            qty_delta = update_item.get("qty", 0)
+            action = update_item.action
+            qty_delta = update_item.qty
 
             if action == "remove":
                 new_qty = product["qtyRemaining"] - qty_delta
-                # Remove productIds if specified
-                if "productIds" in update_item:
-                    product["productIds"] = [pid for pid in product.get("productIds", [])
-                                             if pid not in update_item["productIds"]]
+                if update_item.productIds:
+                    product["productIds"] = [
+                        pid for pid in product.get("productIds", [])
+                        if pid not in update_item.productIds
+                    ]
             else:  # add
                 new_qty = product["qtyRemaining"] + qty_delta
-                # Merge productIds
-                if "productIds" in update_item:
-                    product["productIds"] = list(set(product.get("productIds", []) + update_item["productIds"]))
+                if update_item.productIds:
+                    product["productIds"] = list(
+                        set(product.get("productIds", []) + update_item.productIds)
+                    )
 
             if new_qty <= 0:
-                continue  # remove product from inventory
+                continue  # product removed
 
             product["qtyRemaining"] = new_qty
             product["qtyAdded"] = qty_delta if action == "add" else 0
             if action == "add":
                 product["lastStockAddedDate"] = datetime.utcnow()
 
-            # Update reorder level
-            if "reorderLevel" in update_item:
-                product["reorderLevel"] = update_item["reorderLevel"]
+            if update_item.reorderLevel is not None:
+                product["reorderLevel"] = update_item.reorderLevel
 
             updated_inventory.append(product)
         else:
             updated_inventory.append(product)
 
-    # Add new products if they don't exist (only for add)
+    # Add new products (only if add)
     for update_item in updates:
-        name = update_item["productName"].lower()
-        action = update_item.get("action", "add")
-
-        if action == "add" and not any(p["productName"].lower() == name for p in updated_inventory):
-            if update_item.get("qty", 0) > 0:
+        name = update_item.productName.lower()
+        if update_item.action == "add" and not any(p["productName"].lower() == name for p in updated_inventory):
+            if update_item.qty > 0:
                 updated_inventory.append({
-                    "productName": update_item["productName"],
-                    "qtyRemaining": update_item["qty"],
-                    "qtyAdded": update_item["qty"],
-                    "productIds": update_item.get("productIds", []),
+                    "productName": update_item.productName,
+                    "qtyRemaining": update_item.qty,
+                    "qtyAdded": update_item.qty,
+                    "productIds": update_item.productIds or [],
                     "lastStockAddedDate": datetime.utcnow(),
-                    "reorderLevel": update_item.get("reorderLevel", 0)
+                    "reorderLevel": update_item.reorderLevel or 0
                 })
 
-    # Save
     result = await collection.update_one(
         {"walletAddress": retailer_walletAddress},
         {"$set": {"inventory": updated_inventory}}
