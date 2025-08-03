@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Body
 from typing import List
-from models.retailer import ProductInDB, RetailerModel, RetailerUpdateModel
+from models.retailer import ProductInDB, RetailerModel, RetailerUpdateModel, InventoryUpdateRequest
 from controllers import retailer_controller as controller
 
 router = APIRouter()
@@ -49,11 +49,16 @@ async def bulk_update_inventory(retailer_walletAddress: str, updates: List[dict]
 async def update_inventory_item(
     retailer_walletAddress: str,
     product_name: str,
-    qty: int,
-    reorder_level: int = None,
-    product_ids: List[str] = Query(default=None),
-    action: str = "add"
+    update: InventoryUpdateRequest = Body(...)
 ):
     return await controller.update_inventory_item(
-        retailer_walletAddress, product_name, qty, reorder_level, product_ids, action
+        retailer_walletAddress, 
+        product_name, 
+        update.qty, 
+        update.reorder_level, 
+        update.product_ids, 
+        update.action
     )
+
+
+
