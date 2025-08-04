@@ -177,24 +177,24 @@ export function AssignmentForm({
       <CardContent className="px-4 sm:px-6">
         <div className="space-y-4">
           {fromEntity && toEntity ? (
-            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-2">
-              <p className="text-sm font-medium text-blue-900">
+            <div className="p-4 bg-green-50 border border-green-200 rounded-lg space-y-2">
+              <p className="text-sm font-medium text-green-900">
                 From: <span className="font-normal">{fromEntity.name}</span>
               </p>
-              <p className="text-sm font-medium text-blue-900">
+              <p className="text-sm font-medium text-green-900">
                 To: <span className="font-normal">{toEntity.name}</span>
               </p>
               {assignmentType === "subCrate" ? (
                 <>
-                  <p className="text-sm font-medium text-blue-900">
+                  <p className="text-sm font-medium text-green-900">
                     Parent Crate Code: <span className="font-normal font-mono break-all">{parentCrateCode}</span>
                   </p>
-                  <p className="text-sm font-medium text-blue-900">
+                  <p className="text-sm font-medium text-green-900">
                     SubCrate Code: <span className="font-normal font-mono break-all">{subCrateCode}</span>
                   </p>
                 </>
               ) : (
-                <p className="text-sm font-medium text-blue-900">
+                <p className="text-sm font-medium text-green-900">
                   Crate Code: <span className="font-normal font-mono break-all">{crateCode}</span>
                 </p>
               )}
@@ -206,7 +206,7 @@ export function AssignmentForm({
           <Button
             onClick={handleSendCrate}
             disabled={isSendButtonDisabled}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-sm sm:text-base py-2 sm:py-3"
+            className="w-full bg-green-600 hover:bg-green-700 text-sm sm:text-base py-2 sm:py-3"
           >
             {isSending ? "Sending..." : `Send ${assignmentType === "subCrate" ? "SubCrate" : "Crate"}`}
           </Button>

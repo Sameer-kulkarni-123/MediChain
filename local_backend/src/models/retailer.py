@@ -54,12 +54,12 @@ class InventoryModel(BaseModel):
     reorderLevel: Optional[conint(ge=0)] = None
 
 
+
 class UpdateInventoryRequest(BaseModel):
     qty: int
-    reorder_level: Optional[int] = None
-    product_ids: Optional[List[str]] = None
+    reorder_level: Optional[int] = Field(None, alias="reorderLevel")
+    product_ids: Optional[List[str]] = Field(None, alias="productIds")
     action: str = "add"
-
 
 class BulkUpdateItem(BaseModel):
     productName: str
@@ -96,4 +96,4 @@ class ProductInDB(RetailerModel):
 
     class Config:
         json_encoders = {ObjectId: str}
-        populate_by_name = True  
+        populate_by_name = True

@@ -457,7 +457,7 @@ export default function ManufacturerPortal() {
                   />
                   {formData.crateCode && (
                     <div className="mt-2 space-y-1">
-                      <Badge variant="outline" className="text-green-600 border-green-600 text-xs sm:text-sm">
+                      <Badge variant="outline" className="text-blue-600 border-blue-600 text-xs sm:text-sm">
                         5-Character Crate Code Generated Successfully
                       </Badge>
                       <p className="text-xs text-gray-600">
@@ -617,21 +617,21 @@ export default function ManufacturerPortal() {
                 >
                   {isSubmitting ? "Creating Crate on Blockchain..." : "Create Crate on Blockchain"}
                 </Button>
+                <Button
+                type="submit"
+                  className="w-full text-sm sm:text-base py-2 sm:py-3"
+                  onClick={async () => {
+                  window.open("manufacturer/qrviewer?view=qrs", "_blank")
+                  }}
+                >
+                      View QR codes
+                </Button>
               </form>
             </CardContent>
           </Card>
 
-          <Button
-            onClick={async () => {
-
-              window.open("manufacturer/qrviewer?view=qrs", "_blank")
-            }}
-          >
-            this is a button
-          </Button>
-
           {/* Distributor Selection */}
-          <Card>
+          <Card className="mb-24">
             <CardHeader className="px-4 sm:px-6">
               <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                 <Users className="h-5 w-5" />
@@ -666,9 +666,9 @@ export default function ManufacturerPortal() {
               />
 
               {selectedDistributor && (
-                <div className="p-3 sm:p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <h4 className="font-medium text-green-900 mb-2 text-sm sm:text-base">Selected Distributor:</h4>
-                  <div className="space-y-1 text-xs sm:text-sm text-green-800">
+                <div className="p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h4 className="font-medium text-blue-900 mb-2 text-sm sm:text-base">Selected Distributor:</h4>
+                  <div className="space-y-1 text-xs sm:text-sm text-blue-800">
                     <p>
                       <span className="font-medium">Name:</span> {selectedDistributor.name}
                     </p>
@@ -682,7 +682,7 @@ export default function ManufacturerPortal() {
 
                   <Button
                     onClick={() => handleDistributorConfirmation(manualCrateCodeForAssignment, selectedDistributor["walletAddress"])}
-                    className="w-full mt-4 bg-green-600 hover:bg-green-700 text-sm sm:text-base py-2"
+                    className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-sm sm:text-base py-2"
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? "Confirming Selection..." : "Confirm Distributor Selection"}
@@ -694,7 +694,7 @@ export default function ManufacturerPortal() {
         </div>
 
         {/* Available Distributors Overview */}
-        <Card className="mt-6 sm:mt-8">
+        {/* <Card className="mt-6 sm:mt-8">
           <CardHeader className="px-4 sm:px-6">
             <CardTitle className="text-lg sm:text-xl">Available Distributors Network</CardTitle>
             <CardDescription className="text-sm sm:text-base">
@@ -725,10 +725,10 @@ export default function ManufacturerPortal() {
               ))}
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
 
         {/* Recent Activity */}
-        <Card className="mt-6 sm:mt-8">
+        {/* <Card className="mt-6 sm:mt-8">
           <CardHeader className="px-4 sm:px-6">
             <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
               <Clock className="h-5 w-5" />
@@ -757,7 +757,7 @@ export default function ManufacturerPortal() {
               </div>
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
     </div>
   )

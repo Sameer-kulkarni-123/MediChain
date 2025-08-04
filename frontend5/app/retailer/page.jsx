@@ -1,25 +1,13 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import {
-  Store,
-  ArrowLeft,
-  Shield,
-  CheckCircle,
-  Package,
-  Truck,
-  Factory,
-  Search,
-  ArrowUpDown,
-  RotateCcw,
-} from "lucide-react"
+import { Store, ArrowLeft, Shield, CheckCircle, Package, Truck, Factory } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
 import {
@@ -32,8 +20,15 @@ import {
   getAllBottlesOfSubCrate
   // activateCertifications,
 } from "../../apis"
-import { createOrder, getRetailerInventory, updateInventoryItem, updateProductLocation, updateRetailerInventoryItem, optimizeSupplyPath } from "../../api_local"
-import { map } from "zod"
+import {
+  createOrder,
+  getRetailerInventory,
+  updateProductLocation,
+  updateRetailerInventoryItem,
+  optimizeSupplyPath,
+  getOrdersByRetailer,
+  getPendingOrdersByRetailer,
+} from "../../api_local"
 
 export default function RetailerPortal() {
   const [crateCode, setCrateCode] = useState("")
@@ -44,165 +39,21 @@ export default function RetailerPortal() {
   const [medicineName, setMedicineName] = useState("")
   const [quantity, setQuantity] = useState("")
   const [isPlacingOrder, setIsPlacingOrder] = useState(false)
-  const [trigger, settrigger] = useState(false);
-  const [ connectedAccount, setconnectedAccount ] = useState("")
-  const [retrievedInventory, setretrievedInventory] = useState();
+  const [trigger, settrigger] = useState(false)
+  const [connectedAccount, setconnectedAccount] = useState("")
+  const [retrievedInventory, setretrievedInventory] = useState()
+  const [orderRefresh, setOrderRefresh] = useState(false);
+
 
   // useEffect(() => {
   //   const cAccount = getAccount()
   //   setconnectedAccount(cAccount)
-  
+
   //   return () => {
   //   }
   // }, [])
-  
-
-
-  
 
   // Original inventory data
-  const originalInventory = [
-    {
-      id: 1,
-      medicineName: "Paracetamol 500mg",
-      productId: "PAR-500-001",
-      quantityInStock: 150,
-      soldQuantity: "",
-    },
-    {
-      id: 2,
-      medicineName: "Ibuprofen 200mg",
-      productId: "IBU-200-002",
-      quantityInStock: 75,
-      soldQuantity: "",
-    },
-    {
-      id: 3,
-      medicineName: "Amoxicillin 250mg",
-      productId: "AMX-250-003",
-      quantityInStock: 200,
-      soldQuantity: "",
-    },
-    {
-      id: 4,
-      medicineName: "Aspirin 100mg",
-      productId: "ASP-100-004",
-      quantityInStock: 120,
-      soldQuantity: "",
-    },
-    {
-      id: 5,
-      medicineName: "Metformin 500mg",
-      productId: "MET-500-005",
-      quantityInStock: 90,
-      soldQuantity: "",
-    },
-    {
-      id: 6,
-      medicineName: "Omeprazole 20mg",
-      productId: "OME-020-006",
-      quantityInStock: 180,
-      soldQuantity: "",
-    },
-    {
-      id: 7,
-      medicineName: "Atorvastatin 10mg",
-      productId: "ATO-010-007",
-      quantityInStock: 65,
-      soldQuantity: "",
-    },
-    {
-      id: 8,
-      medicineName: "Lisinopril 5mg",
-      productId: "LIS-005-008",
-      quantityInStock: 110,
-      soldQuantity: "",
-    },
-    {
-      id: 9,
-      medicineName: "Metoprolol 25mg",
-      productId: "MET-025-009",
-      quantityInStock: 85,
-      soldQuantity: "",
-    },
-    {
-      id: 10,
-      medicineName: "Amlodipine 5mg",
-      productId: "AML-005-010",
-      quantityInStock: 95,
-      soldQuantity: "",
-    },
-    {
-      id: 11,
-      medicineName: "Simvastatin 20mg",
-      productId: "SIM-020-011",
-      quantityInStock: 140,
-      soldQuantity: "",
-    },
-    {
-      id: 12,
-      medicineName: "Losartan 50mg",
-      productId: "LOS-050-012",
-      quantityInStock: 70,
-      soldQuantity: "",
-    },
-    {
-      id: 13,
-      medicineName: "Hydrochlorothiazide 25mg",
-      productId: "HCT-025-013",
-      quantityInStock: 160,
-      soldQuantity: "",
-    },
-    {
-      id: 14,
-      medicineName: "Gabapentin 300mg",
-      productId: "GAB-300-014",
-      quantityInStock: 55,
-      soldQuantity: "",
-    },
-    {
-      id: 15,
-      medicineName: "Sertraline 50mg",
-      productId: "SER-050-015",
-      quantityInStock: 80,
-      soldQuantity: "",
-    },
-    {
-      id: 16,
-      medicineName: "Fluoxetine 20mg",
-      productId: "FLU-020-016",
-      quantityInStock: 125,
-      soldQuantity: "",
-    },
-    {
-      id: 17,
-      medicineName: "Citalopram 20mg",
-      productId: "CIT-020-017",
-      quantityInStock: 45,
-      soldQuantity: "",
-    },
-    {
-      id: 18,
-      medicineName: "Tramadol 50mg",
-      productId: "TRA-050-018",
-      quantityInStock: 100,
-      soldQuantity: "",
-    },
-    {
-      id: 19,
-      medicineName: "Codeine 30mg",
-      productId: "COD-030-019",
-      quantityInStock: 60,
-      soldQuantity: "",
-    },
-    {
-      id: 20,
-      medicineName: "Diazepam 5mg",
-      productId: "DIA-005-020",
-      quantityInStock: 35,
-      soldQuantity: "",
-    },
-  ]
 
   const [inventory, setInventory] = useState([])
   const [isUpdatingInventory, setIsUpdatingInventory] = useState(false)
@@ -210,29 +61,27 @@ export default function RetailerPortal() {
   // Filter and sort states
   const [searchTerm, setSearchTerm] = useState("")
   const [sortBy, setSortBy] = useState("original") // "original", "quantity-low", "quantity-high"
-  const [isColdStorage, setIsColdStorage] = useState(false);
-  const [optimizerResult, setOptimizerResult] = useState(null);
-  const [showPartialOptions, setShowPartialOptions] = useState(false);
-  const [showPathDetails, setShowPathDetails] = useState(false);
-  const [partialOrderHandlers, setPartialOrderHandlers] = useState(null);
-
-
+  const [isColdStorage, setIsColdStorage] = useState(false)
+  const [optimizerResult, setOptimizerResult] = useState(null)
+  const [showPartialOptions, setShowPartialOptions] = useState(false)
+  const [showPathDetails, setShowPathDetails] = useState(false)
+  const [partialOrderHandlers, setPartialOrderHandlers] = useState(null)
+  const refreshOrders = () => setOrderRefresh((prev) => !prev);
 
 
   const { toast } = useToast()
 
-    useEffect(() => {
+  useEffect(() => {
     const retrieveInventory = async () => {
       const cAccount = await getAccount()
       console.log("cAccount : ", cAccount)
       const rInventory = await getRetailerInventory(cAccount)
       console.log("this is the rInventory : ", rInventory.data)
 
-      const inventoryWithSoldQuantity = rInventory.data.map(item => ({
-          ...item,
-          soldQuantity: ""
-        }))
-
+      const inventoryWithSoldQuantity = rInventory.data.map((item) => ({
+        ...item,
+        soldQuantity: "",
+      }))
 
       setInventory(inventoryWithSoldQuantity)
     }
@@ -372,17 +221,16 @@ export default function RetailerPortal() {
       if (crateCode.length === 5) {
         await retailerReceivedCrate(crateCode)
 
-        const bottleIds = await getAllBottlesOfCrate(crateCode) 
-        const crateInfo = await getCrateInfo(crateCode) 
+        const bottleIds = await getAllBottlesOfCrate(crateCode)
+        const crateInfo = await getCrateInfo(crateCode)
         const connectedAccount = await getAccount()
 
-        const location = { 
-          "type" : "retailer",
-          "walletAddress" : connectedAccount
+        const location = {
+          type: "retailer",
+          walletAddress: connectedAccount,
         }
 
-
-        bottleIds.map( async (bottleId) => {
+        bottleIds.map(async (bottleId) => {
           await updateProductLocation(bottleId, location, false)
         })
 
@@ -390,17 +238,7 @@ export default function RetailerPortal() {
         // console.log("crateInfo.medicineName inside try", crateInfo[1])
 
         // await updateProductLocation("P001", location, true)
-        await updateRetailerInventoryItem(
-          connectedAccount,
-          crateInfo[1],
-          bottleIds.length,
-          null,
-          bottleIds,
-          "add",
-        )
-
-
-
+        await updateRetailerInventoryItem(connectedAccount, crateInfo[1], bottleIds.length, null, bottleIds, "add")
       } else if (crateCode.length === 11) {
         await retailerReceivedSubCrate(crateCode)
 
@@ -408,26 +246,18 @@ export default function RetailerPortal() {
         const subCrateInfo = await getSubCrateInfo(crateCode)
         const connectedAccount = await getAccount()
 
-        const location = { 
-          "type" : "retailer",
-          "walletAddress" : connectedAccount
+        const location = {
+          type: "retailer",
+          walletAddress: connectedAccount,
         }
-        bottleIds.map( async (bottleId) => {
+        bottleIds.map(async (bottleId) => {
           await updateProductLocation(bottleId, location, false)
         })
 
-        await updateRetailerInventoryItem(
-          connectedAccount,
-          subCrateInfo[1],
-          bottleIds.length,
-          null,
-          bottleIds,
-          "add",
-        )
+        await updateRetailerInventoryItem(connectedAccount, subCrateInfo[1], bottleIds.length, null, bottleIds, "add")
 
         settrigger(!trigger)
-
-        
+        setTimeout(() => refreshOrders(), 500); // ✅ triggers refresh of table after delay
       } else {
         toast({
           title: "Error",
@@ -472,38 +302,33 @@ export default function RetailerPortal() {
         title: "Error",
         description: "Please enter a medicine name",
         variant: "destructive",
-      });
-      return;
+      })
+      return
     }
-  
+
     if (!quantity || Number.parseInt(quantity) <= 0) {
       toast({
         title: "Error",
         description: "Please enter a valid quantity",
         variant: "destructive",
-      });
-      return;
+      })
+      return
     }
-  
-    setIsPlacingOrder(true);
+
+    setIsPlacingOrder(true)
     try {
-      const account = await getAccount();
-      const requiredQty = Number.parseInt(quantity);
-  
+      const account = await getAccount()
+      const requiredQty = Number.parseInt(quantity)
+
       // 1️⃣ Call optimizer
-      const optimizerRes = await optimizeSupplyPath(
-        medicineName.trim(),
-        requiredQty,
-        account,
-        isColdStorage
-      );
-  
-      const optimizerData = optimizerRes.data;
-  
+      const optimizerRes = await optimizeSupplyPath(medicineName.trim(), requiredQty, account, isColdStorage)
+
+      const optimizerData = optimizerRes.data
+
       // 2️⃣ Show path data (always)
-      setOptimizerResult(optimizerData);
-      setShowPathDetails(true);
-  
+      setOptimizerResult(optimizerData)
+      setShowPathDetails(true)
+
       // 3️⃣ Build order data helper
       const buildOrderData = () => {
         return {
@@ -533,66 +358,64 @@ export default function RetailerPortal() {
               })),
             },
           ],
-        };
-      };
-      
-  
+        }
+      }
+
       if (optimizerData.status === "complete") {
         // 4️⃣ Complete order - log payload
-        const orderData = buildOrderData();
-        console.log("Sending Complete Order Data:", JSON.stringify(orderData, null, 2));
-  
-        await createOrder(orderData);
-  
+        const orderData = buildOrderData()
+        console.log("Sending Complete Order Data:", JSON.stringify(orderData, null, 2))
+
+        await createOrder(orderData)
+
         toast({
           title: "Order Placed Successfully",
           description: `Order for ${requiredQty} units of ${medicineName} has been placed.`,
-        });
-  
+        })
+
         // Reset fields
-        setMedicineName("");
-        setQuantity("");
-        setIsColdStorage(false);
+        setMedicineName("")
+        setQuantity("")
+        setIsColdStorage(false)
       } else {
         // 5️⃣ Partial order
-        setShowPartialOptions(true);
-  
+        setShowPartialOptions(true)
+
         const handleAcceptPartial = async () => {
-          const orderData = buildOrderData();
-          console.log("📦 Sending Partial Order Data:", JSON.stringify(orderData, null, 2));
-  
-          await createOrder(orderData);
-  
+          const orderData = buildOrderData()
+          console.log("📦 Sending Partial Order Data:", JSON.stringify(orderData, null, 2))
+
+          await createOrder(orderData)
+
           toast({
             title: "Partial Order Placed",
             description: `Order placed for available quantity only.`,
-          });
-  
-          setOptimizerResult(null);
-          setShowPartialOptions(false);
-          setMedicineName("");
-          setQuantity("");
-        };
-  
+          })
+
+          setOptimizerResult(null)
+          setShowPartialOptions(false)
+          setMedicineName("")
+          setQuantity("")
+        }
+
         const handleCancelOrder = () => {
-          setOptimizerResult(null);
-          setShowPartialOptions(false);
-        };
-  
-        setPartialOrderHandlers({ handleAcceptPartial, handleCancelOrder });
+          setOptimizerResult(null)
+          setShowPartialOptions(false)
+        }
+
+        setPartialOrderHandlers({ handleAcceptPartial, handleCancelOrder })
       }
     } catch (error) {
-      console.error("❌ Error placing order:", error.response?.data || error.message);
+      console.error("❌ Error placing order:", error.response?.data || error.message)
       toast({
         title: "Error",
         description: `Failed to place order: ${error.message}`,
         variant: "destructive",
-      });
+      })
     } finally {
-      setIsPlacingOrder(false);
+      setIsPlacingOrder(false)
     }
-  };
-  
+  }
 
   const handleUpdateInventory = async (itemMedicineName, soldQuantity) => {
     if (!soldQuantity || Number.parseInt(soldQuantity) <= 0) {
@@ -641,8 +464,6 @@ export default function RetailerPortal() {
       //call the actual db api here
       //=========================
 
-      
-
       settrigger(!trigger)
       toast({
         title: "Sale Recorded Successfully",
@@ -660,11 +481,57 @@ export default function RetailerPortal() {
     }
   }
 
-  const handleSoldQuantityChange = (itemMedicineName, value) => {
-    setInventory((prev) => prev.map((inv) => (inv.medicineName === itemMedicineName ? { ...inv, soldQuantity: value } : inv)))
-    // call the actual update db api here
-    settrigger(!trigger)
+  const handleSoldQuantityChange = (productId, value) => {
+    setInventory((prev) => prev.map((inv) => (inv.productId === productId ? { ...inv, soldQuantity: value } : inv)))
   }
+
+  const [singleDistributorOrders, setSingleDistributorOrders] = useState([]);
+const [multiDistributorOrders, setMultiDistributorOrders] = useState([]);
+
+useEffect(() => {
+  const fetchOrders = async () => {
+    const wallet = await getAccount();
+    const res = await getPendingOrdersByRetailer(wallet);
+
+    const oneDistributor = [];
+    const multiDistributor = [];
+
+    res.data.forEach((order) => {
+      order.lineItems.forEach((item) => {
+        const allocations = item.allocations;
+
+        if (allocations.length === 1) {
+          const alloc = allocations[0];
+          oneDistributor.push({
+            orderId: order.orderId,
+            productName: item.productName,
+            fromWallet: alloc.path[0].fromWalletAddress,
+            totalQuantity: item.qty,
+            expectedDays: alloc.path[0].etaDays,
+            status: alloc.fulfilled ? "Complete" : "In Progress",
+          });
+        } else {
+          const grouped = allocations.map((alloc, idx) => ({
+            orderId: idx === 0 ? order.orderId : "",
+            productName: idx === 0 ? item.productName : "",
+            fromWallet: alloc.path[0].fromWalletAddress,
+            totalQuantity: alloc.qty,
+            expectedDays: alloc.path[0].etaDays,
+            status: alloc.fulfilled ? "Complete" : "In Progress",
+            isFirstInGroup: idx === 0,
+          }));
+          multiDistributor.push(...grouped);
+        }
+      });
+    });
+
+    setSingleDistributorOrders(oneDistributor);
+    setMultiDistributorOrders(multiDistributor);
+  };
+
+  fetchOrders();
+}, [orderRefresh]);
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-100">
@@ -739,7 +606,6 @@ export default function RetailerPortal() {
                   {isCertActivated ? "✅ Certifications Activated" : "Activate Certifications"}
                 </Button>
               )} */}
-
               {isVerified && <p className="text-sm text-gray-500">Please verify crate authenticity first</p>}
             </CardContent>
           </Card>
@@ -788,7 +654,6 @@ export default function RetailerPortal() {
                 <Label htmlFor="coldStorage">Requires Cold Storage?</Label>
               </div>
 
-
               <Button
                 onClick={handlePlaceOrder}
                 disabled={isPlacingOrder || !medicineName.trim() || !quantity || Number.parseInt(quantity) <= 0}
@@ -808,98 +673,122 @@ export default function RetailerPortal() {
           </Card>
 
           {optimizerResult && (
-  <div
-    className={`p-3 border rounded-lg mt-4 ${
-      optimizerResult.status === "partial"
-        ? "bg-yellow-50 border-yellow-200"
-        : "bg-green-50 border-green-200"
-    }`}
-  >
-    {optimizerResult.status === "partial" && (
-      <p className="text-sm text-yellow-800 mb-2">
-        <span className="font-medium">Notice:</span>{" "}
-        {optimizerResult.wait_recommendation?.message}
-      </p>
-    )}
+            <div
+              className={`p-3 border rounded-lg mt-4 ${
+                optimizerResult.status === "partial" ? "bg-yellow-50 border-yellow-200" : "bg-green-50 border-green-200"
+              }`}
+            >
+              {optimizerResult.status === "partial" && (
+                <p className="text-sm text-yellow-800 mb-2">
+                  <span className="font-medium">Notice:</span> {optimizerResult.wait_recommendation?.message}
+                </p>
+              )}
 
-    <div className="mt-2">
-      <p className="font-medium text-purple-900">Optimal Path Allocations:</p>
-      <ul className="list-disc list-inside text-purple-800 text-sm">
-        {optimizerResult.allocations.map((alloc, idx) => (
-          <li key={idx}>
-            <span className="font-semibold">Source:</span> {alloc.source} →{" "}
-            <span className="font-semibold">ETA:</span> {alloc.eta_time} days,{" "}
-            <span className="font-semibold">Qty:</span> {alloc.allocated_qty}
-          </li>
-        ))}
-      </ul>
-    </div>
+<ul className="list-disc list-inside text-purple-800 text-sm">
+  {(optimizerResult?.allocations || []).map((alloc, idx) => (
+    <li key={idx}>
+      <span className="font-semibold">Source:</span> {alloc.source} →{" "}
+      <span className="font-semibold">ETA:</span> {alloc.eta_time} days,{" "}
+      <span className="font-semibold">Qty:</span> {alloc.allocated_qty}
+    </li>
+  ))}
+</ul>
 
-    {/* Buttons only for partial */}
-    {optimizerResult.status === "partial" && (
-      <div className="flex gap-4 mt-4">
-        {/* Accept Partial Order */}
+{optimizerResult?.status === "partial" && (
+  <div className="mt-4">
+    {/* Manufacturer available case */}
+    {optimizerResult.wait_recommendation?.message?.includes("manufacturers are available") ? (
+      <div className="p-4 bg-yellow-100 border-l-4 border-yellow-400 text-yellow-900 rounded-md">
+        <p className="mb-2 font-medium">{optimizerResult.wait_recommendation.message}</p>
+        <p className="mb-2 font-semibold">Available Manufacturers and Production Times:</p>
+        <ul className="list-disc list-inside mb-4">
+          {optimizerResult.wait_recommendation.producers?.map((producer, idx) => (
+            <li key={idx}>
+              {producer.manufacturer} — ~{producer.production_time_days} days
+            </li>
+          ))}
+        </ul>
+        <Button
+          variant="destructive"
+          onClick={() => {
+            setOptimizerResult(null);
+            setShowPartialOptions(false);
+          }}
+        >
+          Cancel
+        </Button>
+      </div>
+    ) : optimizerResult.wait_recommendation?.message?.includes("not found in the system") ? (
+      // Product not found in the system — only Cancel button
+      <Button
+        variant="destructive"
+        onClick={() => {
+          setOptimizerResult(null);
+          setShowPartialOptions(false);
+        }}
+      >
+        Cancel
+      </Button>
+    ) : (
+      // Default case — show Accept Partial Order and Cancel buttons
+      <div className="flex gap-4">
         <Button
           className="bg-green-600 hover:bg-green-700"
           onClick={async () => {
             const account = await getAccount();
 
-            // Build order details properly
             const allEtas = optimizerResult.allocations.map((a) => a.eta_time);
             const overallEta = allEtas.length > 0 ? Math.max(...allEtas) : 0;
 
-            const orderData = {
-              retailerWalletAddress: account,
-              status: "created",
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-              lineItems: {
-                productName: medicineName.trim(),
-                qty: optimizerResult.allocations.reduce(
-                  (sum, alloc) => sum + alloc.allocated_qty,
-                  0
-                ),
-                batchId: "",
-                allocatedQty: optimizerResult.allocations.reduce(
-                  (sum, alloc) => sum + alloc.allocated_qty,
-                  0
-                ),
-                overallEta,
-                allocations: optimizerResult.allocations.map((alloc) => ({
-                  productUnitIds: alloc.product_ids,
-                  sourceWalletAddress: alloc.source,
-                  sourceType: "distributor",
-                  etaDays: alloc.eta_time,
-                  fulfilled: false,
-                  currentStage: 0,
-                  path: {
-                    fromWalletAddress: alloc.path[0],
-                    fromType: "distributor",
-                    toWalletAddress: alloc.path[alloc.path.length - 1],
-                    toType: "retailer",
-                    etaDays: alloc.eta_time,
-                  },
-                })),
-              },
-            };
+                      const orderData = {
+                        retailerWalletAddress: account,
+                        status: "created",
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString(),
+                        lineItems: {
+                          productName: medicineName.trim(),
+                          qty: optimizerResult.allocations.reduce((sum, alloc) => sum + alloc.allocated_qty, 0),
+                          batchId: "",
+                          allocatedQty: optimizerResult.allocations.reduce(
+                            (sum, alloc) => sum + alloc.allocated_qty,
+                            0,
+                          ),
+                          overallEta,
+                          allocations: optimizerResult.allocations.map((alloc) => ({
+                            productUnitIds: alloc.product_ids,
+                            sourceWalletAddress: alloc.source,
+                            sourceType: "distributor",
+                            etaDays: alloc.eta_time,
+                            fulfilled: false,
+                            currentStage: 0,
+                            path: {
+                              fromWalletAddress: alloc.path[0],
+                              fromType: "distributor",
+                              toWalletAddress: alloc.path[alloc.path.length - 1],
+                              toType: "retailer",
+                              etaDays: alloc.eta_time,
+                            },
+                          })),
+                        },
+                      }
 
-            await createOrder(orderData);
+                      await createOrder(orderData)
+                      refreshOrders()
 
-            toast({
-              title: "Partial Order Placed",
-              description: `Order placed for available quantity only.`,
-            });
+                      toast({
+                        title: "Partial Order Placed",
+                        description: `Order placed for available quantity only.`,
+                      })
 
-            setOptimizerResult(null);
-            setShowPartialOptions(false);
-            setMedicineName("");
-            setQuantity("");
-          }}
-        >
-          Accept Partial Order
-        </Button>
+                      setOptimizerResult(null)
+                      setShowPartialOptions(false)
+                      setMedicineName("")
+                      setQuantity("")
+                    }}
+                  >
+                    Accept Partial Order
+                  </Button>
 
-        {/* Cancel Order */}
         <Button
           variant="destructive"
           onClick={() => {
@@ -911,6 +800,10 @@ export default function RetailerPortal() {
         </Button>
       </div>
     )}
+  </div>
+)}
+
+
   </div> // <--- This closes the outer div of optimizerResult
 )}
 
@@ -930,8 +823,8 @@ export default function RetailerPortal() {
             {/* Filter and Sort Controls */}
             {/* <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4"> */}
-                {/* Search Input */}
-                {/* <div className="md:col-span-2">
+            {/* Search Input */}
+            {/* <div className="md:col-span-2">
                   <Label htmlFor="search" className="text-sm font-medium mb-2 block">
                     Search
                   </Label>
@@ -947,8 +840,8 @@ export default function RetailerPortal() {
                   </div>
                 </div> */}
 
-                {/* Sort By */}
-                {/* <div>
+            {/* Sort By */}
+            {/* <div>
                   <Label className="text-sm font-medium mb-2 block">Sort By</Label>
                   <Select value={sortBy} onValueChange={setSortBy}>
                     <SelectTrigger>
@@ -963,8 +856,8 @@ export default function RetailerPortal() {
                 </div>
               </div> */}
 
-              {/* Control Buttons */}
-              {/* <div className="flex flex-wrap gap-2 mt-4">
+            {/* Control Buttons */}
+            {/* <div className="flex flex-wrap gap-2 mt-4">
                 <Button
                   onClick={resetFiltersAndSort}
                   variant="outline"
@@ -975,8 +868,8 @@ export default function RetailerPortal() {
                   Reset All
                 </Button> */}
 
-                {/* Active Filters Display */}
-                {/* <div className="flex flex-wrap gap-2 items-center">
+            {/* Active Filters Display */}
+            {/* <div className="flex flex-wrap gap-2 items-center">
                   {searchTerm && (
                     <Badge variant="secondary" className="flex items-center gap-1">
                       Search: "{searchTerm}"
@@ -994,8 +887,8 @@ export default function RetailerPortal() {
                 </div>
               </div> */}
 
-              {/* Results Count */}
-              {/* <div className="mt-2 text-sm text-gray-600">
+            {/* Results Count */}
+            {/* <div className="mt-2 text-sm text-gray-600">
                 Showing {filteredAndSortedInventory.length} of {inventory.length} items
               </div>
             </div> */}
@@ -1025,7 +918,7 @@ export default function RetailerPortal() {
                             className={`${
                               item.qtyRemaining < item.reorderLevel
                                 ? "text-red-600 border-red-600"
-                                  : "text-green-600 border-green-600"
+                                : "text-green-600 border-green-600"
                             }`}
                           >
                             {item.qtyRemaining} units
@@ -1037,14 +930,14 @@ export default function RetailerPortal() {
                             min="1"
                             max={item.qtyRemaining}
                             value={item.soldQuantity}
-                            onChange={(e) => handleSoldQuantityChange(item.medicineName, e.target.value)}
+                            onChange={(e) => handleSoldQuantityChange(item.productId, e.target.value)}
                             placeholder="Units sold"
                             className="w-32"
                           />
                         </td>
                         <td className="p-3">
                           <Button
-                            onClick={() => handleUpdateInventory(item.medicineName, item.soldQuantity)}
+                            onClick={() => handleUpdateInventory(item.productId, item.soldQuantity)}
                             disabled={
                               isUpdatingInventory ||
                               !item.soldQuantity ||
@@ -1073,6 +966,132 @@ export default function RetailerPortal() {
                 </Button>
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Pending Orders Section */}
+        <Card className="mt-8 min-h-[600px]">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              Pending Orders
+            </CardTitle>
+            <CardDescription>Track your pending orders from distributors</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-8">
+              {/* First Table: Pending Orders from 1 Distributor */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Pending Orders from 1 Distributor</h3>
+                <div className="overflow-x-auto">
+                  <div className="max-h-80 overflow-y-auto border rounded-lg">
+                    <table className="w-full border-collapse">
+                      <thead className="sticky top-0 bg-white z-10 border-b-2">
+                        <tr className="border-b">
+                          <th className="text-left p-3 font-medium text-gray-900">Order ID</th>
+                          <th className="text-left p-3 font-medium text-gray-900">Product Name</th>
+                          <th className="text-left p-3 font-medium text-gray-900">From Wallet Address</th>
+                          <th className="text-left p-3 font-medium text-gray-900">Total Quantity</th>
+                          <th className="text-left p-3 font-medium text-gray-900">Expected Days</th>
+                          <th className="text-left p-3 font-medium text-gray-900">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {singleDistributorOrders.map((order, index) => (
+  <tr key={index} className="border-b hover:bg-gray-50">
+    <td className="p-3 text-gray-900 font-mono text-sm">{order.orderId}</td>
+    <td className="p-3 text-gray-900 font-medium">{order.productName}</td>
+    <td className="p-3 text-gray-700 font-mono text-xs">
+      {order.fromWallet.slice(0, 10)}...{order.fromWallet.slice(-6)}
+    </td>
+    <td className="p-3 text-gray-700">{order.totalQuantity} units</td>
+    <td className="p-3 text-gray-700">{order.expectedDays} days</td>
+    <td className="p-3">
+      <Badge
+        variant="outline"
+        className={
+          order.status === "Complete"
+            ? "text-green-600 border-green-600"
+            : "text-blue-600 border-blue-600"
+        }
+      >
+        {order.status}
+      </Badge>
+    </td>
+  </tr>
+))}
+
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              {/* Second Table: Pending Orders from Multiple Distributors Combined */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  Pending Orders from Multiple Distributors Combined
+                </h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Orders grouped by Product Name with multiple distributor sources
+                </p>
+                <div className="overflow-x-auto">
+                  <div className="max-h-80 overflow-y-auto border rounded-lg">
+                    <table className="w-full border-collapse">
+                      <thead className="sticky top-0 bg-white z-10 border-b-2">
+                        <tr className="border-b">
+                          <th className="text-left p-3 font-medium text-gray-900">Order ID</th>
+                          <th className="text-left p-3 font-medium text-gray-900">Product Name</th>
+                          <th className="text-left p-3 font-medium text-gray-900">From Wallet Address</th>
+                          <th className="text-left p-3 font-medium text-gray-900">Total Quantity</th>
+                          <th className="text-left p-3 font-medium text-gray-900">Expected Days</th>
+                          <th className="text-left p-3 font-medium text-gray-900">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {multiDistributorOrders.map((order, index) => (
+  <tr key={index} className={`border-b hover:bg-gray-50 ${!order.isFirstInGroup ? "bg-gray-25" : ""}`}>
+    <td className="p-3 text-gray-900 font-mono text-sm">
+      {order.orderId && <span className="font-medium">{order.orderId}</span>}
+    </td>
+    <td className="p-3 text-gray-900 font-medium">
+      {order.productName && <span className="font-semibold">{order.productName}</span>}
+    </td>
+    <td className="p-3 text-gray-700 font-mono text-xs">
+      {order.fromWallet.slice(0, 10)}...{order.fromWallet.slice(-6)}
+    </td>
+    <td className="p-3 text-gray-700">{order.totalQuantity} units</td>
+    <td className="p-3 text-gray-700">{order.expectedDays} days</td>
+    <td className="p-3">
+      <Badge
+        variant="outline"
+        className={
+          order.status === "Complete"
+            ? "text-green-600 border-green-600"
+            : "text-blue-600 border-blue-600"
+        }
+      >
+        {order.status}
+      </Badge>
+    </td>
+  </tr>
+))}
+
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              {/* Empty State for when no orders exist */}
+              {false && ( // Change to true if you want to show empty state
+                <div className="text-center py-8 text-gray-500">
+                  <Package className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p>No pending orders found</p>
+                  <p className="text-sm mt-1">Your pending orders will appear here once placed</p>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
 

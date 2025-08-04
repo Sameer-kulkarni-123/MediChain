@@ -1,5 +1,5 @@
-from fastapi import APIRouter
-from models.order import OrderModel, ProductInDB
+from fastapi import APIRouter, Query 
+from models.order import OrderModel, ProductInDB, PendingAllocation, FulfillRequest
 from controllers import order_controller as controller
 
 router = APIRouter()
@@ -16,10 +16,6 @@ async def all_orders():
 async def get_orders_by_retailer(retailer_walletAddress: str):
     return await controller.orders_by_retailer(retailer_walletAddress)
 
-# Get all pending orders
-@router.get("/pending", response_model=list[ProductInDB])
-async def get_all_pending_orders():
-    return await controller.pending_orders()
 
 # Get pending orders for a specific retailer
 @router.get("/pending/{retailer_walletAddress}", response_model=list[ProductInDB])
@@ -91,4 +87,17 @@ async def set_order_status_by_products(product_ids: list[str], status: str):
     Update order status using product IDs (provided by user).
     """
     return await controller.update_order_status_by_products(product_ids, status)
+
+
+@router.patch("/fulfill/data", response_model=dict)
+async def fulfill_allocations_for_distributor(
+    data: FulfillRequest
+):
+    return await controller.fulfill_distributor_allocations(data.distributor_wallet, data.order_id)
+
+
+@router.get("/pending-allocations/{distributor_walletAddress}", response_model=list[PendingAllocation])
+async def get_pending_allocations(distributor_walletAddress: str):
+    return await controller.get_pending_allocations_for_distributor(distributor_walletAddress)
+
 

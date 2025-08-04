@@ -17,7 +17,14 @@ import { getAllBottlesOfSubCrate,receiveCrate, getAccount, createSubCrate,getAll
 import { MultiSelectDropdown } from "@/components/multi-select-dropdown"
 import { AssignmentForm } from "@/components/assignment-form" // Ensure this is imported
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select" // Import Select components
-import { getConnectionsFrom, getRetailerByWallet, updateInventoryItem, updateProductLocation } from "@/api_local"
+import { getConnectionsFrom, getRetailerByWallet, updateInventoryItem, updateProductLocation, getPendingAllocations, fulfillAllocations } from "@/api_local"
+
+interface PendingAllocation {
+  orderId: string;
+  retailer_wallet: string;
+  productName: string;
+  qty: number;
+}
 
 export default function DistributorPortal() {
   const [selectedCrate, setSelectedCrate] = useState("MC-1704123456-7890")
@@ -385,6 +392,38 @@ const handleGetCrateInfo = async () => {
     }
   }
 
+  const [allocations, setAllocations] = useState<PendingAllocation[]>([]);
+  const [refreshAllocations, setRefreshAllocations] = useState(false);
+
+  const refresh = () => setRefreshAllocations((prev) => !prev);
+
+useEffect(() => {
+  const fetchAllocations = async () => {
+    try {
+      const walletAddress = await getAccount();
+      console.log("💼 walletAddress = ", walletAddress); // ✅ Debug line
+      if (!walletAddress) return;
+      const data = await getPendingAllocations(walletAddress);
+      console.log("📦 pendingAllocations = ", data); // ✅ Debug line
+      setAllocations(data);
+    } catch (err) {
+      console.error("Failed to load allocations", err);
+    }
+  };
+  fetchAllocations();
+}, [refreshAllocations]);
+
+  const handleFulfill = async (orderId: string) => {
+    try {
+      const walletAddress = await getAccount();
+      if (!walletAddress) return;
+      await fulfillAllocations(walletAddress, orderId);
+      refresh();
+    } catch (err) {
+      console.error("Failed to fulfill allocation", err);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
@@ -481,7 +520,7 @@ const handleGetCrateInfo = async () => {
     
     <Button
       onClick={handleGetCrateDetails}
-      className="w-full bg-blue-600 hover:bg-blue-700 text-sm sm:text-base py-2 sm:py-3"
+      className="w-full bg-green-600 hover:bg-green-700 text-sm sm:text-base py-2 sm:py-3"
       disabled={!crateCodeForDetails.trim() || isLoadingCrateDetails}
     >
       {isLoadingCrateDetails ? (
@@ -586,7 +625,7 @@ const handleGetCrateInfo = async () => {
                 />
               </div>
             <Button onClick={handleGetCrateInfo}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-sm sm:text-base py-2 sm:py-3"
+              className="w-full bg-green-600 hover:bg-green-700 text-sm sm:text-base py-2 sm:py-3"
                disabled={!parentCrateCodeForSubCrate}>
                 Get Crate Info
             </Button>
@@ -618,7 +657,7 @@ const handleGetCrateInfo = async () => {
 
               <Button
                 onClick={handleCreateSubCrate}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-sm sm:text-base py-2 sm:py-3"
+                className="w-full bg-green-600 hover:bg-green-700 text-sm sm:text-base py-2 sm:py-3"
                 disabled={
                   isCreatingSubCrate || !parentCrateCodeForSubCrate || selectedBottleIds.length === 0 || !subCrateId
                 }
@@ -736,9 +775,72 @@ const handleGetCrateInfo = async () => {
             subCrateCode={subCrateCodeForSend}
           />
         </div>
+        <Card className="mt-10 min-h-[400px]">
+  <CardHeader>
+    <CardTitle className="flex items-center gap-2">
+      <Package className="h-5 w-5" />
+      Pending Allocations
+    </CardTitle>
+    <CardDescription>
+      Orders assigned to you by retailers that are yet to be fulfilled
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <div className="overflow-x-auto">
+      <div className="max-h-80 overflow-y-auto border rounded-lg">
+        <table className="w-full border-collapse text-sm">
+          <thead className="sticky top-0 bg-white z-10 border-b-2">
+            <tr className="border-b">
+              <th className="text-left p-3 font-medium text-gray-900">Order ID</th>
+              <th className="text-left p-3 font-medium text-gray-900">Medicine Name</th>
+              <th className="text-left p-3 font-medium text-gray-900">Retailer Wallet</th>
+              <th className="text-left p-3 font-medium text-gray-900">Count</th>
+              <th className="text-left p-3 font-medium text-gray-900">Status</th>
+              <th className="text-left p-3 font-medium text-gray-900">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {allocations.map((alloc) => (
+              <tr key={alloc.orderId} className="border-b hover:bg-gray-50">
+                <td className="p-3 font-mono text-gray-900">{alloc.orderId}</td>
+                <td className="p-3 font-medium text-gray-900">{alloc.productName}</td>
+                <td className="p-3 text-gray-700 font-mono text-xs">
+                  {alloc.retailer_wallet.slice(0, 10)}...{alloc.retailer_wallet.slice(-6)}
+                </td>
+                <td className="p-3 text-gray-700">{alloc.qty}</td>
+                <td className="p-3">
+                  <Badge variant="outline" className="text-orange-600 border-orange-600">
+                    Pending
+                  </Badge>
+                </td>
+                <td className="p-3">
+                  <Button
+                    className="bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm px-3 py-2"
+                    onClick={() => handleFulfill(alloc.orderId)}
+                  >
+                    Update Status
+                  </Button>
+                </td>
+              </tr>
+            ))}
+            {allocations.length === 0 && (
+              <tr>
+                <td colSpan={6} className="p-4 text-center text-gray-500">
+                  No pending allocations.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+      </div>
 
         {/* Available Retailers Overview */}
-        <Card className="mt-6 sm:mt-8">
+        {/* <Card className="mt-6 sm:mt-8">
           <CardHeader className="px-4 sm:px-6">
             <CardTitle className="text-lg sm:text-xl">Available Retailers Network</CardTitle>
             <CardDescription className="text-sm sm:text-base">Overview of all retailers in the network</CardDescription>
@@ -759,7 +861,7 @@ const handleGetCrateInfo = async () => {
                   <p className="text-xs sm:text-sm text-gray-600 mt-1">{retailer.type}</p>
                   <p className="text-xs text-gray-500 mt-1">{retailer.stores} stores</p>
                   <div className="mt-2">
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                       {retailer.location}
                     </span>
                   </div>
@@ -767,10 +869,10 @@ const handleGetCrateInfo = async () => {
               ))}
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mt-6 sm:mt-8">
+        {/* <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mt-6 sm:mt-8">
           <Card className="text-center">
             <CardContent className="pt-4 sm:pt-6 px-4 sm:px-6">
               <MapPin className="h-8 w-8 sm:h-12 sm:w-12 text-green-600 mx-auto mb-4" />
@@ -803,8 +905,7 @@ const handleGetCrateInfo = async () => {
               </Button>
             </CardContent>
           </Card>
-        </div>
+        </div> */}
       </div>
-    </div>
   )
 }
