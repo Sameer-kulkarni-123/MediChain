@@ -9,6 +9,7 @@ const MANUFACTURERS_BASE = "http://localhost:8000/manufacturers";
 const ORDERS_BASE = "http://localhost:8000/orders";
 const PRODUCTS_BASE = "http://localhost:8000/products";
 const RETAILERS_BASE = "http://localhost:8000/retailers";
+const OPTIMIZER_BASE = `http://localhost:8000`;
 
 
 
@@ -460,6 +461,32 @@ export const updateOrderStatusByProducts = (productIds, status) =>
     params: { product_ids: productIds, status },
   });
 
+// ==============================
+//   OPTIMIZER API FUNCTIONS
+// ==============================
+
+/**
+ * Run supply path optimization.
+ *
+ * @param {string} product_name
+ * @param {number} required_qty
+ * @param {string} target_wallet
+ * @param {boolean} is_cold_storage
+ */
+export const optimizeSupplyPath = (
+  product_name,
+  required_qty,
+  target_wallet,
+  is_cold_storage = false
+) =>
+  axios.get(`${OPTIMIZER_BASE}/test-optimize`, {
+    params: {
+      product_name,
+      required_qty,
+      target_wallet,
+      is_cold_storage,
+    },
+  });
 
 /* ==============================
    PRODUCTS API FUNCTIONS
@@ -477,6 +504,7 @@ export const updateOrderStatusByProducts = (productIds, status) =>
  *   unitWeight?: number|string,
  *   batchId?: string,
  *   location?: { type: "manufacturer"|"distributor"|"retailer", walletAddress: string }
+ *   shelf_life?: number
  * }
  * @returns {Promise}
  */
@@ -637,13 +665,10 @@ export const updateRetailerInventoryItem = (
 ) =>
   axios.patch(
     `${RETAILERS_BASE}/${walletAddress}/inventory/${productName}`,
-    null,
     {
-      params: {
-        qty,
-        reorder_level: reorderLevel,
-        product_ids: productIds,
-        action
-      },
+      qty,
+      reorderLevel,
+      productIds,
+      action
     }
   );

@@ -210,7 +210,7 @@ contract MedicineCrateTracking {
         require(subCrate.isExists, "subCrate doesn't exist");
         require(subCrate.nextSubCrateReceiverWalletAddress == msg.sender, "not the allocated receiver for the sub crate");
     
-        crate.currentWalletAddress = msg.sender; // to get full backtrack info, M & D addr from pastWalletAddress + currentWalletAddress(from crate)
+        // crate.currentWalletAddress = msg.sender; // to get full backtrack info, M & D addr from pastWalletAddress + currentWalletAddress(from crate)
         crate.inTransit = false;
         subCrate.isSubCrateFinalDestination = true; 
         crate.nextCrateReceiverWalletAddress = address(0);
@@ -423,6 +423,36 @@ contract MedicineCrateTracking {
         
         return validBottleIds;
     }
+
+    function getAllBottlesOfSubCrate(string memory subCrateCode) public view returns(string[] memory){
+        string memory parentCrateCode= parseCrateFromSubCrate(subCrateCode);
+        Crate storage crate = crates[parentCrateCode];
+        require(crate.isExists, "the crate doesn't exitst");
+        require(crate.subCrates[subCrateCode].isExists, "the subCrate Doesn't exists");
+
+
+        string[] memory bottleIds = crate.subCrates[subCrateCode].bottlesList;
+
+        // uint256 count = 0;
+        // for(uint256 i = 0; i < bottleIds.length; i++){
+        //     if(crate.bottles[bottleIds[i]].isExists){
+        //         count++;
+        //     }
+        // }
+
+        // string[] memory validBottleIds = new string[](count);
+        // uint256 temp = 0;
+
+        // for(uint256 i = 0; i < bottleIds.length; i++){
+        //     if(crate.bottles[bottleIds[i]].isExists){
+        //         validBottleIds[temp] = bottleIds[i];
+        //         temp++;
+        //     }
+
+        // }
+
+        return bottleIds;
+    }
     
     function retrieveCrateInfo(string memory parentCrateCode) public view returns(string[] memory){
         Crate storage crate = crates[parentCrateCode];
@@ -433,12 +463,32 @@ contract MedicineCrateTracking {
 
         retArr[0] = crate.crateCode;
         retArr[1] = crate.medicineName;
-        retArr[2] = "placeholder batchID";
+        retArr[2] = crate.batchID;
         retArr[3] = strBottleCount;
 
         return retArr;
 
 
+    }
+
+    function retrieveSubCrateInfo(string memory subCrateCode) public view returns(string[] memory){
+        string memory parentCrateCode = parseCrateFromSubCrate(subCrateCode);
+        Crate storage crate = crates[parentCrateCode];
+        require(crate.isExists, "The crate doesn't exist");
+        SubCrate storage subCrate = crate.subCrates[subCrateCode];
+        require(subCrate.isExists, "subCrate doesn't exist");
+        string[] memory retArr = new string[](4);
+
+        
+        string memory strBottleCount = uintToString(subCrate.bottlesList.length);
+
+        retArr[0] = subCrate.subCrateID;
+        retArr[1] = crate.medicineName;
+        retArr[2] = crate.batchID;
+        retArr[3] = strBottleCount;
+
+        return retArr;
+        
     }
 
     function uintToString(uint256 _value) internal pure returns (string memory) {

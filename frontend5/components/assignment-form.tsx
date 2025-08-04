@@ -5,7 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Send } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useState } from "react"
-import { getAccount, sendCrate, sendSubCrate } from "../apis"
+import { getAccount, getAllBottlesOfCrate, getAllBottlesOfSubCrate, getCrateInfo, getSubCrateInfo, sendCrate, sendSubCrate } from "../apis"
+import { updateInventoryItem, updateProductLocation } from "@/api_local"
 
 interface Entity {
   id: string
@@ -59,7 +60,36 @@ export function AssignmentForm({
           })
           return
         }
+
         receipt = await sendSubCrate(subCrateCode, toEntity.walletAddress)
+
+        const bottleIds = await getAllBottlesOfSubCrate(subCrateCode) as string[]
+        const subCrateInfo = await getSubCrateInfo(subCrateCode) as string[]
+        const connectedAccount = await getAccount()
+
+        const location = { 
+          "type" : "distributor",
+          "walletAddress" : connectedAccount
+        }
+        bottleIds.map( async (bottleId) => {
+          await updateProductLocation(bottleId, location, true)
+        })
+
+        console.log("connectedAccount", connectedAccount)
+        console.log("subCrateInfo[1]", subCrateInfo[1])
+        console.log("bottleIds.length", bottleIds.length)
+        console.log("bottleIds", bottleIds)
+
+        await updateInventoryItem(
+          connectedAccount,
+          subCrateInfo[1],
+          bottleIds.length,
+          bottleIds,
+          null,
+          "remove",
+          )
+      
+
       } else {
         // assignmentType === "crate"
         if (!crateCode) {
@@ -71,6 +101,34 @@ export function AssignmentForm({
           return
         }
         receipt = await sendCrate(crateCode, toEntity.walletAddress)
+
+        const bottleIds = await getAllBottlesOfCrate(crateCode) as string[]
+        const crateInfo = await getCrateInfo(crateCode) as string[]
+        const connectedAccount = await getAccount()
+
+        const location = { 
+          "type" : "distributor",
+          "walletAddress" : connectedAccount
+        }
+
+
+        bottleIds.map( async (bottleId) => {
+          await updateProductLocation(bottleId, location, true)
+        })
+
+        // console.log("crateInfo", crateInfo)
+        // console.log("crateInfo.medicineName inside try", crateInfo[1])
+
+        // await updateProductLocation("P001", location, true)
+        await updateInventoryItem(
+          connectedAccount,
+          crateInfo[1],
+          bottleIds.length,
+          bottleIds,
+          null,
+          "remove",
+        )
+
       }
 
       console.log("Send transaction successful:", receipt)

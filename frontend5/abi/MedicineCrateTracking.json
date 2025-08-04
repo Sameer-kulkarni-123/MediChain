@@ -206,6 +206,25 @@
       "inputs": [
         {
           "internalType": "string",
+          "name": "subCrateCode",
+          "type": "string"
+        }
+      ],
+      "name": "getAllBottlesOfSubCrate",
+      "outputs": [
+        {
+          "internalType": "string[]",
+          "name": "",
+          "type": "string[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
           "name": "bottleCode",
           "type": "string"
         }
@@ -292,6 +311,25 @@
         }
       ],
       "name": "retrieveCrateInfo",
+      "outputs": [
+        {
+          "internalType": "string[]",
+          "name": "",
+          "type": "string[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "subCrateCode",
+          "type": "string"
+        }
+      ],
+      "name": "retrieveSubCrateInfo",
       "outputs": [
         {
           "internalType": "string[]",
