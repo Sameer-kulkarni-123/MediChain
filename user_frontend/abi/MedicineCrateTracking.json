@@ -325,6 +325,25 @@
       "inputs": [
         {
           "internalType": "string",
+          "name": "parentCrateCode",
+          "type": "string"
+        }
+      ],
+      "name": "retrieveCrateManufacturer",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
           "name": "subCrateCode",
           "type": "string"
         }

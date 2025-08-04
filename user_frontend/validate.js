@@ -24,6 +24,11 @@ export async function scanBottle(bottleCode) {
   return isValid
 }
 
+export async function getCrateManu(parentCrateCode){
+  const manu = await contractInstance.retrieveCrateManufacturer(parentCrateCode);
+  return manu.toLowerCase()
+}
+
 export async function debugIsExists(crateCode) {
   console.log("Block number:", await provider.getBlockNumber());
   // console.log("PROVIDER NETWORK : ", await provider.getNetwork())
