@@ -27,8 +27,9 @@ import {
   getCrateInfo,
   getAccount,
   retailerReceivedSubCrate,
-  getAllBottlesOfSubCrate,
   getSubCrateInfo,
+  getAllBottlesOfCrate, 
+  getAllBottlesOfSubCrate
   // activateCertifications,
 } from "../../apis"
 import { createOrder, getRetailerInventory, updateInventoryItem, updateProductLocation, updateRetailerInventoryItem, optimizeSupplyPath } from "../../api_local"

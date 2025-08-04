@@ -10,6 +10,7 @@ const ORDERS_BASE = "http://localhost:8000/orders";
 const PRODUCTS_BASE = "http://localhost:8000/products";
 const RETAILERS_BASE = "http://localhost:8000/retailers";
 const OPTIMIZER_BASE = `http://localhost:8000`;
+const GENERATEQR_BASE = "http://localhost:8000/generateqr";
 
 
 
@@ -672,3 +673,11 @@ export const updateRetailerInventoryItem = (
       action
     }
   );
+
+/** 
+@param {Array<string>} bottleIds
+*/
+export const generateQR = (
+  bottleIds = []
+) => 
+  axios.post(`${GENERATEQR_BASE}`,  bottleIds)
