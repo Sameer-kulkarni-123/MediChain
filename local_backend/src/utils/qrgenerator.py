@@ -20,7 +20,7 @@ def generate_qr_codes(bottleIds):
   image_urls = []
 
   for bottleId in bottleIds:
-    url = f"http://{ip}:3001/{bottleId}"
+    url = f"http://{ip}:3001/scan/{bottleId}"
     qr = qrcode.make(url)
     path = os.path.join(pwd,"qrs", crateCode, f"{bottleId}.png")
     os.makedirs(os.path.dirname(path), exist_ok=True)

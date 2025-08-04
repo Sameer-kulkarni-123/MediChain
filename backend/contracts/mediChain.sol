@@ -669,6 +669,16 @@ contract MedicineCrateTracking {
 
     }
 
+    function retrieveCrateManufacturer(string memory parentCrateCode) public view returns(address){
+        Crate storage crate = crates[parentCrateCode];
+        require(crate.isExists, "The crate doesn't exist");
+
+        address  manu = crate.manufacturerWalletAddress;
+        return manu;
+
+    }
+
+
     function retrieveSubCrateInfo(string memory subCrateCode) public view returns(string[] memory){
         string memory parentCrateCode = parseCrateFromSubCrate(subCrateCode);
         Crate storage crate = crates[parentCrateCode];

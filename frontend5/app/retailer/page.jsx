@@ -383,6 +383,7 @@ export default function RetailerPortal() {
 
         const handleAcceptPartial = async () => {
           const orderData = buildOrderData()
+          console.log("order data",orderData)
           console.log("📦 Sending Partial Order Data:", JSON.stringify(orderData, null, 2))
 
           await createOrder(orderData)
@@ -713,6 +714,8 @@ useEffect(() => {
           onClick={() => {
             setOptimizerResult(null);
             setShowPartialOptions(false);
+            setMedicineName("");
+            setQuantity("");
           }}
         >
           Cancel
@@ -725,6 +728,8 @@ useEffect(() => {
         onClick={() => {
           setOptimizerResult(null);
           setShowPartialOptions(false);
+          setMedicineName("");
+          setQuantity("");
         }}
       >
         Cancel
@@ -733,67 +738,67 @@ useEffect(() => {
       // Default case — show Accept Partial Order and Cancel buttons
       <div className="flex gap-4">
         <Button
-          className="bg-green-600 hover:bg-green-700"
-          onClick={async () => {
-            const account = await getAccount();
+  className="bg-green-600 hover:bg-green-700"
+  onClick={async () => {
+    const account = await getAccount();
+    const allEtas = optimizerResult.allocations.map(a => a.eta_time);
+    const overallEta = allEtas.length ? Math.max(...allEtas) : 0;
 
-            const allEtas = optimizerResult.allocations.map((a) => a.eta_time);
-            const overallEta = allEtas.length > 0 ? Math.max(...allEtas) : 0;
+    // duplicate logic from inside buildOrderData
+    const orderData = {
+      retailerWalletAddress: account,
+      status: "created",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      lineItems: [
+        {
+          productName: medicineName.trim(),
+          qty: optimizerResult.allocations.reduce((sum, a) => sum + a.allocated_qty, 0),
+          allocations: optimizerResult.allocations.map((alloc) => ({
+            qty: alloc.allocated_qty,
+            batchId: "",
+            productUnitIds: alloc.product_ids,
+            currentStage: 0,
+            fulfilled: false,
+            path: [
+              {
+                fromType: "distributor",
+                fromWalletAddress: alloc.path[0],
+                toType: "retailer",
+                toWalletAddress: alloc.path[alloc.path.length - 1],
+                etaDays: alloc.eta_time,
+              },
+            ],
+          })),
+        },
+      ],
+    };
 
-                      const orderData = {
-                        retailerWalletAddress: account,
-                        status: "created",
-                        createdAt: new Date().toISOString(),
-                        updatedAt: new Date().toISOString(),
-                        lineItems: {
-                          productName: medicineName.trim(),
-                          qty: optimizerResult.allocations.reduce((sum, alloc) => sum + alloc.allocated_qty, 0),
-                          batchId: "",
-                          allocatedQty: optimizerResult.allocations.reduce(
-                            (sum, alloc) => sum + alloc.allocated_qty,
-                            0,
-                          ),
-                          overallEta,
-                          allocations: optimizerResult.allocations.map((alloc) => ({
-                            productUnitIds: alloc.product_ids,
-                            sourceWalletAddress: alloc.source,
-                            sourceType: "distributor",
-                            etaDays: alloc.eta_time,
-                            fulfilled: false,
-                            currentStage: 0,
-                            path: {
-                              fromWalletAddress: alloc.path[0],
-                              fromType: "distributor",
-                              toWalletAddress: alloc.path[alloc.path.length - 1],
-                              toType: "retailer",
-                              etaDays: alloc.eta_time,
-                            },
-                          })),
-                        },
-                      }
+    console.log("order data", orderData);
+    await createOrder(orderData);
+    refreshOrders();
+    toast({
+      title: "Partial Order Placed",
+      description: `Order placed for available quantity only.`,
+    });
 
-                      await createOrder(orderData)
-                      refreshOrders()
+    setOptimizerResult(null);
+    setShowPartialOptions(false);
+    setMedicineName("");
+    setQuantity("");
+  }}
+>
+  Accept Partial Order
+</Button>
 
-                      toast({
-                        title: "Partial Order Placed",
-                        description: `Order placed for available quantity only.`,
-                      })
-
-                      setOptimizerResult(null)
-                      setShowPartialOptions(false)
-                      setMedicineName("")
-                      setQuantity("")
-                    }}
-                  >
-                    Accept Partial Order
-                  </Button>
 
         <Button
           variant="destructive"
           onClick={() => {
             setOptimizerResult(null);
             setShowPartialOptions(false);
+            setMedicineName("");
+            setQuantity("");
           }}
         >
           Cancel

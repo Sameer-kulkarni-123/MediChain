@@ -3,7 +3,8 @@
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
-import { scanBottle, debugIsExists } from "./validate.js";
+import { scanBottle, debugIsExists, getCrateManu } from "./validate.js";
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -11,36 +12,49 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = 3001;
 
-app.get("/debug/:code", async (req, res) => {
-  try {
-    console.log("The crate code : ", req.params.code)
-    const isValid = await debugIsExists(req.params.code);
+app.use(express.static(path.join(__dirname, "public")));
 
-    if (isValid) {
-      res.sendFile(path.join(__dirname, "public", "success.html"));
-    } else {
-      res.sendFile(path.join(__dirname, "public", "fail.html"));
-    }
-  } catch (err) {
-    console.error("Error debugging crate:", err);
-    res.sendFile(path.join(__dirname, "public", "catch.html"));
-    // res.status(500).send("Internal Server Error");
-  }
-});
+
+// app.get("/debug/:code", async (req, res) => {
+//   try {
+//     console.log("The crate code : ", req.params.code)
+//     const isValid = await debugIsExists(req.params.code);
+
+//     if (isValid) {
+//       res.sendFile(path.join(__dirname, "public", "success.html"));
+//     } else {
+//       res.sendFile(path.join(__dirname, "public", "fail.html"));
+//     }
+//   } catch (err) {
+//     console.error("Error debugging crate:", err);
+//     res.sendFile(path.join(__dirname, "public", "catch.html"));
+//     // res.status(500).send("Internal Server Error");
+//   }
+// });
 
 app.get("/favicon.ico", (req, res) => {
   res.status(204).end(); // No Content
 });
 
 
-app.get("/:code", async (req, res) => {
+app.get("/scan/:code", async (req, res) => {
   try {
-    console.log("The bottle code : ", req.params.code)
-    const isValid = await scanBottle(req.params.code);
+    const bottle_id = req.params.code
+    console.log("The bottle code : ", bottle_id)
+    const isValid = await scanBottle(bottle_id);
     console.log("isValid : ", isValid)
+    let crateId = ""
+
+    for(let i=0; i<5; i++){
+      crateId = crateId + bottle_id[i]
+    }
+
+    const manu = await getCrateManu(crateId)
 
     if (isValid == 1) {
-      res.sendFile(path.join(__dirname, "public", "1.html"));
+      console.log("code : ", manu)
+      // res.sendFile(path.join(__dirname, "public", "1.html"));
+      res.redirect(`/1.html?manu=${manu}`);
     } else if(isValid == 2){
       res.sendFile(path.join(__dirname, "public", "2.html"));
     } else if(isValid == 4){
