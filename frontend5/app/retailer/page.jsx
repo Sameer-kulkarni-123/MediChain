@@ -42,6 +42,8 @@ export default function RetailerPortal() {
   const [trigger, settrigger] = useState(false)
   const [connectedAccount, setconnectedAccount] = useState("")
   const [retrievedInventory, setretrievedInventory] = useState()
+  const [orderRefresh, setOrderRefresh] = useState(false);
+
 
   // useEffect(() => {
   //   const cAccount = getAccount()
@@ -64,6 +66,8 @@ export default function RetailerPortal() {
   const [showPartialOptions, setShowPartialOptions] = useState(false)
   const [showPathDetails, setShowPathDetails] = useState(false)
   const [partialOrderHandlers, setPartialOrderHandlers] = useState(null)
+  const refreshOrders = () => setOrderRefresh((prev) => !prev);
+
 
   const { toast } = useToast()
 
@@ -253,6 +257,7 @@ export default function RetailerPortal() {
         await updateRetailerInventoryItem(connectedAccount, subCrateInfo[1], bottleIds.length, null, bottleIds, "add")
 
         settrigger(!trigger)
+        setTimeout(() => refreshOrders(), 500); // ✅ triggers refresh of table after delay
       } else {
         toast({
           title: "Error",
@@ -525,7 +530,7 @@ useEffect(() => {
   };
 
   fetchOrders();
-}, []);
+}, [orderRefresh]);
 
 
   return (
@@ -738,6 +743,7 @@ useEffect(() => {
                       }
 
                       await createOrder(orderData)
+                      refreshOrders()
 
                       toast({
                         title: "Partial Order Placed",

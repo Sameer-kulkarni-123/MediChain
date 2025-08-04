@@ -462,6 +462,35 @@ export const updateOrderStatusByProducts = (productIds, status) =>
     params: { product_ids: productIds, status },
   });
 
+
+// Fulfill allocations for a distributor
+export const fulfillAllocations = async (distributor_wallet, order_id) => {
+  try {
+    const response = await axios.patch("http://localhost:8000/orders/fulfill/data", {
+      distributor_wallet,
+      order_id
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fulfilling allocations:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+
+// Get pending allocations for a distributor
+export const getPendingAllocations = async (distributor_walletAddress) => {
+  try {
+    const response = await axios.get(
+      `http://localhost:8000/orders/pending-allocations/${distributor_walletAddress}`
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching pending allocations:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
 // ==============================
 //   OPTIMIZER API FUNCTIONS
 // ==============================

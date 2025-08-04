@@ -68,11 +68,20 @@ class OrderModel(BaseModel):
     createdAt: Optional[datetime]
     updatedAt: Optional[datetime]
 
+class PendingAllocation(BaseModel):
+    orderId: str
+    retailer_wallet: str
+    productName: str
+    qty: int
 
-
+class FulfillRequest(BaseModel):
+    distributor_wallet: str
+    order_id: str
+    
 class ProductInDB(OrderModel):
     id: PyObjectId = Field(default_factory=PyObjectId, alias='_id')
 
     class Config:
         json_encoders = {ObjectId: str}
         populate_by_name = True  
+

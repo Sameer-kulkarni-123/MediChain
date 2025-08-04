@@ -56,7 +56,7 @@ async def one_order(order_id: str):
 # Update order status or details
 async def update_order(order_id: str, update_data: dict):
     update_data["updatedAt"] = datetime.utcnow()
-
+    print(update_data)
     result = await collection.update_one(
         {"orderId": order_id},
         {"$set": update_data}
@@ -226,8 +226,9 @@ async def update_allocations_fulfilled_by_products(product_ids: list[str]):
     updated_orders = []
 
     for product_id in product_ids:
-        # Find product
         product = await controller.get_product_by_id(product_id)
+        if not product:
+            continue
 
         # Find the order containing this productId
         order = await collection.find_one({
@@ -236,50 +237,41 @@ async def update_allocations_fulfilled_by_products(product_ids: list[str]):
         if not order:
             continue
 
-        allocations = order["lineItems"]["allocations"]
         updated = False
 
-        # Update ALL matching allocations
-        for allocation in allocations:
-            if product_id in allocation.get("productUnitIds", []):
-                destination_wallet = allocation["path"]["toWalletAddress"]
-                allocation["fulfilled"] = (
-                    product.location is not None
-                    and product.location.walletAddress == destination_wallet
-                    and not product.inTransit
-                )
-                updated = True
+        for line_item in order.get("lineItems", []):
+            for allocation in line_item.get("allocations", []):
+                if product_id in allocation.get("productUnitIds", []):
+                    to_wallet = allocation["path"]["toWalletAddress"]
 
-        if not updated:
-            continue
+                    # Check ALL products in this allocation
+                    all_products_fulfilled = True
+                    for pid in allocation["productUnitIds"]:
+                        p = await controller.get_product_by_id(pid)
+                        if not (
+                            p and 
+                            p.location and 
+                            p.location.walletAddress == to_wallet and 
+                            not p.inTransit
+                        ):
+                            all_products_fulfilled = False
+                            break
 
-        # Update order status (completed if all fulfilled)
-        all_fulfilled = all(a["fulfilled"] for a in allocations)
-        order_status = "completed" if all_fulfilled else "in-transit"
-        order["updatedAt"] = datetime.utcnow()
+                    if allocation.get("fulfilled") != all_products_fulfilled:
+                        allocation["fulfilled"] = all_products_fulfilled
+                        updated = True
 
-        # Save back to DB
-        await collection.update_one(
-            {"_id": order["_id"]},
-            {
-                "$set": {
-                    "lineItems.allocations": allocations,
-                    "status": order_status,
-                    "updatedAt": order["updatedAt"],
-                }
-            }
-        )
-
-        updated_orders.append({
-            "orderId": order["orderId"],
-            "updatedProductId": product_id,
-            "orderStatus": order_status
-        })
+        if updated:
+            await collection.update_one(
+                {"_id": order["_id"]},
+                {"$set": {"lineItems": order["lineItems"], "updatedAt": datetime.utcnow()}}
+            )
+            updated_orders.append(order["orderId"])
 
     if not updated_orders:
-        raise HTTPException(status_code=404, detail="No matching orders/allocations found")
+        raise HTTPException(status_code=404, detail="No matching allocations updated")
 
-    return {"updated": updated_orders}
+    return {"updatedOrders": updated_orders}
 
 
 
@@ -315,4 +307,91 @@ async def update_order_status_by_products(product_ids: list[str], status: str):
         raise HTTPException(status_code=404, detail="No matching orders found")
 
     return {"updatedOrders": updated_orders, "newStatus": status}
+
+
+async def fulfill_distributor_allocations(distributor_wallet: str, order_id: str):
+    order = await collection.find_one({"orderId": order_id})
+    if not order:
+        print("not found")
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    updated = False
+
+    # Fix: Loop through each line item and its allocations
+    for line_item in order.get("lineItems", []):
+        for allocation in line_item.get("allocations", []):
+            path = allocation.get("path", [])
+            if not path:
+                continue
+            if path[0].get("fromWalletAddress") == distributor_wallet and not allocation.get("fulfilled", False):
+                allocation["fulfilled"] = True
+                updated = True
+
+    if not updated:
+        raise HTTPException(status_code=400, detail="No unfulfilled allocations found for this distributor")
+
+    # Fix: Check if all allocations are fulfilled
+    all_fulfilled = all(
+        all(a.get("fulfilled", False) for a in li.get("allocations", []))
+        for li in order.get("lineItems", [])
+    )
+    order_status = "completed" if all_fulfilled else "in-transit"
+
+    # Fix: Save updated lineItems back to the DB
+    await collection.update_one(
+        {"_id": order["_id"]},
+        {
+            "$set": {
+                "lineItems": order["lineItems"],
+                "status": order_status,
+                "updatedAt": datetime.utcnow()
+            }
+        }
+    )
+
+    return {
+        "message": "Matching allocations marked fulfilled",
+        "orderStatus": order_status,
+        "orderId": order_id
+    }
+
+async def get_pending_allocations_for_distributor(distributor_walletAddress: str):
+    """
+    Returns a list of pending allocations (not fulfilled) for the given distributor.
+    Each item includes: orderId, productName, and the specific allocation's qty.
+    """
+    docs = await collection.find({
+        "lineItems.allocations.fulfilled": False,
+        "lineItems.allocations.path": {
+            "$elemMatch": {
+                "fromWalletAddress": distributor_walletAddress
+            }
+        }
+    }).to_list(length=None)
+
+    if not docs:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No pending allocations found for distributor {distributor_walletAddress}"
+        )
+
+    pending_allocations = []
+
+    for doc in docs:
+        order_id = str(doc["orderId"])
+        retailer_wallet = str(doc["retailerWalletAddress"])
+        for item in doc["lineItems"]:
+            product_name = item.get("productName")
+            for allocation in item.get("allocations", []):
+                if not allocation.get("fulfilled", False):
+                    for path in allocation.get("path", []):
+                        if path.get("fromWalletAddress") == distributor_walletAddress:
+                            pending_allocations.append({
+                                "orderId": order_id,
+                                "retailer_wallet":retailer_wallet,
+                                "productName": product_name,
+                                "qty": allocation.get("qty", 0)
+                            })
+    print(pending_allocations)
+    return pending_allocations
 
