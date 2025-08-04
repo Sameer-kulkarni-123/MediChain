@@ -334,10 +334,11 @@ export default function ManufacturerPortal() {
       const receipt = await registerCrate(
         formData.crateCode,
         formData.batchId,    //adding it to contract later
-        formData.productId,
+        // formData.productId,
+        "placeholder",
         formData.medicineName,
         // account,
-        formData.cidDocuments || "",
+        "a",
         Number.parseInt(formData.bottleCount),
         bottleCodes,
       )
@@ -359,7 +360,7 @@ export default function ManufacturerPortal() {
 
       // Reset form
       setFormData({
-          crateCode: "",
+          crateCode: formData.crateCode,
           batchId: "",
           productId: "",
           medicineName: "",
@@ -483,7 +484,7 @@ export default function ManufacturerPortal() {
                       className="text-sm sm:text-base"
                     />
                   </div>
-                  <div>
+                  {/* <div>
                     <Label htmlFor="productId" className="text-sm sm:text-base">
                       Product ID
                     </Label>
@@ -495,7 +496,7 @@ export default function ManufacturerPortal() {
                       required
                       className="text-sm sm:text-base"
                     />
-                  </div>
+                  </div> */}
                 </div>
 
                 <div>
@@ -596,7 +597,7 @@ export default function ManufacturerPortal() {
                   />
                 </div>
 
-                <div>
+                {/* <div>
                   <Label htmlFor="cidDocuments" className="text-sm sm:text-base">
                     CID Documents
                   </Label>
@@ -608,7 +609,7 @@ export default function ManufacturerPortal() {
                     rows={3}
                     className="text-sm sm:text-base"
                   />
-                </div>
+                </div> */}
 
                 <Button
                   type="submit"
