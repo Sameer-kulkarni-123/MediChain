@@ -684,31 +684,61 @@ useEffect(() => {
                 </p>
               )}
 
-              <div className="mt-2">
-                <p className="font-medium text-purple-900">Optimal Path Allocations:</p>
-                <ul className="list-disc list-inside text-purple-800 text-sm">
-                  {optimizerResult.allocations.map((alloc, idx) => (
-                    <li key={idx}>
-                      <span className="font-semibold">Source:</span> {alloc.source} →{" "}
-                      <span className="font-semibold">ETA:</span> {alloc.eta_time} days,{" "}
-                      <span className="font-semibold">Qty:</span> {alloc.allocated_qty}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+<ul className="list-disc list-inside text-purple-800 text-sm">
+  {(optimizerResult?.allocations || []).map((alloc, idx) => (
+    <li key={idx}>
+      <span className="font-semibold">Source:</span> {alloc.source} →{" "}
+      <span className="font-semibold">ETA:</span> {alloc.eta_time} days,{" "}
+      <span className="font-semibold">Qty:</span> {alloc.allocated_qty}
+    </li>
+  ))}
+</ul>
 
-              {/* Buttons only for partial */}
-              {optimizerResult.status === "partial" && (
-                <div className="flex gap-4 mt-4">
-                  {/* Accept Partial Order */}
-                  <Button
-                    className="bg-green-600 hover:bg-green-700"
-                    onClick={async () => {
-                      const account = await getAccount()
+{optimizerResult?.status === "partial" && (
+  <div className="mt-4">
+    {/* Manufacturer available case */}
+    {optimizerResult.wait_recommendation?.message?.includes("manufacturers are available") ? (
+      <div className="p-4 bg-yellow-100 border-l-4 border-yellow-400 text-yellow-900 rounded-md">
+        <p className="mb-2 font-medium">{optimizerResult.wait_recommendation.message}</p>
+        <p className="mb-2 font-semibold">Available Manufacturers and Production Times:</p>
+        <ul className="list-disc list-inside mb-4">
+          {optimizerResult.wait_recommendation.producers?.map((producer, idx) => (
+            <li key={idx}>
+              {producer.manufacturer} — ~{producer.production_time_days} days
+            </li>
+          ))}
+        </ul>
+        <Button
+          variant="destructive"
+          onClick={() => {
+            setOptimizerResult(null);
+            setShowPartialOptions(false);
+          }}
+        >
+          Cancel
+        </Button>
+      </div>
+    ) : optimizerResult.wait_recommendation?.message?.includes("not found in the system") ? (
+      // Product not found in the system — only Cancel button
+      <Button
+        variant="destructive"
+        onClick={() => {
+          setOptimizerResult(null);
+          setShowPartialOptions(false);
+        }}
+      >
+        Cancel
+      </Button>
+    ) : (
+      // Default case — show Accept Partial Order and Cancel buttons
+      <div className="flex gap-4">
+        <Button
+          className="bg-green-600 hover:bg-green-700"
+          onClick={async () => {
+            const account = await getAccount();
 
-                      // Build order details properly
-                      const allEtas = optimizerResult.allocations.map((a) => a.eta_time)
-                      const overallEta = allEtas.length > 0 ? Math.max(...allEtas) : 0
+            const allEtas = optimizerResult.allocations.map((a) => a.eta_time);
+            const overallEta = allEtas.length > 0 ? Math.max(...allEtas) : 0;
 
                       const orderData = {
                         retailerWalletAddress: account,
@@ -759,20 +789,26 @@ useEffect(() => {
                     Accept Partial Order
                   </Button>
 
-                  {/* Cancel Order */}
-                  <Button
-                    variant="destructive"
-                    onClick={() => {
-                      setOptimizerResult(null)
-                      setShowPartialOptions(false)
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
+        <Button
+          variant="destructive"
+          onClick={() => {
+            setOptimizerResult(null);
+            setShowPartialOptions(false);
+          }}
+        >
+          Cancel
+        </Button>
+      </div>
+    )}
+  </div>
+)}
+
+
+  </div> // <--- This closes the outer div of optimizerResult
+)}
+
+
+
         </div>
         {/* Current Inventory Table */}
         <Card className="mt-8 min-h-[600px]">
