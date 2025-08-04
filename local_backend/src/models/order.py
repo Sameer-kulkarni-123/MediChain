@@ -44,26 +44,26 @@ class PathModel(BaseModel):
     toType: Literal['distributor', 'retailer']
     toWalletAddress: str
     etaDays: float
-    scannedAt: Optional[datetime]
+    scannedAt: Optional[datetime] = None
 
 class AllocationsModel(BaseModel):
     qty: conint(ge=0)
-    batchId: Optional[str]
+    batchId: Optional[str] = None
     productUnitIds: Optional[List[str]]
     currentStage: Optional[conint(ge=0)]
     fulfilled: bool = False
-    path: PathModel
+    path: List[PathModel]
 
 class LineItemsModel (BaseModel):
     productName: str
     qty: conint(ge = 0)
-    allocations: AllocationsModel
+    allocations: List[AllocationsModel]
 
 class OrderModel(BaseModel):
     id: PyObjectId = Field(alias="_id", default=None)
-    orderId: str 
+    orderId: Optional[str] = None 
     retailerWalletAddress: str
-    lineItems: LineItemsModel
+    lineItems: List[LineItemsModel]
     status: Literal['created','in-transit','completed','cancelled']
     createdAt: Optional[datetime]
     updatedAt: Optional[datetime]
