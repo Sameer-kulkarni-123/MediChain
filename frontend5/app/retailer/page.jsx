@@ -15,9 +15,9 @@ import {
   getCrateInfo,
   getAccount,
   retailerReceivedSubCrate,
-  getAllBottlesOfSubCrate,
   getSubCrateInfo,
-  getAllBottlesOfCrate, // Declare getAllBottlesOfCrate here
+  getAllBottlesOfCrate, 
+  getAllBottlesOfSubCrate
   // activateCertifications,
 } from "../../apis"
 import {

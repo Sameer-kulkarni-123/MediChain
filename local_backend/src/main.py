@@ -11,6 +11,9 @@ from routes.retailer_route import router as retailer_router
 from routes.shipment_route import router as shipment_router
 from routes.certificate_route import router as certificate_router
 from routes.optimizer_route import router as optimizer_router
+from routes.qr_route import router as qr_router
+from fastapi.staticfiles import StaticFiles
+
 
 import uvicorn
 
@@ -34,6 +37,12 @@ app.include_router(retailer_router, prefix="/retailers")
 app.include_router(shipment_router, prefix="/shipments")
 app.include_router(certificate_router, prefix="/certificates")
 app.include_router(optimizer_router)  # /test-optimize lives here
+app.include_router(qr_router)
+
+# app.mount("/static", StaticFiles(directory="src/qrs"), name="static")
+from pathlib import Path
+app.mount("/static", StaticFiles(directory=Path(__file__).parent / "qrs"), name="static")
+
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)

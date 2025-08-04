@@ -34,6 +34,7 @@ contract MedicineCrateTracking {
         string parentCrateID;
         string parentSubCrateID;
         bool isSubCrateExists;
+        bool notValid;
     }
 
     struct SubCrate {
@@ -219,15 +220,17 @@ contract MedicineCrateTracking {
 
     event BottleScanned(string bottleCode, bool success);
 
-    function scanBottleReadOnly(string memory bottleCode) public view returns(bool){
-        string memory crateCode = parseCrateFromBottle(bottleCode);
-        Crate storage crate = crates[crateCode];
-        require(crate.isExists, "crate doesn't exists");
 
+    function scanBottleReadOnly(string memory bottleCode) public view returns(uint256){
+        string memory parentCrateCode = parseCrateFromBottle(bottleCode);
+        Crate storage crate = crates[parentCrateCode];
+        require(crate.isExists, "crate doesn't exist");
 
-        if (crate.isSubCrateExists) {
+        if(crate.isSubCrateExists){
+            
             bool flag = false;
-            string memory subCrateConsists;
+            string memory subCrateConsists; //sub crate which consists of the bottle
+
             for(uint i = 0; i < crate.subCratesList.length; i++){
                if(crate.subCrates[crate.subCratesList[i]].bottles[bottleCode].isExists){
                 flag = true;
@@ -235,67 +238,102 @@ contract MedicineCrateTracking {
                 break;
                } 
             }
-            if (!flag){
-                bool isValid = false;
-                // emit BottleScanned(bottleCode, isValid);
-                return isValid;
-            }
+
             
-            if(crate.subCrates[subCrateConsists].isSubCrateFinalDestination){
-                if(crate.subCrates[subCrateConsists].bottles[bottleCode].scanned){
-                    bool isValid = false;
-                    // emit BottleScanned(bottleCode, isValid);
-                    return isValid;
-                }
-                else{
-                    // crate.subCrates[subCrateConsists].bottles[bottleCode].scanned = true;
-                    
-                    bool isValid = true;
-                    // emit BottleScanned(bottleCode, isValid);
-                    return isValid;
-                    
-                }
-            }
-            else{
-                bool isValid = false;
-                // emit BottleScanned(bottleCode, isValid);
-                return isValid;
+            if(crate.bottles[bottleCode].notValid){
+                return 5;
             }
 
+            if (!flag){
+                if(crate.bottles[bottleCode].isExists){
+                    // crate.bottles[bottleCode].notValid = true;
+                    return 4;
+                }
+                return 4;
+            }
+            
+            SubCrate storage subCrate = crate.subCrates[subCrateConsists];
+            Bottle storage bottle = subCrate.bottles[bottleCode];
+
+            if(bottle.notValid){
+                return 5;
+            }
+
+            if(subCrate.isSubCrateFinalDestination){
+                    if(bottle.scanned){
+                        return 2;
+                        //bottle scanned once before reaching retailer
+                    }
+                    else{
+                        // bottle.scanned = true;
+                        return 1;
+                        //bottle scanned zero before reaching retailer
+                    }
+            } 
+            else{
+                // bottle.notValid = true;
+                return 5;
+                //bottle scanned zero times before reaching the retailer
+            }
 
         }
         else{
             Bottle storage bottle = crate.bottles[bottleCode];
-            if(bottle.isExists){
+            if(!bottle.isExists){
+                return 4;
+                //bottle doesn't exists
+            }
+            if(bottle.notValid){
+                return 5;
+            }
+
+            if(crate.isCrateFinalDestination){
                 if(bottle.scanned){
-                    bool isValid = false;
-                    // emit BottleScanned(bottleCode, isValid);
-                    return isValid;
+                    return 2;
+                    //bottle scanned once after reaching retailer
                 }
                 else{
-                    bool isValid = true;
                     // bottle.scanned = true;
-                    // emit BottleScanned(bottleCode, isValid);
-                    return isValid;
+                    return 1;
+                    //bottle scanned zero after reaching retailer
                 }
             }
             else{
-                bool isValid = false;
-                // emit BottleScanned(bottleCode, isValid);
-                return isValid;
+                // bottle.notValid = true;
+                return 5;
+                //bottle scanned once before reaching the retailer
             }
         }
     }
 
-    function scanBottle(string memory bottleCode) public returns(bool){
-        string memory crateCode = parseCrateFromBottle(bottleCode);
-        Crate storage crate = crates[crateCode];
-        require(crate.isExists, "crate doesn't exists");
 
 
-        if (crate.isSubCrateExists) {
+
+    //cases :
+    /* 
+    case 6: bottle scanned when in distributor, when in crate, and sent to retailer in a subCrate, set notValid = true
+    case 5: bottle scanned once before reaching the retailer
+    case 4: fake qr
+    case 3: bottle never reaches the retailers :
+            return:false, certificate:No, msg:never reached retailer
+            set is valid in bottle to false
+    case 2: reaches the retailer but already scanned : 
+            return:false, certificate:true, msg: bottle has been scanned before
+    case 1: reaches the retailer and its the first scan:
+            return:true, certificate:true, msg: good
+            in bottle set isValid to false
+    */
+
+    function scanBottle(string memory bottleCode) public returns(uint256){
+        string memory parentCrateCode = parseCrateFromBottle(bottleCode);
+        Crate storage crate = crates[parentCrateCode];
+        require(crate.isExists, "crate doesn't exist");
+
+        if(crate.isSubCrateExists){
+            
             bool flag = false;
-            string memory subCrateConsists;
+            string memory subCrateConsists; //sub crate which consists of the bottle
+
             for(uint i = 0; i < crate.subCratesList.length; i++){
                if(crate.subCrates[crate.subCratesList[i]].bottles[bottleCode].isExists){
                 flag = true;
@@ -303,58 +341,218 @@ contract MedicineCrateTracking {
                 break;
                } 
             }
-            if (!flag){
-                bool isValid = false;
-                emit BottleScanned(bottleCode, isValid);
-                return isValid;
-            }
+
             
-            if(crate.subCrates[subCrateConsists].isSubCrateFinalDestination){
-                if(crate.subCrates[subCrateConsists].bottles[bottleCode].scanned){
-                    bool isValid = false;
-                    emit BottleScanned(bottleCode, isValid);
-                    return isValid;
-                }
-                else{
-                    crate.subCrates[subCrateConsists].bottles[bottleCode].scanned = true;
-                    
-                    bool isValid = true;
-                    emit BottleScanned(bottleCode, isValid);
-                    return isValid;
-                    
-                }
-            }
-            else{
-                bool isValid = false;
-                emit BottleScanned(bottleCode, isValid);
-                return isValid;
+            if(crate.bottles[bottleCode].notValid){
+                return 5;
             }
 
+            if (!flag){
+                if(crate.bottles[bottleCode].isExists){
+                    crate.bottles[bottleCode].notValid = true;
+                    return 4;
+                }
+                return 4;
+            }
+            
+            SubCrate storage subCrate = crate.subCrates[subCrateConsists];
+            Bottle storage bottle = subCrate.bottles[bottleCode];
+
+            if(bottle.notValid){
+                return 5;
+            }
+
+            if(subCrate.isSubCrateFinalDestination){
+                    if(bottle.scanned){
+                        return 2;
+                        //bottle scanned once before reaching retailer
+                    }
+                    else{
+                        bottle.scanned = true;
+                        return 1;
+                        //bottle scanned zero before reaching retailer
+                    }
+            } 
+            else{
+                bottle.notValid = true;
+                return 5;
+                //bottle scanned zero times before reaching the retailer
+            }
 
         }
         else{
             Bottle storage bottle = crate.bottles[bottleCode];
-            if(bottle.isExists){
+            if(!bottle.isExists){
+                return 4;
+                //bottle doesn't exists
+            }
+            if(bottle.notValid){
+                return 5;
+            }
+
+            if(crate.isCrateFinalDestination){
                 if(bottle.scanned){
-                    bool isValid = false;
-                    emit BottleScanned(bottleCode, isValid);
-                    return isValid;
+                    return 2;
+                    //bottle scanned once after reaching retailer
                 }
                 else{
-                    bool isValid = true;
                     bottle.scanned = true;
-                    emit BottleScanned(bottleCode, isValid);
-                    return isValid;
+                    return 1;
+                    //bottle scanned zero after reaching retailer
                 }
             }
             else{
-                bool isValid = false;
-                emit BottleScanned(bottleCode, isValid);
-                return isValid;
+                bottle.notValid = true;
+                return 5;
+                //bottle scanned once before reaching the retailer
             }
         }
-        
     }
+
+
+
+
+    // function scanBottleReadOnly(string memory bottleCode) public view returns(bool){
+    //     string memory crateCode = parseCrateFromBottle(bottleCode);
+    //     Crate storage crate = crates[crateCode];
+    //     require(crate.isExists, "crate doesn't exists");
+
+
+    //     if (crate.isSubCrateExists) {
+    //         bool flag = false;
+    //         string memory subCrateConsists; //sub crate which consists of the bottle
+    //         for(uint i = 0; i < crate.subCratesList.length; i++){
+    //            if(crate.subCrates[crate.subCratesList[i]].bottles[bottleCode].isExists){
+    //             flag = true;
+    //             subCrateConsists = crate.subCratesList[i];
+    //             break;
+    //            } 
+    //         }
+    //         if (!flag){
+    //             bool isValid = false;
+    //             // emit BottleScanned(bottleCode, isValid);
+    //             return isValid;
+    //         }
+            
+    //         if(crate.subCrates[subCrateConsists].isSubCrateFinalDestination){
+    //             if(crate.subCrates[subCrateConsists].bottles[bottleCode].scanned){
+    //                 bool isValid = false;
+    //                 // emit BottleScanned(bottleCode, isValid);
+    //                 return isValid;
+    //             }
+    //             else{
+    //                 // crate.subCrates[subCrateConsists].bottles[bottleCode].scanned = true;
+                    
+    //                 bool isValid = true;
+    //                 // emit BottleScanned(bottleCode, isValid);
+    //                 return isValid;
+                    
+    //             }
+    //         }
+    //         else{
+    //             bool isValid = false;
+    //             // emit BottleScanned(bottleCode, isValid);
+    //             return isValid;
+    //         }
+
+
+    //     }
+    //     else{
+    //         Bottle storage bottle = crate.bottles[bottleCode];
+    //         if(bottle.isExists){
+    //             if(bottle.scanned){
+    //                 bool isValid = false;
+    //                 // emit BottleScanned(bottleCode, isValid);
+    //                 return isValid;
+    //             }
+    //             else{
+    //                 bool isValid = false;
+    //                 if(crate.isCrateFinalDestination){
+    //                     isValid = true;
+    //                 }
+    //                 // bottle.scanned = true;
+    //                 // emit BottleScanned(bottleCode, isValid);
+    //                 return isValid;
+    //             }
+    //         }
+    //         else{
+    //             bool isValid = false;
+    //             // emit BottleScanned(bottleCode, isValid);
+    //             return isValid;
+    //         }
+    //     }
+    // }
+
+    // function scanBottle(string memory bottleCode) public returns(bool){
+    //     string memory crateCode = parseCrateFromBottle(bottleCode);
+    //     Crate storage crate = crates[crateCode];
+    //     require(crate.isExists, "crate doesn't exists");
+
+
+    //     if (crate.isSubCrateExists) {
+    //         bool flag = false;
+    //         string memory subCrateConsists;
+    //         for(uint i = 0; i < crate.subCratesList.length; i++){
+    //            if(crate.subCrates[crate.subCratesList[i]].bottles[bottleCode].isExists){
+    //             flag = true;
+    //             subCrateConsists = crate.subCratesList[i];
+    //             break;
+    //            } 
+    //         }
+    //         if (!flag){
+    //             bool isValid = false;
+    //             emit BottleScanned(bottleCode, isValid);
+    //             return isValid;
+    //         }
+            
+    //         if(crate.subCrates[subCrateConsists].isSubCrateFinalDestination){
+    //             if(crate.subCrates[subCrateConsists].bottles[bottleCode].scanned){
+    //                 bool isValid = false;
+    //                 emit BottleScanned(bottleCode, isValid);
+    //                 return isValid;
+    //             }
+    //             else{
+    //                 crate.subCrates[subCrateConsists].bottles[bottleCode].scanned = true;
+                    
+    //                 bool isValid = true;
+    //                 emit BottleScanned(bottleCode, isValid);
+    //                 return isValid;
+                    
+    //             }
+    //         }
+    //         else{
+    //             bool isValid = false;
+    //             emit BottleScanned(bottleCode, isValid);
+    //             return isValid;
+    //         }
+
+
+    //     }
+    //     else{
+    //         Bottle storage bottle = crate.bottles[bottleCode];
+    //         if(bottle.isExists){
+    //             if(bottle.scanned){
+    //                 bool isValid = false;
+    //                 emit BottleScanned(bottleCode, isValid);
+    //                 return isValid;
+    //             }
+    //             else{
+    //                 bool isValid = false;
+    //                 if(crate.isCrateFinalDestination){
+    //                     isValid = true;
+    //                     bottle.scanned = true;
+    //                 }
+    //                 return isValid;
+    //             }
+    //         }
+    //         else{
+    //             bool isValid = false;
+    //             emit BottleScanned(bottleCode, isValid);
+    //             return isValid;
+    //         }
+    //     }
+        
+    // }
 
 
     function parseCrateFromBottle(string memory bottleCode) public pure returns (string memory){

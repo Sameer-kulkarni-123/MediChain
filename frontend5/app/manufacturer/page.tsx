@@ -15,7 +15,8 @@ import { ConnectionPath } from "@/components/connection-path"
 import supplyChainData from "@/data/supplyChainData.json"
 import { useToast } from "@/hooks/use-toast"
 import { registerCrate, getAccount, sendCrate, getAllBottlesOfCrate } from "../../apis"
-import { createProduct, getConnectionsFrom,getDistributor, updateProductLocation  } from "@/api_local" 
+import { createProduct, generateQR, getConnectionsFrom,getDistributor, updateProductLocation,  } from "@/api_local" 
+import axios from "axios"
 
 interface CreatedCrate {
   crateCode: string
@@ -342,6 +343,13 @@ export default function ManufacturerPortal() {
       )
       console.log("Crate details submitted to blockchain:", receipt)
       console.log("Generated codes stored in system:", fullCrateCodes)
+
+
+      const response = await generateQR(bottleCodes)
+      // const response = await axios.post("/generateqr", { bottleIds })
+      const qrList = response.data.qrs
+
+      localStorage.setItem("qrList", JSON.stringify(qrList))
       
 
       toast({
@@ -612,6 +620,15 @@ export default function ManufacturerPortal() {
               </form>
             </CardContent>
           </Card>
+
+          <Button
+            onClick={async () => {
+
+              window.open("manufacturer/qrviewer?view=qrs", "_blank")
+            }}
+          >
+            this is a button
+          </Button>
 
           {/* Distributor Selection */}
           <Card>

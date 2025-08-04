@@ -1,10 +1,35 @@
 import qrcode
 
 # Your URL
-url = "http://172.16.232.102:3001/X5OYB-NMKX4"
 
 # Generate QR code
-qr = qrcode.make(url)
 
 # Save the image
-qr.save("link_qr.png")
+
+ip = "192.168.1.22"
+
+import os
+
+pwd = os.getcwd()
+
+def generate_qr_codes(bottleIds):
+  crateCode = ""
+  for i in range(5):
+    crateCode += bottleIds[0][i]
+
+  image_urls = []
+
+  for bottleId in bottleIds:
+    url = f"http://{ip}:3001/{bottleId}"
+    qr = qrcode.make(url)
+    path = os.path.join(pwd,"qrs", crateCode, f"{bottleId}.png")
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    qr.save(path)
+    public_url = f"http://127.0.0.1:8000/static/{crateCode}/{bottleId}.png"
+    
+    image_urls.append({
+            "bottleId": bottleId,
+            "qrUrl": public_url
+        })
+    
+  return image_urls

@@ -18,10 +18,8 @@ export async function scanBottle(bottleCode) {
 
   const isValid = await contractInstance.scanBottleReadOnly(bottleCode);
   console.log("the tx of scanBottle : ", isValid)
-  if(isValid){
-    const tx = await contractInstance.scanBottle(bottleCode);
-    const receipt = await tx.wait(); // Wait for transaction to be mined
-  }
+  const tx = await contractInstance.scanBottle(bottleCode);
+  const receipt = await tx.wait(); // Wait for transaction to be mined
 
   return isValid
 }

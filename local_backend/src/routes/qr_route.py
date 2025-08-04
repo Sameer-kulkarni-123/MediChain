@@ -4,10 +4,10 @@ from utils import qrgenerator
 router = APIRouter()
 
 @router.post('/generateqr')
-async def generateqr(bottleIds: list[str], crateCode:str):
+async def generateqr(bottleIds: list[str]):
     try:
-        result = qrgenerator.generate_qr_codes(bottleIds, crateCode)
-        return {"status": "success", "qrcodes": result}
+        result = qrgenerator.generate_qr_codes(bottleIds)
+        return {"status": "success", "qrs": result}
     except Exception as e:
         print(f"Error generating QR: {e}")
         raise HTTPException(status_code=500, detail="Error generating QR codes")
