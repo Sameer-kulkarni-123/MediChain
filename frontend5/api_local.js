@@ -9,7 +9,6 @@ const MANUFACTURERS_BASE = "http://localhost:8000/manufacturers";
 const ORDERS_BASE = "http://localhost:8000/orders";
 const PRODUCTS_BASE = "http://localhost:8000/products";
 const RETAILERS_BASE = "http://localhost:8000/retailers";
-const GENERATEQR_BASE = "http://localhost:8000/generateqr";
 
 
 
@@ -461,6 +460,32 @@ export const updateOrderStatusByProducts = (productIds, status) =>
     params: { product_ids: productIds, status },
   });
 
+// ==============================
+//   OPTIMIZER API FUNCTIONS
+// ==============================
+
+/**
+ * Run supply path optimization.
+ *
+ * @param {string} product_name
+ * @param {number} required_qty
+ * @param {string} target_wallet
+ * @param {boolean} is_cold_storage
+ */
+export const optimizeSupplyPath = (
+  product_name,
+  required_qty,
+  target_wallet,
+  is_cold_storage = false
+) =>
+  axios.get(`${OPTIMIZER_BASE}/test-optimize`, {
+    params: {
+      product_name,
+      required_qty,
+      target_wallet,
+      is_cold_storage,
+    },
+  });
 
 /* ==============================
    PRODUCTS API FUNCTIONS

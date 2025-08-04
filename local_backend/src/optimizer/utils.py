@@ -12,12 +12,13 @@ def build_weighted_graph(connections,product_weight, required_qty):
         time = conn.get('transitTimeDays', 1)
         graph.setdefault(src, []).append((dst, cost, time))
         # If bidirectional, uncomment the next line:
-        # graph.setdefault(dst, []).append((src, cost, time))
+        graph.setdefault(dst, []).append((src, cost, time))
     return graph
 
 import heapq
 
 def shortest_path(graph, src, dst, return_time=True):
+    print("hello1", src, dst)
     """
     Dijkstra's algorithm.
     If return_time=True, optimize for time, else for cost.
