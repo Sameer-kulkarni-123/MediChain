@@ -28,6 +28,7 @@ import {
   optimizeSupplyPath,
   getOrdersByRetailer,
   getPendingOrdersByRetailer,
+  getRetailerInventoryItem,
 } from "../../api_local"
 
 export default function RetailerPortal() {
@@ -43,6 +44,8 @@ export default function RetailerPortal() {
   const [connectedAccount, setconnectedAccount] = useState("")
   const [retrievedInventory, setretrievedInventory] = useState()
   const [orderRefresh, setOrderRefresh] = useState(false);
+  const [soldQuantities, setSoldQuantities] = useState({});
+
 
 
   // useEffect(() => {
@@ -428,7 +431,7 @@ export default function RetailerPortal() {
       return
     }
 
-    const item = inventory.find((inv) => inv.medicineName === itemMedicineName)
+    const item = inventory.find((inv) => inv.productName === itemMedicineName)
     if (!item) {
       toast({
         title: "Error",
@@ -465,10 +468,29 @@ export default function RetailerPortal() {
       //call the actual db api here
       //=========================
 
+      const connectedAccount = await getAccount()
+      const invItem = await getRetailerInventoryItem(connectedAccount, itemMedicineName)
+      const bottleIds = invItem.data[0].productIds 
+
+      console.log("invItem :", invItem)
+      console.log("invItem :", invItem.data[0].productIds)
+      console.log("bottleIds :", invItem.data.productIds)
+
+      let toBeRemoved = []
+
+      for(let i=0; i<soldQty; i++){
+        toBeRemoved[i] = bottleIds[i]
+      }
+
+      console.log("toBeRemoved : ", toBeRemoved)
+
+      await updateRetailerInventoryItem(connectedAccount, itemMedicineName, soldQty, null, toBeRemoved, "remove")
+
+
       settrigger(!trigger)
       toast({
         title: "Sale Recorded Successfully",
-        description: `${soldQty} units of ${item.medicineName} sold. New stock: ${newQuantity} units`,
+        description: `${soldQty} units of ${item.productName} sold. New stock: ${newQuantity} units`,
       })
     } catch (error) {
       console.error("Error updating inventory:", error)
@@ -482,8 +504,11 @@ export default function RetailerPortal() {
     }
   }
 
-  const handleSoldQuantityChange = (productId, value) => {
-    setInventory((prev) => prev.map((inv) => (inv.productId === productId ? { ...inv, soldQuantity: value } : inv)))
+  const handleSoldQuantityChange = (productName, value) => {
+      setSoldQuantities((prev) => ({
+    ...prev,
+    [productName]: value,
+  }));
   }
 
   const [singleDistributorOrders, setSingleDistributorOrders] = useState([]);
@@ -797,8 +822,8 @@ useEffect(() => {
           onClick={() => {
             setOptimizerResult(null);
             setShowPartialOptions(false);
-            setMedicineName("");
-            setQuantity("");
+                setMedicineName("");
+                setQuantity("");
           }}
         >
           Cancel
@@ -931,29 +956,30 @@ useEffect(() => {
                         </td>
                         <td className="p-3">
                           <Input
-                            type="number"
-                            min="1"
-                            max={item.qtyRemaining}
-                            value={item.soldQuantity}
-                            onChange={(e) => handleSoldQuantityChange(item.productId, e.target.value)}
-                            placeholder="Units sold"
-                            className="w-32"
-                          />
+                          type="number"
+                          min="1"
+                          max={item.qtyRemaining}
+                          value={soldQuantities[item.productName] || ""}
+                          onChange={(e) => handleSoldQuantityChange(item.productName, e.target.value)}
+                          placeholder="Units sold"
+                          className="w-32"
+                        />
+
                         </td>
                         <td className="p-3">
                           <Button
-                            onClick={() => handleUpdateInventory(item.productId, item.soldQuantity)}
-                            disabled={
-                              isUpdatingInventory ||
-                              !item.soldQuantity ||
-                              Number.parseInt(item.soldQuantity) <= 0 ||
-                              Number.parseInt(item.soldQuantity) > item.quantityInStock
-                            }
-                            size="sm"
-                            className="bg-purple-600 hover:bg-purple-700"
-                          >
-                            {isUpdatingInventory ? "Recording..." : "Record Sale"}
-                          </Button>
+                          onClick={() => handleUpdateInventory(item.productName, soldQuantities[item.productName])}
+                          disabled={
+                            isUpdatingInventory ||
+                            !soldQuantities[item.productName] ||
+                            Number.parseInt(soldQuantities[item.productName]) <= 0 ||
+                            Number.parseInt(soldQuantities[item.productName]) > item.qtyRemaining
+                          }
+                          size="sm"
+                          className="bg-purple-600 hover:bg-purple-700"
+                        >
+                          {isUpdatingInventory ? "Recording..." : "Record Sale"}
+                        </Button>
                         </td>
                       </tr>
                     ))}
