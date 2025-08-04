@@ -7,6 +7,20 @@ from controllers.manufacturer_controller import all_manufacturers
 from controllers.product_controller import get_product_by_id
 
 
+def calculate_eta(path, connections_lookup):
+    """
+    Calculate total ETA (in days) by summing transitTimeDays for each edge in the path.
+    """
+    total_days = 0
+    for i in range(len(path) - 1):
+        from_node = path[i]
+        to_node = path[i + 1]
+        # lookup for the edge in connections
+        edge_key = (from_node, to_node)
+        if edge_key in connections_lookup:
+            total_days += connections_lookup[edge_key]
+    return total_days
+
 async def get_all_inventories(product_name):
     inventories = {}
     retailers = await all_retailers()
@@ -20,7 +34,7 @@ async def get_all_inventories(product_name):
         if items:
             inventories[wallet] = items
     return inventories
-
+    
 async def get_weights_product(product_name):
     products = await get_products_by_name(product_name)
     
@@ -47,14 +61,31 @@ async def suggest_wait_strategy(graph, inventories, product_name, target_wallet,
     }
 
 async def optimize_supply_path(product_name, required_qty, target_wallet, is_cold_storage=False):
+    # print(f"[INPUT] product_name={product_name}, required_qty={required_qty}, target_wallet={target_wallet}, cold_storage={is_cold_storage}")
+
     product_weight = await get_weights_product(product_name)
+    # print(f"[DEBUG] Product weight: {product_weight}")
+
     connections = await get_all_connections()
     connections = [conn.dict() if hasattr(conn, "dict") else conn for conn in connections]
-    graph = build_weighted_graph(connections, product_weight,required_qty )
-    inventories = await get_all_inventories(product_name)
+    # print(f"[DEBUG] Total connections retrieved: {len(connections)}")
 
-    # CASE: Product not found at all
+    # Build a lookup for transit times (place here)
+    connections_lookup = {}
+    for conn in connections:
+        key = (conn["fromWalletAddress"], conn["toWalletAddress"])
+        connections_lookup[key] = conn.get("transitTimeDays", 0)
+
+    graph = build_weighted_graph(connections, product_weight, required_qty)
+    # print(f"[DEBUG] Graph nodes: {len(graph)}")
+    # for node, edges in graph.items():
+    #     print(f"    {node} -> {edges}")
+
+    inventories = await get_all_inventories(product_name)
+    # print(f"[DEBUG] Inventories found for '{product_name}': {list(inventories.keys())}")
+
     if not inventories:
+        # print("[WARN] No inventories found for product!")
         return {
             "status": "partial",
             "wait_recommendation": {
@@ -62,48 +93,72 @@ async def optimize_supply_path(product_name, required_qty, target_wallet, is_col
             }
         }
 
-    # Build source nodes, skip target_wallet
+    # Get all retailers and distributors for entity type check
+    retailers = await all_retailers()
+    distributors = await all_distributors()
+    retailer_wallets = {r.walletAddress for r in retailers}
+    distributor_wallets = {d.walletAddress for d in distributors}
+
+    # print("[DEBUG] Building source nodes...")
     source_nodes = []
+
     for wallet, items in inventories.items():
         if wallet == target_wallet:
-            continue  # Skip the target's own stock
-        
-        product_ids = []
-        total_available = 0
+            # print(f"    [SKIP] Wallet {wallet} is target wallet.")
+            continue
 
-        # Loop through inventory items
+        # Skip retailers if we don't allow them as sources
+        if wallet in retailer_wallets:
+            # print(f"    [SKIP] Wallet {wallet} is a retailer (not valid source).")
+            continue
+
+        total_available = 0
+        product_ids = []
+
+        # print(f"    Checking inventory for wallet {wallet}...")
         for item in items:
             if getattr(item, 'productIds', []):
                 valid_product_ids = []
                 for pid in item.productIds:
-                    product = await get_product_by_id(pid)
+                    try:
+                        product = await get_product_by_id(pid)
+                    except Exception as e:
+                        # print(f"        [ERROR] Failed fetching product {pid}: {e}")
+                        continue
+
                     if product and not getattr(product, 'inTransit', False):
                         valid_product_ids.append(pid)
 
                 if valid_product_ids:
                     product_ids.extend(valid_product_ids)
                     total_available += len(valid_product_ids)
-
             else:
-                # If there are no productIds, fall back to qty
                 if not getattr(item, 'inTransit', False):
-                    total_available += getattr(item, 'qty', getattr(item, 'qtyRemaining', 1))
+                    qty = getattr(item, 'qty', getattr(item, 'qtyRemaining', 1))
+                    total_available += qty
 
         if total_available > 0:
+            if wallet not in graph or not graph.get(wallet):
+                # print(f"    [SKIP] Wallet {wallet} has stock but is not connected in graph.")
+                continue
+
+            # print(f"    [ADD] Wallet {wallet} added as source node. total_available={total_available}, product_ids={product_ids}")
             source_nodes.append({
                 "wallet": wallet,
                 "available_qty": total_available,
                 "product_ids": product_ids,
             })
+        else:
+            print(f"    [SKIP] Wallet {wallet} has no available stock.")
 
-    
-    # CASE: No available stock (with/without cold storage)
+    # If no source nodes available
     if not source_nodes:
-        # Step 7: Check manufacturers who can produce the product
+        # print("[WARN] No source nodes found!")
         manufacturers = await all_manufacturers()
         available_manufacturers = [
             m for m in manufacturers if product_name in (m.productsProduced or [])
         ]
+
         if available_manufacturers:
             manufacturer_info = [
                 {
@@ -136,12 +191,13 @@ async def optimize_supply_path(product_name, required_qty, target_wallet, is_col
             }
         }
 
-
-    # Try to fulfill from a single node if possible (prefer fewer hops, more available)
+    # Try to fulfill from a single node
     single_node_candidates = []
     for src in source_nodes:
         if src["available_qty"] >= required_qty:
             result = shortest_path(graph, src['wallet'], target_wallet, return_time=is_cold_storage)
+            # print(f"    [PATH CHECK] {src['wallet']} -> {target_wallet} = {result}")
+
             if result and result[0] is not None:
                 path, cost, time = result
                 hops = len(path)
@@ -149,48 +205,57 @@ async def optimize_supply_path(product_name, required_qty, target_wallet, is_col
                     "wallet": src['wallet'],
                     "path": path,
                     "cost": cost,
-                    "time": time,
+                    "eta_time": calculate_eta(path, connections_lookup),
                     "priority": (cost if not is_cold_storage else time, hops, -src["available_qty"]),
                     "product_ids": src['product_ids'][:required_qty],
                     "available_qty": src['available_qty']
                 })
+        else:
+            # print(f"    [INFO] Wallet {src['wallet']} has only {src['available_qty']} units, need {required_qty}.")
+            continue
+
     if single_node_candidates:
-        # Prefer lowest cost/time, then fewer hops, then more available
         single_node_candidates.sort(key=lambda x: x["priority"])
         best = single_node_candidates[0]
+        # print(f"[SUCCESS] Fulfilled by single node {best['wallet']}")
         return {
             "allocations": [{
                 "source": best["wallet"],
                 "path": best["path"],
                 "product_ids": best["product_ids"],
                 "total_cost": best["cost"],
-                "allocated_qty": required_qty
+                "allocated_qty": required_qty,
+                "eta_time": best["eta_time"]
+
             }],
             "status": "complete"
         }
 
-    # Otherwise, allocate from multiple nodes (partial allowed)
-    # Score all sources by cost/time, hops, and available qty
+    # Multi-node allocation
+    # print("[DEBUG] Attempting multi-node allocation...")
     scored_sources = []
     for src in source_nodes:
         result = shortest_path(graph, src['wallet'], target_wallet, return_time=is_cold_storage)
         if not result or result[0] is None:
+            # print(f"    [SKIP] No path from {src['wallet']} to {target_wallet}.")
             continue
+
         path, cost, time = result
         hops = len(path)
         scored_sources.append({
             "wallet": src['wallet'],
             "path": path,
             "cost": cost,
-            "time": time,
+            "eta_time": calculate_eta(path, connections_lookup),
             "priority": (cost if not is_cold_storage else time, hops, -src["available_qty"]),
             "product_ids": src['product_ids'],
             "available_qty": src['available_qty']
         })
-    scored_sources.sort(key=lambda x: x["priority"])
 
+    scored_sources.sort(key=lambda x: x["priority"])
     allocations = []
     qty_remaining = required_qty
+
     for source in scored_sources:
         if qty_remaining <= 0:
             break
@@ -200,19 +265,17 @@ async def optimize_supply_path(product_name, required_qty, target_wallet, is_col
             "path": source['path'],
             "product_ids": source['product_ids'][:take_qty],
             "total_cost": source['cost'],
-            "allocated_qty": take_qty
+            "allocated_qty": take_qty,
+            "eta_time": source["eta_time"]
         })
         qty_remaining -= take_qty
 
-    # CASE: Complete fulfillment across multiple nodes
     if qty_remaining == 0:
-        return {
-            "allocations": allocations,
-            "status": "complete"
-        }
+        # print("[SUCCESS] Multi-node allocation complete.")
+        return {"allocations": allocations, "status": "complete"}
 
-    # CASE: Partial fulfillment
     if allocations:
+        # print("[PARTIAL] Only partially fulfilled.")
         return {
             "allocations": allocations,
             "status": "partial",
@@ -221,7 +284,7 @@ async def optimize_supply_path(product_name, required_qty, target_wallet, is_col
             }
         }
 
-    # CASE: No allocations possible (should not reach here if source_nodes is not empty)
+    # print("[FAIL] No allocation possible.")
     wait_plan = await suggest_wait_strategy(graph, inventories, product_name, target_wallet, cold_storage=is_cold_storage)
     return {
         "allocations": [],

@@ -31,7 +31,7 @@ import {
   getSubCrateInfo,
   // activateCertifications,
 } from "../../apis"
-import { createOrder, getRetailerInventory, updateInventoryItem, updateProductLocation, updateRetailerInventoryItem } from "../../api_local"
+import { createOrder, getRetailerInventory, updateInventoryItem, updateProductLocation, updateRetailerInventoryItem, optimizeSupplyPath } from "../../api_local"
 import { map } from "zod"
 
 export default function RetailerPortal() {
@@ -209,6 +209,14 @@ export default function RetailerPortal() {
   // Filter and sort states
   const [searchTerm, setSearchTerm] = useState("")
   const [sortBy, setSortBy] = useState("original") // "original", "quantity-low", "quantity-high"
+  const [isColdStorage, setIsColdStorage] = useState(false);
+  const [optimizerResult, setOptimizerResult] = useState(null);
+  const [showPartialOptions, setShowPartialOptions] = useState(false);
+  const [showPathDetails, setShowPathDetails] = useState(false);
+  const [partialOrderHandlers, setPartialOrderHandlers] = useState(null);
+
+
+
 
   const { toast } = useToast()
 
@@ -463,61 +471,127 @@ export default function RetailerPortal() {
         title: "Error",
         description: "Please enter a medicine name",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
-
+  
     if (!quantity || Number.parseInt(quantity) <= 0) {
       toast({
         title: "Error",
         description: "Please enter a valid quantity",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
-
-    setIsPlacingOrder(true)
+  
+    setIsPlacingOrder(true);
     try {
-      const account = await getAccount()
-
-      const orderData = {
-        retailerWalletAddress: account,
-        lineItems: {
-          productName: medicineName.trim(),
-          qty: Number.parseInt(quantity),
-          allocations: {
-            qty: Number.parseInt(quantity),
-            batchId: "", // Will be filled by the system
-            productUnitIds: [],
-            currentStage: "created",
-            fulfilled: false,
-            path: [],
-          },
-        },
-        status: "created",
+      const account = await getAccount();
+      const requiredQty = Number.parseInt(quantity);
+  
+      // 1️⃣ Call optimizer
+      const optimizerRes = await optimizeSupplyPath(
+        medicineName.trim(),
+        requiredQty,
+        account,
+        isColdStorage
+      );
+  
+      const optimizerData = optimizerRes.data;
+  
+      // 2️⃣ Show path data (always)
+      setOptimizerResult(optimizerData);
+      setShowPathDetails(true);
+  
+      // 3️⃣ Build order data helper
+      const buildOrderData = () => {
+        return {
+          retailerWalletAddress: account,
+          status: "created",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          lineItems: [
+            {
+              productName: medicineName.trim(),
+              qty: optimizerData.allocations.reduce((sum, a) => sum + a.allocated_qty, 0),
+              allocations: optimizerData.allocations.map((alloc) => ({
+                qty: alloc.allocated_qty,
+                batchId: "",
+                productUnitIds: alloc.product_ids,
+                currentStage: 0,
+                fulfilled: false,
+                path: [
+                  {
+                    fromType: "distributor",
+                    fromWalletAddress: alloc.path[0],
+                    toType: "retailer",
+                    toWalletAddress: alloc.path[alloc.path.length - 1],
+                    etaDays: alloc.eta_time,
+                  },
+                ],
+              })),
+            },
+          ],
+        };
+      };
+      
+  
+      if (optimizerData.status === "complete") {
+        // 4️⃣ Complete order - log payload
+        const orderData = buildOrderData();
+        console.log("Sending Complete Order Data:", JSON.stringify(orderData, null, 2));
+  
+        await createOrder(orderData);
+  
+        toast({
+          title: "Order Placed Successfully",
+          description: `Order for ${requiredQty} units of ${medicineName} has been placed.`,
+        });
+  
+        // Reset fields
+        setMedicineName("");
+        setQuantity("");
+        setIsColdStorage(false);
+      } else {
+        // 5️⃣ Partial order
+        setShowPartialOptions(true);
+  
+        const handleAcceptPartial = async () => {
+          const orderData = buildOrderData();
+          console.log("📦 Sending Partial Order Data:", JSON.stringify(orderData, null, 2));
+  
+          await createOrder(orderData);
+  
+          toast({
+            title: "Partial Order Placed",
+            description: `Order placed for available quantity only.`,
+          });
+  
+          setOptimizerResult(null);
+          setShowPartialOptions(false);
+          setMedicineName("");
+          setQuantity("");
+        };
+  
+        const handleCancelOrder = () => {
+          setOptimizerResult(null);
+          setShowPartialOptions(false);
+        };
+  
+        setPartialOrderHandlers({ handleAcceptPartial, handleCancelOrder });
       }
-
-      await createOrder(orderData)
-
-      toast({
-        title: "Order Placed Successfully",
-        description: `Order for ${quantity} units of ${medicineName} has been placed.`,
-      })
-
-      // Reset form
-      setMedicineName("")
-      setQuantity("")
     } catch (error) {
-      console.error("Error placing order:", error)
+      console.error("❌ Error placing order:", error.response?.data || error.message);
       toast({
         title: "Error",
         description: `Failed to place order: ${error.message}`,
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsPlacingOrder(false)
+      setIsPlacingOrder(false);
     }
-  }
+  };
+  
 
   const handleUpdateInventory = async (itemMedicineName, soldQuantity) => {
     if (!soldQuantity || Number.parseInt(soldQuantity) <= 0) {
@@ -703,6 +777,17 @@ export default function RetailerPortal() {
                 />
               </div>
 
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="coldStorage"
+                  checked={isColdStorage}
+                  onChange={(e) => setIsColdStorage(e.target.checked)}
+                />
+                <Label htmlFor="coldStorage">Requires Cold Storage?</Label>
+              </div>
+
+
               <Button
                 onClick={handlePlaceOrder}
                 disabled={isPlacingOrder || !medicineName.trim() || !quantity || Number.parseInt(quantity) <= 0}
@@ -720,8 +805,117 @@ export default function RetailerPortal() {
               )}
             </CardContent>
           </Card>
-        </div>
 
+          {optimizerResult && (
+  <div
+    className={`p-3 border rounded-lg mt-4 ${
+      optimizerResult.status === "partial"
+        ? "bg-yellow-50 border-yellow-200"
+        : "bg-green-50 border-green-200"
+    }`}
+  >
+    {optimizerResult.status === "partial" && (
+      <p className="text-sm text-yellow-800 mb-2">
+        <span className="font-medium">Notice:</span>{" "}
+        {optimizerResult.wait_recommendation?.message}
+      </p>
+    )}
+
+    <div className="mt-2">
+      <p className="font-medium text-purple-900">Optimal Path Allocations:</p>
+      <ul className="list-disc list-inside text-purple-800 text-sm">
+        {optimizerResult.allocations.map((alloc, idx) => (
+          <li key={idx}>
+            <span className="font-semibold">Source:</span> {alloc.source} →{" "}
+            <span className="font-semibold">ETA:</span> {alloc.eta_time} days,{" "}
+            <span className="font-semibold">Qty:</span> {alloc.allocated_qty}
+          </li>
+        ))}
+      </ul>
+    </div>
+
+    {/* Buttons only for partial */}
+    {optimizerResult.status === "partial" && (
+      <div className="flex gap-4 mt-4">
+        {/* Accept Partial Order */}
+        <Button
+          className="bg-green-600 hover:bg-green-700"
+          onClick={async () => {
+            const account = await getAccount();
+
+            // Build order details properly
+            const allEtas = optimizerResult.allocations.map((a) => a.eta_time);
+            const overallEta = allEtas.length > 0 ? Math.max(...allEtas) : 0;
+
+            const orderData = {
+              retailerWalletAddress: account,
+              status: "created",
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              lineItems: {
+                productName: medicineName.trim(),
+                qty: optimizerResult.allocations.reduce(
+                  (sum, alloc) => sum + alloc.allocated_qty,
+                  0
+                ),
+                batchId: "",
+                allocatedQty: optimizerResult.allocations.reduce(
+                  (sum, alloc) => sum + alloc.allocated_qty,
+                  0
+                ),
+                overallEta,
+                allocations: optimizerResult.allocations.map((alloc) => ({
+                  productUnitIds: alloc.product_ids,
+                  sourceWalletAddress: alloc.source,
+                  sourceType: "distributor",
+                  etaDays: alloc.eta_time,
+                  fulfilled: false,
+                  currentStage: 0,
+                  path: {
+                    fromWalletAddress: alloc.path[0],
+                    fromType: "distributor",
+                    toWalletAddress: alloc.path[alloc.path.length - 1],
+                    toType: "retailer",
+                    etaDays: alloc.eta_time,
+                  },
+                })),
+              },
+            };
+
+            await createOrder(orderData);
+
+            toast({
+              title: "Partial Order Placed",
+              description: `Order placed for available quantity only.`,
+            });
+
+            setOptimizerResult(null);
+            setShowPartialOptions(false);
+            setMedicineName("");
+            setQuantity("");
+          }}
+        >
+          Accept Partial Order
+        </Button>
+
+        {/* Cancel Order */}
+        <Button
+          variant="destructive"
+          onClick={() => {
+            setOptimizerResult(null);
+            setShowPartialOptions(false);
+          }}
+        >
+          Cancel
+        </Button>
+      </div>
+    )}
+  </div> // <--- This closes the outer div of optimizerResult
+)}
+
+
+
+        </div>
         {/* Current Inventory Table */}
         <Card className="mt-8 min-h-[600px]">
           <CardHeader>
@@ -820,7 +1014,7 @@ export default function RetailerPortal() {
                   </thead>
                   <tbody>
                     {inventory.map((item, index) => (
-                      <tr key={item.id} className="border-b hover:bg-gray-50">
+                      <tr key={index} className="border-b hover:bg-gray-50">
                         <td className="p-3 text-gray-700">{index + 1}</td>
                         <td className="p-3 text-gray-900 font-medium">{item.productName}</td>
                         {/* <td className="p-3 text-gray-700 font-mono text-sm">{item.productId}</td> */}
