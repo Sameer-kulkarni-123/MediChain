@@ -3,6 +3,9 @@ from controllers.distributor_controller import all_distributors
 from controllers.connection_controller import get_all_connections
 from controllers.product_controller import get_products_by_name
 from optimizer.utils import build_weighted_graph, shortest_path
+from controllers.manufacturer_controller import all_manufacturers
+from controllers.product_controller import get_product_by_id
+
 
 async def get_all_inventories(product_name):
     inventories = {}
@@ -17,6 +20,18 @@ async def get_all_inventories(product_name):
         if items:
             inventories[wallet] = items
     return inventories
+
+async def get_weights_product(product_name):
+    products = await get_products_by_name(product_name)
+    
+    if not products:
+        # Decide what to do if the product is not found
+        # Either return a default value or raise an error
+        return 1  # default weight
+    
+    # If you expect a single product match:
+    return products[0].unitWeight
+
 
 async def suggest_wait_strategy(graph, inventories, product_name, target_wallet, cold_storage=False):
     if cold_storage:

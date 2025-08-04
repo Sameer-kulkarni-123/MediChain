@@ -1,0 +1,45 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+ENV/
+env/
+.venv/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# Local database and cache
+*.db
+*.sqlite3
+*.log
+*.pkl
+
+# Output artifacts
+*.json
+*.txt
+*.html
+
+# System files
+.DS_Store
+Thumbs.db
+
+# VS Code settings (if used)
+.vscode/
+
+# Environment files
+.env
+
+# Reports
+inventory_report_*
+critical_alerts_*
+medicine_depletion_map_*
+
+# Model files
+production_pharma_model.*
+
+# Ignore this specific notebook if not to be tracked
+production_pharma_model.ipynb
