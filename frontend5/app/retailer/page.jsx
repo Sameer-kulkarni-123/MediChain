@@ -27,8 +27,9 @@ import {
   getCrateInfo,
   getAccount,
   retailerReceivedSubCrate,
-  getAllBottlesOfSubCrate,
   getSubCrateInfo,
+  getAllBottlesOfCrate, 
+  getAllBottlesOfSubCrate
   // activateCertifications,
 } from "../../apis"
 import { createOrder, getRetailerInventory, updateInventoryItem, updateProductLocation, updateRetailerInventoryItem } from "../../api_local"
@@ -820,7 +821,7 @@ export default function RetailerPortal() {
                   </thead>
                   <tbody>
                     {inventory.map((item, index) => (
-                      <tr key={item.id} className="border-b hover:bg-gray-50">
+                      <tr key={index} className="border-b hover:bg-gray-50">
                         <td className="p-3 text-gray-700">{index + 1}</td>
                         <td className="p-3 text-gray-900 font-medium">{item.productName}</td>
                         {/* <td className="p-3 text-gray-700 font-mono text-sm">{item.productId}</td> */}
