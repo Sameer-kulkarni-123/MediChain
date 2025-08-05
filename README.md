@@ -1,20 +1,12 @@
 # MediChain - Blockchain-Powered Pharmaceutical Supply Chain Solution
 
-**Infosys Global Hackathon 2025 - Template Repository**  
+**Infosys Global Hackathon 2025 **  
 *When the World is your Client*
 
 ## 🏥 MediChain - Solution for Sustainable Development
 
 **💡 Template Instructions: Replace the content in brackets with your actual project information. Remove this instruction block when ready.**
 
-## Table of Contents
-- [🎯 Project Overview](#-project-overview)
-- [⚙️ Technical Implementation](#️-technical-implementation)
-- [🚀 Solution Components](#-solution-components)
-- [📖 Getting Started](#-getting-started)
-- [🤝 Contributing](#-contributing)
-- [👥 Contributors](#-contributors)
-- [🙏 Acknowledgments](#-acknowledgments)
 
 ## 🎯 Project Overview
 
@@ -94,15 +86,12 @@ MediChain is a comprehensive blockchain-based pharmaceutical supply chain manage
 **🔗 External Integrations**
 - Ethereum blockchain network
 - QR code scanning APIs
-
-
+  
 
 ## 🚀 Solution Components
 
 ### Working Prototype
 
-
-**Describe your working prototype:**
 
 **✅ Core Functionality:**
 - Medicine crate creation and tracking
@@ -143,17 +132,9 @@ MediChain is a comprehensive blockchain-based pharmaceutical supply chain manage
 
 **📊 Measurable Impact:**
 
-**Quantitative Metrics**
-- 📈 User Adoption: 10,000+ medicines tracked in pilot phase
-- ⏱️ Efficiency Gains: 90% faster medicine authentication
-- 💰 Cost Savings: $100,000+ annual savings in verification costs
-- 🌍 Geographic Reach: Deployed across 3 continents with 5+ countries
-
 **Qualitative Benefits**
 - 🏥 Healthcare: Improved medicine safety and authenticity
 - 🎓 Education: Enhanced supply chain transparency training
-- 🌱 Environment: Reduced waste through better inventory management
-- 👥 Social: Increased trust in pharmaceutical supply chains
 
 **Use Cases & Applications**
 
@@ -161,7 +142,6 @@ MediChain is a comprehensive blockchain-based pharmaceutical supply chain manage
 
 Target users: Pharmaceutical manufacturers, distributors, retailers, and healthcare providers
 Problem solved: Counterfeit medicine prevention and supply chain transparency
-Impact achieved: 99% reduction in counterfeit circulation, real-time tracking
 
 **🔄 Secondary Use Cases:**
 
@@ -175,9 +155,10 @@ Impact achieved: 99% reduction in counterfeit circulation, real-time tracking
 
 | Environment | URL | Purpose |
 |-------------|-----|---------|
-| Local Development | http://localhost:3000 | Development and testing |
+| QR Development | http://<YOUR-IP>:8080 |Displayes te QRs |
 | Backend API | http://localhost:8000 | API endpoints |
 | Blockchain | http://localhost:8545 | Local blockchain node |
+| Blockchain | http://localhost:30001 | Frontend server |
 
 
 ## 🤝 Contributing
@@ -219,12 +200,6 @@ git checkout -b fix/bug-description
 - Add tests if applicable
 - Update documentation
 
-**✅ Test Your Changes**
-
-```bash
-npm test  # or your project's test command
-npm run lint  # check code style
-```
 
 **📝 Commit with Good Messages**
 
